@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Filter App</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        h2 {
+            margin: 0 0 12px 0;
+            font-size: 1.4em;
+            color: #222;
+        }
+
+        p {
+            margin: 0 0 16px 0;
+            font-size: 0.9em;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fafafa;
+            font-size: 1em;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            font-size: 1em;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+
+        .preview-container {
+            display: flex;
+            gap: 20px;
+            justify-content: space-between;
+        }
+
+        .preview-half {
+            width: 48%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: block;
+            margin: 0 auto 8px;
+            cursor: pointer;
+        }
+
+        #noImageMsg {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            margin: 20px 0;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        button:hover:not(:disabled) {
+            background: #0056b3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .download-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .download-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .download-option label {
+            flex: 1;
+            font-size: 0.9em;
+            color: #444;
+        }
+
+        .download-option select,
+        .download-option input {
+            flex: 2;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+
+        .slider-container {
+            margin-top: 10px;
+        }
+
+        .slider-container label {
+            font-size: 0.9em;
+            color: #444;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal img {
+            max-width: calc(100% - 100px);
+            max-height: calc(100vh - 100px);
+            border: 50px solid white;
+            box-sizing: border-box;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .card {
+                padding: 16px;
+            }
+
+            .preview-container {
+                flex-direction: column;
+            }
+
+            .preview-half {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <defs>
+            <!-- Grain Filters -->
+            <filter id="grain-low">
+                <feTurbulence type="fractalNoise" baseFrequency="0.3" numOctaves="3" stitchTiles="stitch" result="noise"/>
+                <feColorMatrix in="noise" type="matrix" values="0.2 0 0 0 0 0 0.2 0 0 0 0 0.2 0 0 0 0 0 0 1 0"/>
+                <feComposite in2="SourceGraphic" operator="over" />
+            </filter>
+            <filter id="grain-med">
+                <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" stitchTiles="stitch" result="noise"/>
+                <feColorMatrix in="noise" type="matrix" values="0.3 0 0 0 0 0 0.3 0 0 0 0 0.3 0 0 0 0 0 0 1 0"/>
+                <feComposite in2="SourceGraphic" operator="over" />
+            </filter>
+            <filter id="grain-high">
+                <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="3" stitchTiles="stitch" result="noise"/>
+                <feColorMatrix in="noise" type="matrix" values="0.4 0 0 0 0 0 0.4 0 0 0 0 0.4 0 0 0 0 0 0 1 0"/>
+                <feComposite in2="SourceGraphic" operator="over" />
+            </filter>
+            <!-- Vignette Filters -->
+            <filter id="vignette-soft">
+                <feGaussianBlur stdDeviation="20" result="blur"/>
+                <feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 19 -8" result="matrix" in="blur"/>
+                <feBlend in="SourceGraphic" in2="matrix" mode="multiply" />
+            </filter>
+            <filter id="vignette-strong">
+                <feGaussianBlur stdDeviation="30" result="blur"/>
+                <feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 19 -10" result="matrix" in="blur"/>
+                <feBlend in="SourceGraphic" in2="matrix" mode="multiply" />
+            </filter>
+        </defs>
+    </svg>
+
+    <div class="container">
+        <div class="card">
+            <h2>Upload Image</h2>
+            <p>Supports any image format (JPEG, PNG, etc.). Works on iOS devices.</p>
+            <input type="file" id="fileInput" accept="image/*" capture="environment">
+        </div>
+
+        <div class="card">
+            <h2>Select Filter Category and Preset</h2>
+            <p>Choose a preset from each category to layer effects. Use sliders to adjust intensity. Preview updates live.</p>
+            
+            <label for="basicSelect">Basic Mods</label>
+            <select id="basicSelect">
+                <option value="none">None</option>
+                <option value="grayscale">1. Grayscale</option>
+                <option value="sepia">2. Sepia</option>
+                <option value="invert">3. Invert Colors</option>
+                <option value="bright">4. Brightness Boost</option>
+                <option value="contrast">5. High Contrast</option>
+                <option value="saturate">6. Saturation Boost</option>
+                <option value="huerotate">7. Hue Rotate (180°)</option>
+                <option value="blur">8. Soft Blur</option>
+                <option value="opacity">9. Reduced Opacity</option>
+                <option value="shadow">10. Drop Shadow Effect</option>
+            </select>
+            <div class="slider-container">
+                <label for="basicIntensity">Intensity: <span id="basicIntensityValue">100</span>%</label>
+                <input type="range" id="basicIntensity" min="0" max="100" value="100">
+            </div>
+
+            <label for="filmSelect">Film Looks (Disposable Camera & Nostalgic Medium Format)</label>
+            <select id="filmSelect">
+                <option value="none">None</option>
+                <option value="disposable1">1. Faded Disposable (Warm Tint)</option>
+                <option value="disposable2">2. Grainy Flash (High Contrast)</option>
+                <option value="disposable3">3. Overexposed Vintage</option>
+                <option value="disposable4">4. Cool Blue Leak</option>
+                <option value="disposable5">5. Yellowed Edges</option>
+                <option value="medium1">6. Soft Medium Format (Sepia Glow)</option>
+                <option value="medium2">7. Nostalgic Portra (Muted Colors)</option>
+                <option value="medium3">8. Velvia Vibrant (High Sat)</option>
+                <option value="medium4">9. Kodachrome Retro</option>
+                <option value="medium5">10. Ektar Bold</option>
+            </select>
+            <div class="slider-container">
+                <label for="filmIntensity">Intensity: <span id="filmIntensityValue">100</span>%</label>
+                <input type="range" id="filmIntensity" min="0" max="100" value="100">
+            </div>
+
+            <label for="cameraSelect">Camera Effects</label>
+            <select id="cameraSelect">
+                <option value="none">None</option>
+                <option value="grain-low">1. Low Film Grain</option>
+                <option value="grain-med">2. Medium Film Grain</option>
+                <option value="grain-high">3. High Film Grain</option>
+                <option value="light-leak-red">4. Red Light Leak</option>
+                <option value="light-leak-orange">5. Orange Light Leak</option>
+                <option value="light-leak-blue">6. Blue Light Leak</option>
+                <option value="vignette-soft">7. Soft Vignette</option>
+                <option value="vignette-strong">8. Strong Vignette</option>
+                <option value="lens-flare">9. Lens Flare (Brightness Boost)</option>
+                <option value="dust">10. Dust & Scratches (Light Blur)</option>
+            </select>
+            <div class="slider-container">
+                <label for="cameraIntensity">Intensity: <span id="cameraIntensityValue">100</span>%</label>
+                <input type="range" id="cameraIntensity" min="0" max="100" value="100">
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Live Preview (Original vs Filtered)</h2>
+            <p>Original on left, filtered on right. Click an image to view full screen.</p>
+            <div class="preview-container">
+                <div class="preview-half">
+                    <img id="originalImg" class="preview-img" alt="Original" style="display: none;">
+                    <div>Original</div>
+                </div>
+                <div class="preview-half">
+                    <img id="previewImg" class="preview-img" alt="Filtered" style="display: none;">
+                    <div>Filtered</div>
+                </div>
+            </div>
+            <div id="noImageMsg">Upload an image to get started.</div>
+        </div>
+
+        <div class="card">
+            <h2>Download Options</h2>
+            <p>Customize your download settings.</p>
+            <div class="download-options">
+                <div class="download-option">
+                    <label for="formatSelect">Format:</label>
+                    <select id="formatSelect">
+                        <option value="png">PNG (Lossless)</option>
+                        <option value="jpeg">JPEG (Compressed)</option>
+                    </select>
+                </div>
+                <div class="download-option">
+                    <label for="qualityInput">JPEG Quality (1-100):</label>
+                    <input type="number" id="qualityInput" min="1" max="100" value="90" disabled>
+                </div>
+                <div class="download-option">
+                    <label for="maxSizeInput">Max File Size (MB, approx):</label>
+                    <input type="number" id="maxSizeInput" min="0.1" step="0.1" value="5">
+                </div>
+                <div class="download-option">
+                    <label for="maxDimInput">Max Dimension (pixels):</label>
+                    <input type="number" id="maxDimInput" min="100" value="2000">
+                </div>
+            </div>
+            <button id="downloadBtn" disabled>Download Filtered Image</button>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <img id="modalImg" alt="Full screen image">
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const basicSelect = document.getElementById('basicSelect');
+        const filmSelect = document.getElementById('filmSelect');
+        const cameraSelect = document.getElementById('cameraSelect');
+        const basicIntensity = document.getElementById('basicIntensity');
+        const basicIntensityValue = document.getElementById('basicIntensityValue');
+        const filmIntensity = document.getElementById('filmIntensity');
+        const filmIntensityValue = document.getElementById('filmIntensityValue');
+        const cameraIntensity = document.getElementById('cameraIntensity');
+        const cameraIntensityValue = document.getElementById('cameraIntensityValue');
+        const originalImg = document.getElementById('originalImg');
+        const previewImg = document.getElementById('previewImg');
+        const noImageMsg = document.getElementById('noImageMsg');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const formatSelect = document.getElementById('formatSelect');
+        const qualityInput = document.getElementById('qualityInput');
+        const maxSizeInput = document.getElementById('maxSizeInput');
+        const maxDimInput = document.getElementById('maxDimInput');
+        const modal = document.getElementById('modal');
+        const modalImg = document.getElementById('modalImg');
+
+        // Define CSS filter functions
+        const filters = {
+            grayscale: (int) => `grayscale(${int * 100}%)`,
+            sepia: (int) => `sepia(${int * 100}%)`,
+            invert: (int) => `invert(${int * 100}%)`,
+            bright: (int) => `brightness(${1 + int * 0.5})`,
+            contrast: (int) => `contrast(${1 + int * 1})`,
+            saturate: (int) => `saturate(${1 + int * 2})`,
+            huerotate: (int) => `hue-rotate(${int * 180}deg)`,
+            blur: (int) => `blur(${int * 3}px)`,
+            opacity: (int) => `opacity(${1 - int * 0.3})`,
+            shadow: (int) => `drop-shadow(${int * 8}px ${int * 8}px ${int * 4}px rgba(0,0,0,${int * 0.3}))`,
+
+            disposable1: (int) => `sepia(${int * 0.3}) brightness(${1 + int * (0.9 - 1)}) contrast(${1 + int * (1.2 - 1)})`,
+            disposable2: (int) => `contrast(${1 + int * (1.5 - 1)}) brightness(${1 + int * (1.1 - 1)})`,
+            disposable3: (int) => `brightness(${1 + int * (1.3 - 1)}) saturate(${1 + int * (0.8 - 1)})`,
+            disposable4: (int) => `hue-rotate(${int * -10}deg) brightness(${1 + int * (0.95 - 1)}) contrast(${1 + int * (1.1 - 1)})`,
+            disposable5: (int) => `sepia(${int * 0.2}) brightness(${1 + int * (0.85 - 1)})`,
+            medium1: (int) => `sepia(${int * 0.4}) brightness(${1 + int * (1.05 - 1)}) contrast(${1 + int * (1.1 - 1)})`,
+            medium2: (int) => `saturate(${1 + int * (0.7 - 1)}) brightness(${1 + int * (1 - 1)}) contrast(${1 + int * (1.05 - 1)})`,
+            medium3: (int) => `saturate(${1 + int * (1.5 - 1)}) contrast(${1 + int * (1.2 - 1)})`,
+            medium4: (int) => `sepia(${int * 0.5}) saturate(${1 + int * (1.2 - 1)}) brightness(${1 + int * (0.95 - 1)})`,
+            medium5: (int) => `saturate(${1 + int * (1.3 - 1)}) contrast(${1 + int * (1.3 - 1)}) brightness(${1 + int * (1.05 - 1)})`,
+
+            'light-leak-red': (int) => `brightness(${1 + int * 0.2}) hue-rotate(${int * -20}deg)`,
+            'light-leak-orange': (int) => `brightness(${1 + int * 0.2}) hue-rotate(${int * 20}deg)`,
+            'light-leak-blue': (int) => `brightness(${1 + int * 0.2}) hue-rotate(${int * 200}deg)`,
+            'lens-flare': (int) => `brightness(${1 + int * 0.3}) contrast(${1 + int * (0.9 - 1)})`,
+            'dust': (int) => `blur(${int * 0.5}px) contrast(${1 + int * 0.1})`
+        };
+
+        let imageUrl = null;
+
+        // Update SVG filter based on intensity
+        function updateSvgFilter(id, int) {
+            const filterEl = document.getElementById(id);
+            if (id.startsWith('grain')) {
+                let maxOp = 0.2;
+                if (id === 'grain-med') maxOp = 0.3;
+                else if (id === 'grain-high') maxOp = 0.4;
+                const op = int * maxOp;
+                const cm = filterEl.querySelector('feColorMatrix');
+                cm.setAttribute('values', `${op} 0 0 0 0 0 ${op} 0 0 0 0 ${op} 0 0 0 0 0 0 1 0`);
+            } else if (id.startsWith('vignette')) {
+                let maxStd = 20;
+                let maxMat = -8;
+                if (id === 'vignette-strong') {
+                    maxStd = 30;
+                    maxMat = -10;
+                }
+                const std = int * maxStd;
+                const mat = int * maxMat;
+                const blur = filterEl.querySelector('feGaussianBlur');
+                blur.setAttribute('stdDeviation', std);
+                const cm = filterEl.querySelector('feColorMatrix');
+                cm.setAttribute('values', `1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 19 ${mat}`);
+            }
+        }
+
+        // Update preview with layered filters
+        function updatePreview() {
+            let filterParts = [];
+
+            const basic = basicSelect.value;
+            const basicInt = basicIntensity.value / 100;
+            if (basic !== 'none' && basicInt > 0) {
+                filterParts.push(filters[basic](basicInt));
+            }
+
+            const film = filmSelect.value;
+            const filmInt = filmIntensity.value / 100;
+            if (film !== 'none' && filmInt > 0) {
+                filterParts.push(filters[film](filmInt));
+            }
+
+            const camera = cameraSelect.value;
+            const cameraInt = cameraIntensity.value / 100;
+            if (camera !== 'none' && cameraInt > 0) {
+                if (['grain-low', 'grain-med', 'grain-high', 'vignette-soft', 'vignette-strong'].includes(camera)) {
+                    updateSvgFilter(camera, cameraInt);
+                    filterParts.push(`url(#${camera})`);
+                } else {
+                    filterParts.push(filters[camera](cameraInt));
+                }
+            }
+
+            previewImg.style.filter = filterParts.join(' ') || 'none';
+        }
+
+        // Handle image upload
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const url = URL.createObjectURL(file);
+                originalImg.src = url;
+                previewImg.src = url;
+                originalImg.style.display = 'block';
+                previewImg.style.display = 'block';
+                noImageMsg.style.display = 'none';
+                downloadBtn.disabled = false;
+                basicSelect.value = 'none';
+                filmSelect.value = 'none';
+                cameraSelect.value = 'none';
+                updatePreview();
+                if (imageUrl) {
+                    URL.revokeObjectURL(imageUrl);
+                }
+                imageUrl = url;
+            } else {
+                alert('Please select a valid image file.');
+            }
+        });
+
+        // Listeners for selects and sliders
+        basicSelect.addEventListener('change', updatePreview);
+        filmSelect.addEventListener('change', updatePreview);
+        cameraSelect.addEventListener('change', updatePreview);
+
+        basicIntensity.addEventListener('input', (e) => {
+            basicIntensityValue.textContent = e.target.value;
+            updatePreview();
+        });
+        filmIntensity.addEventListener('input', (e) => {
+            filmIntensityValue.textContent = e.target.value;
+            updatePreview();
+        });
+        cameraIntensity.addEventListener('input', (e) => {
+            cameraIntensityValue.textContent = e.target.value;
+            updatePreview();
+        });
+
+        // Full screen modal
+        originalImg.addEventListener('click', function() {
+            modal.style.display = 'flex';
+            modalImg.src = this.src;
+            modalImg.style.filter = 'none';
+        });
+
+        previewImg.addEventListener('click', function() {
+            modal.style.display = 'flex';
+            modalImg.src = this.src;
+            modalImg.style.filter = this.style.filter;
+        });
+
+        modal.addEventListener('click', function() {
+            this.style.display = 'none';
+        });
+
+        // Enable/disable quality input based on format
+        formatSelect.addEventListener('change', function() {
+            qualityInput.disabled = this.value === 'png';
+        });
+
+        // Rasterize filtered image for download
+        function rasterizeFilteredImage(imgSrc, filterValue, callback) {
+            const img = new Image();
+            img.onload = function() {
+                let width = img.width;
+                let height = img.height;
+                const maxDim = parseInt(maxDimInput.value) || Infinity;
+                if (width > maxDim || height > maxDim) {
+                    const ratio = Math.min(maxDim / width, maxDim / height);
+                    width = Math.floor(width * ratio);
+                    height = Math.floor(height * ratio);
+                }
+                const svgWidth = width;
+                const svgHeight = height;
+                const defs = document.querySelector('svg[aria-hidden="true"] defs').innerHTML;
+                const svg = `
+                    <svg xmlns='http://www.w3.org/2000/svg' width='${svgWidth}' height='${svgHeight}'>
+                        <defs>${defs}</defs>
+                        <foreignObject width='100%' height='100%'>
+                            <div xmlns='http://www.w3.org/1999/xhtml' style='filter: ${filterValue}; width:100%; height:100%;'>
+                                <img src='${imgSrc}' style='width:100%; height:100%; display:block; object-fit: contain;' />
+                            </div>
+                        </foreignObject>
+                    </svg>
+                `;
+                const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+                const svgUrl = URL.createObjectURL(svgBlob);
+                const svgImg = new Image();
+                svgImg.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = svgWidth;
+                    canvas.height = svgHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(svgImg, 0, 0);
+                    URL.revokeObjectURL(svgUrl);
+                    callback(canvas);
+                };
+                svgImg.onerror = function() {
+                    alert('Error processing image.');
+                    URL.revokeObjectURL(svgUrl);
+                };
+                svgImg.src = svgUrl;
+            };
+            img.src = imgSrc;
+        }
+
+        // Handle download with options
+        downloadBtn.addEventListener('click', function() {
+            if (!imageUrl) {
+                alert('Please upload an image first.');
+                return;
+            }
+            const filterValue = previewImg.style.filter || 'none';
+            rasterizeFilteredImage(imageUrl, filterValue, function(canvas) {
+                const format = formatSelect.value;
+                const quality = parseInt(qualityInput.value) / 100;
+                const maxSizeMB = parseFloat(maxSizeInput.value) || Infinity;
+                const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+
+                function downloadCanvas(resizeFactor = 1) {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = canvas.width * resizeFactor;
+                    tempCanvas.height = canvas.height * resizeFactor;
+                    const ctx = tempCanvas.getContext('2d');
+                    ctx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+
+                    tempCanvas.toBlob(function(blob) {
+                        if (blob.size / (1024 * 1024) > maxSizeMB && resizeFactor > 0.1) {
+                            downloadCanvas(resizeFactor * 0.9); // Recursively resize
+                        } else {
+                            const link = document.createElement('a');
+                            link.download = `filtered-image-${Date.now()}.${format}`;
+                            link.href = URL.createObjectURL(blob);
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(link.href);
+                        }
+                    }, mimeType, format === 'jpeg' ? quality : undefined);
+                }
+
+                downloadCanvas(1);
+            });
+        });
+    </script>
+</body>
+</html>
