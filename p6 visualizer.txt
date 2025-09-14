@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P6 Schedule Timeline Visualizer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #495057;
+            margin-bottom: 30px;
+        }
+        .upload-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        input[type="file"], button {
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #timeline {
+            overflow-x: auto;
+            border: 1px solid #ddd;
+            background: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+        #exportBtn {
+            display: none;
+        }
+        .loading {
+            text-align: center;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>P6 Schedule Timeline Visualizer</h1>
+        <div class="upload-section">
+            <input type="file" id="csvFile" accept=".csv">
+            <button onclick="visualizeTimeline()">Visualize Timeline</button>
+            <button id="exportBtn" onclick="exportToPng()">Export as PNG</button>
+        </div>
+        <div id="loading" class="loading" style="display: none;">Generating timeline...</div>
+        <div id="timeline"></div>
+    </div>
+
+    <script>
+        // Parse CSV
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            if (lines.length === 0) return [];
+            const headers = parseLine(lines[0]);
+            return lines.slice(1).map(line => {
+                const values = parseLine(line);
+                const obj = {};
+                headers.forEach((header, i) => {
+                    obj[header] = values[i] || '';
+                });
+                return obj;
+            });
+        }
+
+        function parseLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim().replace(/^"|"$/g, ''));
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim().replace(/^"|"$/g, ''));
+            return result;
+        }
+
+        // Parse mm/dd/yyyy date
+        function parseP6Date(dateStr) {
+            if (!dateStr) return null;
+            const parts = dateStr.split('/');
+            if (parts.length !== 3) return null;
+            let year = parseInt(parts[2]);
+            if (year < 100) year += 2000;
+            return new Date(year, parseInt(parts[0]) - 1, parseInt(parts[1]));
+        }
+
+        // Parse duration or lag string to hours
+        function parseDuration(str) {
+            if (!str) return 0;
+            const match = str.match(/([+-]?\d+(?:\.\d+)?)([dh]?)/i);
+            if (!match) return 0;
+            let val = parseFloat(match[1]);
+            if (match[2].toLowerCase() === 'd') val *= 8;
+            return val;
+        }
+
+        // Parse relationships
+        function parseRelationships(relStr) {
+            if (!relStr) return [];
+            return relStr.split(',').map(rel => {
+                const parts = rel.split(':');
+                if (parts.length < 3) return null;
+                const id = parts[0].trim();
+                const type = parts[1].trim();
+                const lagStr = parts[2].trim();
+                let lag = 0;
+                const lagMatch = lagStr.match(/([+-]?\d+(?:\.\d+)?)([dh]?)/i);
+                if (lagMatch) {
+                    lag = parseFloat(lagMatch[1]);
+                    if (lagMatch[2].toLowerCase() === 'd') lag *= 8; // 8h/day
+                }
+                return { id, type, lag };
+            }).filter(rel => rel !== null);
+        }
+
+        // Get start and end dates for activity
+        function getActivityDates(activity) {
+            let start = parseP6Date(activity['Actual Start'] || activity['Early Start'] || activity['Planned Start']);
+            let finish = parseP6Date(activity['Actual Finish'] || activity['Early Finish'] || activity['Planned Finish']);
+            const durHours = parseDuration(activity['Remaining Duration'] || activity['Original Duration']);
+            const durMs = durHours * 60 * 60 * 1000;
+
+            if (!start && finish) {
+                start = new Date(finish.getTime() - durMs);
+            } else if (!finish && start) {
+                finish = new Date(start.getTime() + durMs);
+            }
+
+            if (!start || !finish) return null;
+            return { start, finish };
+        }
+
+        // Visualize function using Canvas
+        function visualizeTimeline() {
+            const fileInput = document.getElementById('csvFile');
+            if (!fileInput.files[0]) {
+                alert('Please select a CSV file.');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('timeline').innerHTML = '';
+            document.getElementById('exportBtn').style.display = 'none';
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const activities = parseCSV(e.target.result);
+                    if (activities.length < 1) throw new Error('No data in CSV');
+
+                    // Filter valid activities with dates
+                    const validActs = activities.filter(act => getActivityDates(act));
+                    if (validActs.length === 0) throw new Error('No activities with valid dates');
+
+                    // Find min and max dates
+                    let minDate = new Date(Math.min(...validActs.map(act => getActivityDates(act).start.getTime())));
+                    let maxDate = new Date(Math.max(...validActs.map(act => getActivityDates(act).finish.getTime())));
+                    const totalMs = maxDate - minDate;
+                    const totalDays = totalMs / (1000 * 60 * 60 * 24);
+                    const canvasWidth = Math.max(1000, totalDays * 10) + 200; // 10px per day, +200 for labels
+                    const canvasHeight = validActs.length * 40 + 50;
+                    const scale = (canvasWidth - 200) / totalDays;
+
+                    // Create canvas
+                    const canvas = document.createElement('canvas');
+                    canvas.width = canvasWidth;
+                    canvas.height = canvasHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.font = '12px Arial';
+                    ctx.fillStyle = '#333';
+
+                    // Sort activities by start date
+                    validActs.sort((a, b) => getActivityDates(a).start - getActivityDates(b).start);
+
+                    // Map ID to index for positioning
+                    const idToIndex = {};
+                    validActs.forEach((act, index) => {
+                        idToIndex[act['Activity ID']] = index;
+                    });
+
+                    // Draw date ticks
+                    const tickIntervalDays = Math.ceil(totalDays / 10); // ~10 ticks
+                    for (let i = 0; i <= totalDays; i += tickIntervalDays) {
+                        const date = new Date(minDate.getTime() + i * 24 * 60 * 60 * 1000);
+                        const x = 150 + (i / totalDays) * (canvasWidth - 200);
+                        ctx.beginPath();
+                        ctx.moveTo(x, 0);
+                        ctx.lineTo(x, canvasHeight - 30);
+                        ctx.strokeStyle = '#eee';
+                        ctx.stroke();
+                        ctx.fillText(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), x - 20, canvasHeight - 10);
+                    }
+
+                    // Render activities
+                    validActs.forEach((act, index) => {
+                        const dates = getActivityDates(act);
+                        const startOffsetDays = (dates.start - minDate) / (1000 * 60 * 60 * 24);
+                        const durationDays = (dates.finish - dates.start) / (1000 * 60 * 60 * 24);
+                        const x = 150 + startOffsetDays * scale;
+                        const y = index * 40 + 20;
+                        const width = Math.max(2, durationDays * scale); // Min width for bars
+
+                        // Label
+                        ctx.textAlign = 'right';
+                        ctx.fillText(`${act['Activity ID']}: ${act['Activity Name']}`, 140, y + 8);
+
+                        // Bar or Diamond
+                        ctx.fillStyle = '#007bff';
+                        if (durationDays === 0) {
+                            // Diamond for milestone
+                            ctx.beginPath();
+                            ctx.moveTo(x, y);
+                            ctx.lineTo(x - 10, y + 10);
+                            ctx.lineTo(x, y + 20);
+                            ctx.lineTo(x + 10, y + 10);
+                            ctx.closePath();
+                            ctx.fill();
+                        } else {
+                            // Bar
+                            ctx.fillRect(x, y, width, 20);
+                            ctx.fillStyle = '#fff';
+                            ctx.textAlign = 'left';
+                            ctx.fillText(act['Activity Name'].substring(0, Math.floor(width / 6)), x + 5, y + 14); // Truncate text
+                        }
+
+                        // Reset
+                        ctx.fillStyle = '#333';
+                        ctx.textAlign = 'center';
+                    });
+
+                    // Render connections
+                    validActs.forEach((act, index) => {
+                        const dates = getActivityDates(act);
+                        const startOffsetDays = (dates.start - minDate) / (1000 * 60 * 60 * 24);
+                        const durationDays = (dates.finish - dates.start) / (1000 * 60 * 60 * 24);
+                        const thisXStart = 150 + startOffsetDays * scale;
+                        const thisWidth = Math.max(2, durationDays * scale);
+                        const thisY = index * 40 + 30; // Mid point
+
+                        const preds = parseRelationships(act['Predecessors']);
+                        preds.forEach(pred => {
+                            const predIndex = idToIndex[pred.id];
+                            if (predIndex === undefined) return;
+                            const predAct = validActs[predIndex];
+                            const predDates = getActivityDates(predAct);
+                            const predStartOffsetDays = (predDates.start - minDate) / (1000 * 60 * 60 * 24);
+                            const predDurationDays = (predDates.finish - predDates.start) / (1000 * 60 * 60 * 24);
+                            const predXStart = 150 + predStartOffsetDays * scale;
+                            const predXEnd = predXStart + Math.max(2, predDurationDays * scale);
+                            const predY = predIndex * 40 + 30; // Mid point
+
+                            // Determine fromX and toX based on relationship type
+                            let fromX = predXEnd; // Default FS/FF
+                            if (pred.type === 'SS' || pred.type === 'SF') {
+                                fromX = predXStart;
+                            }
+                            let toX = thisXStart; // Default FS/SS
+                            if (pred.type === 'FF' || pred.type === 'SF') {
+                                toX = thisXStart + thisWidth;
+                            }
+
+                            // Adjust fromX for lag
+                            const lagDays = pred.lag / 8;
+                            fromX += lagDays * scale;
+
+                            // Draw orthogonal line: horizontal then vertical
+                            ctx.beginPath();
+                            ctx.moveTo(fromX, predY);
+                            ctx.lineTo(toX, predY);
+                            ctx.lineTo(toX, thisY);
+                            ctx.strokeStyle = '#333';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+
+                            // Arrowhead
+                            const arrowSize = 5;
+                            ctx.beginPath();
+                            ctx.moveTo(toX, thisY);
+                            if (Math.abs(predY - thisY) > 0) {
+                                // Last segment vertical
+                                const dir = (thisY > predY) ? 1 : -1;
+                                ctx.lineTo(toX - arrowSize, thisY - dir * arrowSize);
+                                ctx.lineTo(toX + arrowSize, thisY - dir * arrowSize);
+                            } else {
+                                // Last segment horizontal
+                                const dir = (toX > fromX) ? 1 : -1;
+                                ctx.lineTo(toX - dir * arrowSize, thisY - arrowSize);
+                                ctx.lineTo(toX - dir * arrowSize, thisY + arrowSize);
+                            }
+                            ctx.closePath();
+                            ctx.fillStyle = '#333';
+                            ctx.fill();
+                        });
+                    });
+
+                    document.getElementById('timeline').appendChild(canvas);
+                    document.getElementById('exportBtn').style.display = 'inline-block';
+
+                } catch (err) {
+                    alert('Error processing CSV: ' + err.message);
+                } finally {
+                    document.getElementById('loading').style.display = 'none';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Export to PNG
+        function exportToPng() {
+            const canvas = document.querySelector('#timeline canvas');
+            if (!canvas) {
+                alert('No timeline to export.');
+                return;
+            }
+            const dataURL = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = 'p6_timeline.png';
+            link.click();
+        }
+    </script>
+</body>
+</html>
