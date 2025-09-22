@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Org Chart with Multi-Select, Zoom, Resize, and Inline Editing</title>
+  <title>Org Chart with Auto-Save Editable Fields and Click-Off Unselect</title>
   <!-- Load Roboto font from Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
@@ -22,7 +22,7 @@
       color: #333;
     }
 
-    /* Container for controls, multiple rows */
+    /* Container for the top controls, multiple rows */
     #controls {
       display: flex;
       flex-direction: column;
@@ -173,7 +173,7 @@
       <button id="sendBackBtn">Send to Back</button>
     </div>
 
-    <!-- (4) Row for Node Editing (inline) -->
+    <!-- (4) Row for Node Editing (inline, auto-save) -->
     <div class="control-row">
       <label>Name:</label>
       <input type="text" id="editNodeName" />
@@ -183,7 +183,6 @@
       <input type="color" id="editNodeColor" value="#ffffff" />
       <label>Alpha:</label>
       <input type="range" id="editNodeAlpha" class="opacity-range" min="0" max="100" value="100" />
-      <button id="saveNodeEditsBtn">Save Edits</button>
       <button id="deleteNodeBtn">Delete Node</button>
     </div>
   </div>
@@ -218,7 +217,7 @@
     /* Zoom */
     let currentScale = 1.0;
 
-    const GRID_SIZE = 30;
+    const GRID_SIZE = 10;
     let connectorColorHex = "#333333";
     let connectorAlpha = 100;
 
@@ -227,7 +226,6 @@
     const editTitleInput = document.getElementById('editNodeTitle');
     const editColorInput = document.getElementById('editNodeColor');
     const editAlphaInput = document.getElementById('editNodeAlpha');
-    const saveNodeEditsBtn = document.getElementById('saveNodeEditsBtn');
     const deleteNodeBtn = document.getElementById('deleteNodeBtn');
 
     /***********************************************
@@ -481,7 +479,7 @@
     }
 
     /***********************************************
-     * NODE EDITING (INLINE)
+     * NODE EDITING (INLINE, AUTO-SAVE)
      ***********************************************/
     function updateEditFields() {
       const selCount = selectedNodes.size;
@@ -497,7 +495,6 @@
         editTitleInput.disabled = true;
         editColorInput.disabled = true;
         editAlphaInput.disabled = true;
-        saveNodeEditsBtn.disabled = true;
         deleteNodeBtn.disabled = true;
         return;
       }
@@ -513,7 +510,6 @@
         editTitleInput.disabled = true;
         editColorInput.disabled = true;
         editAlphaInput.disabled = true;
-        saveNodeEditsBtn.disabled = true;
         deleteNodeBtn.disabled = true;
         return;
       }
@@ -532,32 +528,56 @@
       editTitleInput.disabled = false;
       editColorInput.disabled = false;
       editAlphaInput.disabled = false;
-      saveNodeEditsBtn.disabled = false;
       deleteNodeBtn.disabled = false;
     }
 
-    // Save Edits
-    saveNodeEditsBtn.addEventListener('click', () => {
-      // Only works if exactly 1 node is selected
-      if (selectedNodes.size !== 1) return;
-      const nodeId = Array.from(selectedNodes)[0];
-      const node = orgData.find(n => n.id === nodeId);
-      if (!node) return;
-
-      node.name = editNameInput.value;
-      node.title = editTitleInput.value;
-      node.colorHex = editColorInput.value;
-      node.colorAlpha = parseInt(editAlphaInput.value, 10);
-
-      // Update DOM
-      const nodeEl = nodeElements[nodeId];
-      nodeEl.querySelector('.name').textContent = node.name;
-      nodeEl.querySelector('.title').textContent = node.title;
-      nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
-
-      updateAllConnectors();
-
-      // Fields remain with the updated data
+    // Name changes => auto-update
+    editNameInput.addEventListener('input', () => {
+      if (selectedNodes.size === 1) {
+        const nodeId = Array.from(selectedNodes)[0];
+        const node = orgData.find(n => n.id === nodeId);
+        if (node) {
+          node.name = editNameInput.value;
+          const nodeEl = nodeElements[nodeId];
+          nodeEl.querySelector('.name').textContent = node.name;
+        }
+      }
+    });
+    // Title changes => auto-update
+    editTitleInput.addEventListener('input', () => {
+      if (selectedNodes.size === 1) {
+        const nodeId = Array.from(selectedNodes)[0];
+        const node = orgData.find(n => n.id === nodeId);
+        if (node) {
+          node.title = editTitleInput.value;
+          const nodeEl = nodeElements[nodeId];
+          nodeEl.querySelector('.title').textContent = node.title;
+        }
+      }
+    });
+    // Color changes => auto-update
+    editColorInput.addEventListener('input', () => {
+      if (selectedNodes.size === 1) {
+        const nodeId = Array.from(selectedNodes)[0];
+        const node = orgData.find(n => n.id === nodeId);
+        if (node) {
+          node.colorHex = editColorInput.value;
+          const nodeEl = nodeElements[nodeId];
+          nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
+        }
+      }
+    });
+    // Alpha changes => auto-update
+    editAlphaInput.addEventListener('input', () => {
+      if (selectedNodes.size === 1) {
+        const nodeId = Array.from(selectedNodes)[0];
+        const node = orgData.find(n => n.id === nodeId);
+        if (node) {
+          node.colorAlpha = parseInt(editAlphaInput.value, 10);
+          const nodeEl = nodeElements[nodeId];
+          nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
+        }
+      }
     });
 
     // Delete Node
@@ -583,7 +603,7 @@
       }
       delete nodeElements[nodeId];
 
-      unselectAllNodes(); // Also calls updateEditFields()
+      unselectAllNodes(); 
       updateAllConnectors();
     });
 
@@ -746,7 +766,7 @@
      * INITIAL SETUP
      ***********************************************/
     createOrgNodes();
-    // Make sure we start with the editing fields locked
+    // Start with editing fields locked
     updateEditFields();
 
     // ================== BUTTON HANDLERS ==================
@@ -805,7 +825,7 @@
     document.getElementById('bringFrontBtn').addEventListener('click', bringSelectedNodesToFront);
     document.getElementById('sendBackBtn').addEventListener('click', sendSelectedNodesToBack);
 
-    /* Helper: Convert hex+alpha to RGBA string */
+    /* 1) Helper: Convert hex+alpha to RGBA string */
     function hexAlphaToRGBA(hex, alphaVal) {
       if (!hex.startsWith("#")) return "rgba(0,0,0,1)";
       let r = parseInt(hex.slice(1,3), 16);
@@ -814,6 +834,14 @@
       let a = alphaVal / 100.0;
       return `rgba(${r},${g},${b},${a})`;
     }
+
+    /* 2) NEW: If the user clicks anywhere NOT on a node (and not on the controls), unselect all nodes */
+    document.addEventListener('click', (e) => {
+      // If user clicked outside any .org-node and also not on the #controls panel => unselect
+      if (!e.target.closest('.org-node') && !e.target.closest('#controls')) {
+        unselectAllNodes();
+      }
+    });
   </script>
 </body>
 </html>
