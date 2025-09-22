@@ -2,16 +2,17 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Org Chart with Invisible Resize, Auto-Size, and RGBA Colors</title>
+  <title>Org Chart with Multi-Select, Zoom, Resize, and Inline Editing</title>
   <!-- Load Roboto font from Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
   <!-- Libraries for Export to PDF: html2canvas + jsPDF -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
   <style>
-    /* Use Roboto for everything */
-    body, button, input, .org-node, #editPanel {
+    /* Use Roboto font for everything */
+    body, button, input, .org-node {
       font-family: 'Roboto', sans-serif;
     }
     body {
@@ -21,12 +22,11 @@
       color: #333;
     }
 
-    /* A sleek controls bar at the top */
+    /* Container for controls, multiple rows */
     #controls {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
+      flex-direction: column;
+      align-items: flex-start;
       padding: 10px;
       background: #ffffff;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -34,9 +34,17 @@
       top: 0;
       z-index: 9999;
     }
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
     #controls button,
     #controls input[type="color"],
-    #controls input[type="range"] {
+    #controls input[type="range"],
+    #controls input[type="text"] {
       padding: 6px 10px;
       border: 1px solid #ccc;
       border-radius: 4px;
@@ -47,27 +55,33 @@
     #controls button:hover {
       background: #ddd;
     }
-    /* For color inputs */
     #controls input[type="color"] {
-      cursor: pointer;
       height: 34px;
       width: 34px;
       padding: 0;
       border: 1px solid #ccc;
     }
-    /* For opacity range */
-    .opacity-range {
+    .opacity-range,
+    #containerWidthRange,
+    #containerHeightRange {
       width: 80px;
     }
+    /* Disabled inputs style */
+    input[disabled], button[disabled] {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
 
-    /* Container for the organizational chart */
+    /* The org chart container */
     #orgChartContainer {
-      width: 100%;
-      height: calc(100vh - 60px);
+      width: 2000px;       /* default large width */
+      height: 2000px;      /* default large height */
       position: relative;
       border-top: 1px solid #e0e0e0;
-      overflow: auto; /* scroll if needed */
+      overflow: auto;      /* scroll if needed */
       background: #fafafa;
+      transform-origin: top left; /* for zooming */
+      transform: scale(1);       /* default scale */
     }
 
     /* Basic styling for an org node */
@@ -80,10 +94,10 @@
       border: 1px solid #333;
       border-radius: 4px;
       text-align: center;
-      cursor: move; /* indicates drag for the main body */
+      cursor: move;
       box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-      user-select: none; /* prevent text selection while dragging */
-      z-index: 1; /* keep nodes above connectors */
+      user-select: none;
+      z-index: 1;
       white-space: normal;
       word-wrap: break-word;
       resize: none;
@@ -98,117 +112,92 @@
       color: #666;
     }
 
-    /* Invisible resize corner in the bottom-right that still works */
+    /* Invisible resize corner in the bottom-right */
     .resize-handle {
       position: absolute;
       bottom: 0;
       right: 0;
       width: 15px;
       height: 15px;
-      background: transparent; /* no visible square */
+      background: transparent;
       cursor: se-resize;
       user-select: none;
     }
 
-    /* Connector line segments (L-shapes have two segments). Keep them behind nodes by using a lower z-index. */
+    /* Connector line segments behind nodes */
     .connector-segment {
       position: absolute;
       background-color: #333;
-      z-index: 0; /* behind nodes */
+      z-index: 0;
     }
 
-    /* Popup form for editing node details */
-    #editPanel {
-      position: absolute;
-      z-index: 999;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 8px;
-      width: 240px;
-      display: none;
-      font-size: 14px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-    #editPanel label {
-      display: block;
-      margin: 4px 0 2px;
-    }
-    #editPanel input[type="text"],
-    #editPanel input[type="color"],
-    #editPanel input[type="range"] {
-      width: 100%;
-      box-sizing: border-box;
-      margin-bottom: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 4px;
-      font-size: 14px;
-    }
-    #editPanel button {
-      margin-top: 4px;
-      margin-right: 4px;
-      padding: 6px 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background: #eee;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    #editPanel button:hover {
-      background: #ddd;
-    }
-
-    /* 1) ADD THIS: Highlight .selected nodes with bold blue outline */
+    /* Highlight selected nodes with a blue outline & bold text */
     .org-node.selected {
-      outline: 2px solid blue; /* or border: 2px solid blue; */
+      outline: 2px solid blue;
       font-weight: bold;
     }
-
   </style>
 </head>
 <body>
-  <!-- Top controls bar -->
+  <!-- Controls at the top -->
   <div id="controls">
-    <button id="newNodeBtn">New Node</button>
-    <button id="autoOrganizeBtn">Auto-Organize</button>
-    <button id="autoSizeBtn">Auto Size All Nodes</button>
-    <button id="drawConnectorBtn">Draw Connector</button>
-    <button id="clearConnectorsBtn">Clear Connectors</button>
-    <button id="exportPDFBtn">Export to PDF</button>
-    <label for="connectorColorInput">Connector Color:</label>
-    <input type="color" id="connectorColorInput" value="#333333" />
-    <input type="range" id="connectorAlphaRange" class="opacity-range" min="0" max="100" value="100" />
-    <button id="saveChartBtn">Save Chart</button>
-    <button id="loadChartBtn">Load Chart</button>
-    <input type="file" id="loadFile" accept="application/json" style="display: none;" />
+    <!-- (1) Row for Node & Chart Management -->
+    <div class="control-row">
+      <button id="newNodeBtn">New Node</button>
+      <button id="autoOrganizeBtn">Auto-Organize</button>
+      <button id="autoSizeBtn">Auto Size All Nodes</button>
+      <button id="exportPDFBtn">Export to PDF</button>
+    </div>
+
+    <!-- (2) Row for Zoom & Container Size Sliders -->
+    <div class="control-row">
+      <button id="zoomOutBtn">Zoom Out</button>
+      <button id="zoomInBtn">Zoom In</button>
+      <label for="containerWidthRange">Width:</label>
+      <input type="range" id="containerWidthRange" min="1000" max="5000" value="2000" />
+      <label for="containerHeightRange">Height:</label>
+      <input type="range" id="containerHeightRange" min="1000" max="5000" value="2000" />
+    </div>
+
+    <!-- (3) Row for Connectors, Colors, Save/Load, Z-index -->
+    <div class="control-row">
+      <button id="drawConnectorBtn">Draw Connector</button>
+      <button id="clearConnectorsBtn">Clear Connectors</button>
+      <label for="connectorColorInput">Connector Color:</label>
+      <input type="color" id="connectorColorInput" value="#333333" />
+      <input type="range" id="connectorAlphaRange" class="opacity-range" min="0" max="100" value="100" />
+      <button id="saveChartBtn">Save Chart</button>
+      <button id="loadChartBtn">Load Chart</button>
+      <input type="file" id="loadFile" accept="application/json" style="display: none;" />
+      <button id="bringFrontBtn">Bring to Front</button>
+      <button id="sendBackBtn">Send to Back</button>
+    </div>
+
+    <!-- (4) Row for Node Editing (inline) -->
+    <div class="control-row">
+      <label>Name:</label>
+      <input type="text" id="editNodeName" />
+      <label>Title:</label>
+      <input type="text" id="editNodeTitle" />
+      <label>Color:</label>
+      <input type="color" id="editNodeColor" value="#ffffff" />
+      <label>Alpha:</label>
+      <input type="range" id="editNodeAlpha" class="opacity-range" min="0" max="100" value="100" />
+      <button id="saveNodeEditsBtn">Save Edits</button>
+      <button id="deleteNodeBtn">Delete Node</button>
+    </div>
   </div>
 
-  <!-- Container for the org chart -->
+  <!-- Main container for the org chart -->
   <div id="orgChartContainer"></div>
 
-  <!-- Popup editor panel -->
-  <div id="editPanel">
-    <label for="nodeNameInput">Name:</label>
-    <input type="text" id="nodeNameInput" />
-    <label for="nodeTitleInput">Title:</label>
-    <input type="text" id="nodeTitleInput" />
-    <label for="nodeColorInput">Node Color:</label>
-    <input type="color" id="nodeColorInput" value="#ffffff" />
-    <input type="range" id="nodeAlphaInput" class="opacity-range" min="0" max="100" value="100" />
-    <button id="saveNodeBtn">Save</button>
-    <button id="closeEditPanelBtn">Close</button>
-    <!-- New Delete Node button -->
-    <button id="deleteNodeBtn">Delete Node</button>
-  </div>
-
   <script>
-    /** 
-     * Each node: { id, name, title, x, y, width, height, colorHex, colorAlpha (0-100) } 
+    /**
+     * Each node: { id, name, title, x, y, width, height, colorHex, colorAlpha (0-100) }
      * Connectors: { from, to, seg1, seg2 }
      */
     let orgData = [
-      { id: 1, name: "Alice", title: "CEO", x: 200, y: 70, width:130, height:60, colorHex: "#ffffff", colorAlpha: 100 },
+      { id: 1, name: "Alice", title: "CEO", x: 200, y: 70,  width:130, height:60, colorHex: "#ffffff", colorAlpha: 100 },
       { id: 2, name: "Bob",   title: "CTO", x: 100, y:220, width:130, height:60, colorHex: "#ffffff", colorAlpha: 100 },
       { id: 3, name: "Carol", title: "CFO", x: 300, y:220, width:130, height:60, colorHex: "#ffffff", colorAlpha: 100 },
     ];
@@ -218,29 +207,35 @@
     let isDrawingConnector = false;
     let startNodeId = null;
 
-    /** 2) ADD THIS: Keep track of selected node IDs for multi-select and drag */
+    /* Multi-select & multi-drag */
     let selectedNodes = new Set();
-
-    /** For dragging multiple nodes at once, store each node's offset from the mouse. */
     let isDraggingNodes = false;
-    let groupOffsets = {}; // { nodeId: {offsetX, offsetY}, ... }
+    let groupOffsets = {};
+
+    /* Z-index layering */
+    let maxZIndex = 1;
+
+    /* Zoom */
+    let currentScale = 1.0;
 
     const GRID_SIZE = 30;
     let connectorColorHex = "#333333";
-    let connectorAlpha = 100; // 0-100
+    let connectorAlpha = 100;
 
-    function hexAlphaToRGBA(hex, alphaVal) {
-      if (!hex.startsWith("#")) return "rgba(0,0,0,1)";
-      let r = parseInt(hex.slice(1,3), 16);
-      let g = parseInt(hex.slice(3,5), 16);
-      let b = parseInt(hex.slice(5,7), 16);
-      let a = alphaVal / 100.0;
-      return `rgba(${r},${g},${b},${a})`;
-    }
+    /* Node editing fields refs */
+    const editNameInput = document.getElementById('editNodeName');
+    const editTitleInput = document.getElementById('editNodeTitle');
+    const editColorInput = document.getElementById('editNodeColor');
+    const editAlphaInput = document.getElementById('editNodeAlpha');
+    const saveNodeEditsBtn = document.getElementById('saveNodeEditsBtn');
+    const deleteNodeBtn = document.getElementById('deleteNodeBtn');
 
+    /***********************************************
+     * CREATE / DRAW NODES
+     ***********************************************/
     function createOrgNodes() {
       const container = document.getElementById('orgChartContainer');
-      // Remove old
+      // Remove existing DOM elements
       Object.values(nodeElements).forEach(el => {
         if (el.parentNode) {
           el.parentNode.removeChild(el);
@@ -248,6 +243,7 @@
       });
       nodeElements = {};
 
+      // Build DOM from orgData
       orgData.forEach(node => {
         const nodeEl = document.createElement('div');
         nodeEl.classList.add('org-node');
@@ -256,6 +252,7 @@
         nodeEl.style.top = node.y + 'px';
         nodeEl.style.width = node.width + 'px';
         nodeEl.style.height = node.height + 'px';
+        nodeEl.style.zIndex = 1;
         const rgba = hexAlphaToRGBA(node.colorHex || "#ffffff", node.colorAlpha ?? 100);
         nodeEl.style.backgroundColor = rgba;
 
@@ -270,23 +267,37 @@
         makeDraggable(nodeEl);
         makeResizable(nodeEl, node);
 
-        // Single click -> if in drawing mode, set start/end
+        // Single click => either connect or select
         nodeEl.addEventListener('click', (e) => {
-          e.stopPropagation(); // Don’t bubble to container
+          e.stopPropagation();
           if (isDrawingConnector) {
             handleConnectorClick(node.id);
           } else {
-            // 3) ADD THIS: selection logic
             handleNodeSelection(e, node.id);
           }
         });
-
-        // Double-click -> open edit panel
-        nodeEl.addEventListener('dblclick', (e) => {
-          e.stopPropagation();
-          openEditPanel(node);
-        });
       });
+    }
+
+    /***********************************************
+     * CONNECTORS
+     ***********************************************/
+    function createConnector(nodeIdA, nodeIdB) {
+      const seg1 = document.createElement('div');
+      seg1.classList.add('connector-segment');
+      const seg2 = document.createElement('div');
+      seg2.classList.add('connector-segment');
+
+      seg1.style.backgroundColor = hexAlphaToRGBA(connectorColorHex, connectorAlpha);
+      seg2.style.backgroundColor = hexAlphaToRGBA(connectorColorHex, connectorAlpha);
+
+      const container = document.getElementById('orgChartContainer');
+      container.appendChild(seg1);
+      container.appendChild(seg2);
+
+      const connectorObj = { from: nodeIdA, to: nodeIdB, seg1, seg2 };
+      connectors.push(connectorObj);
+      updateConnectorPositions(connectorObj);
     }
 
     function handleConnectorClick(nodeId) {
@@ -301,29 +312,13 @@
       }
     }
 
-    function createConnector(nodeIdA, nodeIdB) {
-      const seg1 = document.createElement('div');
-      seg1.classList.add('connector-segment');
-      const seg2 = document.createElement('div');
-      seg2.classList.add('connector-segment');
-      seg1.style.backgroundColor = hexAlphaToRGBA(connectorColorHex, connectorAlpha);
-      seg2.style.backgroundColor = hexAlphaToRGBA(connectorColorHex, connectorAlpha);
-
-      const container = document.getElementById('orgChartContainer');
-      container.appendChild(seg1);
-      container.appendChild(seg2);
-
-      const connectorObj = { from: nodeIdA, to: nodeIdB, seg1, seg2 };
-      connectors.push(connectorObj);
-      updateConnectorPositions(connectorObj);
-    }
-
     function updateConnectorPositions(conn) {
       const { from, to, seg1, seg2 } = conn;
       const containerRect = document.getElementById('orgChartContainer').getBoundingClientRect();
       const elA = nodeElements[from].getBoundingClientRect();
       const elB = nodeElements[to].getBoundingClientRect();
-      
+
+      // Center points
       const centerA = {
         x: elA.left - containerRect.left + elA.width / 2,
         y: elA.top - containerRect.top + elA.height / 2
@@ -333,7 +328,7 @@
         y: elB.top - containerRect.top + elB.height / 2
       };
 
-      // segment1: horizontal
+      // Horizontal segment
       const left1 = Math.min(centerA.x, centerB.x);
       const width1 = Math.abs(centerB.x - centerA.x);
       seg1.style.left = left1 + 'px';
@@ -342,7 +337,7 @@
       seg1.style.height = '2px';
       seg1.style.backgroundColor = hexAlphaToRGBA(connectorColorHex, connectorAlpha);
 
-      // segment2: vertical
+      // Vertical segment
       const top2 = Math.min(centerA.y, centerB.y);
       const height2 = Math.abs(centerB.y - centerA.y);
       seg2.style.left = centerB.x + 'px';
@@ -356,25 +351,25 @@
       connectors.forEach(conn => updateConnectorPositions(conn));
     }
 
-    /** 3) Selection logic helpers */
+    /***********************************************
+     * SELECTION & MULTI-DRAG
+     ***********************************************/
     function handleNodeSelection(e, nodeId) {
-      // If Ctrl (or Cmd on Mac), toggle in/out of selection. Otherwise, select only this node.
       const isMultiSelect = e.ctrlKey || e.metaKey;
       if (!isMultiSelect) {
         unselectAllNodes();
       }
-      // Toggle for multi-select, or add if nothing is selected
       if (selectedNodes.has(nodeId) && isMultiSelect) {
         selectedNodes.delete(nodeId);
       } else {
         selectedNodes.add(nodeId);
       }
       updateSelectedStyles();
+      updateEditFields(); // Refresh the inline editing state
     }
 
     function updateSelectedStyles() {
-      // Add 'selected' class to those in selectedNodes, remove from all others
-      Object.keys(nodeElements).forEach( idStr => {
+      Object.keys(nodeElements).forEach(idStr => {
         const idNum = parseInt(idStr, 10);
         if (selectedNodes.has(idNum)) {
           nodeElements[idNum].classList.add('selected');
@@ -387,32 +382,26 @@
     function unselectAllNodes() {
       selectedNodes.clear();
       updateSelectedStyles();
+      updateEditFields();
     }
 
-    /** 4) Make all selected nodes draggable together */
     function makeDraggable(nodeEl) {
       const nodeId = parseInt(nodeEl.id.replace('node-',''),10);
-      let isResizing = false; // We'll check if user is resizing so we skip drag
+      let isResizing = false;
 
       nodeEl.addEventListener('mousedown', (e) => {
-        // If clicked the resize handle, don't drag
+        // If clicked the resize handle, do not drag
         if (e.target.classList.contains('resize-handle')) {
           isResizing = true;
           return;
         }
         isResizing = false;
 
-        // If this node is part of the selection, we move the whole group. 
-        // If not selected, we first select it (unless Ctrl was pressed),
-        // but that is done in handleNodeSelection() on click. 
-        // Wait a moment to ensure handleNodeSelection() finishes:
+        // Small delay so click selection is handled
         setTimeout(() => {
-          // If there's at least one node selected, we drag them
           if (selectedNodes.size > 0 && selectedNodes.has(nodeId)) {
             isDraggingNodes = true;
             groupOffsets = {};
-
-            // For each selected node, record the offset from mouse
             selectedNodes.forEach(selId => {
               const selEl = nodeElements[selId];
               groupOffsets[selId] = {
@@ -432,7 +421,6 @@
         if (!isDraggingNodes) return;
         e.preventDefault();
 
-        // Move each selected node according to its offset
         selectedNodes.forEach(selId => {
           const selEl = nodeElements[selId];
           let x = e.clientX + groupOffsets[selId].offsetX;
@@ -445,7 +433,7 @@
           selEl.style.left = x + 'px';
           selEl.style.top = y + 'px';
 
-          // Update orgData
+          // Update data
           const theNode = orgData.find(n => n.id === selId);
           if (theNode) {
             theNode.x = x;
@@ -464,7 +452,7 @@
       let startMouseX = 0, startMouseY = 0;
 
       handle.addEventListener('mousedown', (e) => {
-        e.stopPropagation(); // do not trigger drag
+        e.stopPropagation();
         e.preventDefault();
         isResizing = true;
         startMouseX = e.clientX;
@@ -478,7 +466,6 @@
         e.preventDefault();
         let newW = startWidth + (e.clientX - startMouseX);
         let newH = startHeight + (e.clientY - startMouseY);
-        // Minimum sizes
         newW = Math.max(newW, 60);
         newH = Math.max(newH, 40);
         nodeEl.style.width = newW + 'px';
@@ -493,6 +480,157 @@
       });
     }
 
+    /***********************************************
+     * NODE EDITING (INLINE)
+     ***********************************************/
+    function updateEditFields() {
+      const selCount = selectedNodes.size;
+
+      if (selCount === 0) {
+        // No node selected
+        editNameInput.value = "Select node to edit attributes";
+        editTitleInput.value = "Select node to edit attributes";
+        editColorInput.value = "#ffffff";
+        editAlphaInput.value = 100;
+
+        editNameInput.disabled = true;
+        editTitleInput.disabled = true;
+        editColorInput.disabled = true;
+        editAlphaInput.disabled = true;
+        saveNodeEditsBtn.disabled = true;
+        deleteNodeBtn.disabled = true;
+        return;
+      }
+
+      if (selCount > 1) {
+        // Multiple nodes
+        editNameInput.value = "Cannot batch edit multiple nodes info";
+        editTitleInput.value = "Cannot batch edit multiple nodes info";
+        editColorInput.value = "#ffffff";
+        editAlphaInput.value = 100;
+
+        editNameInput.disabled = true;
+        editTitleInput.disabled = true;
+        editColorInput.disabled = true;
+        editAlphaInput.disabled = true;
+        saveNodeEditsBtn.disabled = true;
+        deleteNodeBtn.disabled = true;
+        return;
+      }
+
+      // Exactly one node
+      const nodeId = Array.from(selectedNodes)[0];
+      const node = orgData.find(n => n.id === nodeId);
+      if (!node) return; // safety check
+
+      editNameInput.value = node.name;
+      editTitleInput.value = node.title;
+      editColorInput.value = node.colorHex;
+      editAlphaInput.value = node.colorAlpha;
+
+      editNameInput.disabled = false;
+      editTitleInput.disabled = false;
+      editColorInput.disabled = false;
+      editAlphaInput.disabled = false;
+      saveNodeEditsBtn.disabled = false;
+      deleteNodeBtn.disabled = false;
+    }
+
+    // Save Edits
+    saveNodeEditsBtn.addEventListener('click', () => {
+      // Only works if exactly 1 node is selected
+      if (selectedNodes.size !== 1) return;
+      const nodeId = Array.from(selectedNodes)[0];
+      const node = orgData.find(n => n.id === nodeId);
+      if (!node) return;
+
+      node.name = editNameInput.value;
+      node.title = editTitleInput.value;
+      node.colorHex = editColorInput.value;
+      node.colorAlpha = parseInt(editAlphaInput.value, 10);
+
+      // Update DOM
+      const nodeEl = nodeElements[nodeId];
+      nodeEl.querySelector('.name').textContent = node.name;
+      nodeEl.querySelector('.title').textContent = node.title;
+      nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
+
+      updateAllConnectors();
+
+      // Fields remain with the updated data
+    });
+
+    // Delete Node
+    deleteNodeBtn.addEventListener('click', () => {
+      if (selectedNodes.size !== 1) return;
+      const nodeId = Array.from(selectedNodes)[0];
+      // Remove from orgData
+      orgData = orgData.filter(n => n.id !== nodeId);
+
+      // Remove connectors referencing this node
+      connectors.forEach(conn => {
+        if (conn.from === nodeId || conn.to === nodeId) {
+          if (conn.seg1 && conn.seg1.parentNode) conn.seg1.parentNode.removeChild(conn.seg1);
+          if (conn.seg2 && conn.seg2.parentNode) conn.seg2.parentNode.removeChild(conn.seg2);
+        }
+      });
+      connectors = connectors.filter(conn => conn.from !== nodeId && conn.to !== nodeId);
+
+      // Remove DOM element
+      const nodeEl = nodeElements[nodeId];
+      if (nodeEl && nodeEl.parentNode) {
+        nodeEl.parentNode.removeChild(nodeEl);
+      }
+      delete nodeElements[nodeId];
+
+      unselectAllNodes(); // Also calls updateEditFields()
+      updateAllConnectors();
+    });
+
+    /***********************************************
+     * Z-INDEX / LAYERING
+     ***********************************************/
+    function bringSelectedNodesToFront() {
+      if (selectedNodes.size === 0) return;
+      selectedNodes.forEach(selId => {
+        maxZIndex++;
+        nodeElements[selId].style.zIndex = maxZIndex;
+      });
+    }
+
+    function sendSelectedNodesToBack() {
+      if (selectedNodes.size === 0) return;
+      selectedNodes.forEach(selId => {
+        nodeElements[selId].style.zIndex = 1;
+      });
+    }
+
+    /***********************************************
+     * ZOOM
+     ***********************************************/
+    function zoomIn() {
+      currentScale += 0.1;
+      if (currentScale > 3.0) {
+        currentScale = 3.0; // optional max
+      }
+      updateZoom();
+    }
+    function zoomOut() {
+      currentScale -= 0.1;
+      if (currentScale < 0.1) {
+        currentScale = 0.1; // optional min
+      }
+      updateZoom();
+    }
+    function updateZoom() {
+      const container = document.getElementById('orgChartContainer');
+      container.style.transformOrigin = 'top left';
+      container.style.transform = `scale(${currentScale})`;
+    }
+
+    /***********************************************
+     * OTHER CHART UTILITIES
+     ***********************************************/
     function addNewNode() {
       const maxId = orgData.reduce((m, n) => Math.max(m, n.id), 0);
       const newId = maxId + 1;
@@ -592,7 +730,6 @@
     function autoSizeAllNodes() {
       orgData.forEach(node => {
         const nodeEl = nodeElements[node.id];
-        // Temporarily set auto
         nodeEl.style.width = 'auto';
         nodeEl.style.height = 'auto';
         const newW = nodeEl.offsetWidth;
@@ -605,97 +742,19 @@
       updateAllConnectors();
     }
 
-    /** EDIT PANEL logic */
-    let currentlyEditingNodeId = null;
-    const editPanel = document.getElementById('editPanel');
-    const nameInput = document.getElementById('nodeNameInput');
-    const titleInput = document.getElementById('nodeTitleInput');
-    const nodeColorInput = document.getElementById('nodeColorInput');
-    const nodeAlphaInput = document.getElementById('nodeAlphaInput');
-
-    function openEditPanel(node) {
-      currentlyEditingNodeId = node.id;
-      nameInput.value = node.name;
-      titleInput.value = node.title;
-      nodeColorInput.value = node.colorHex || "#ffffff";
-      nodeAlphaInput.value = node.colorAlpha ?? 100;
-
-      const nodeEl = nodeElements[node.id];
-      const rect = nodeEl.getBoundingClientRect();
-      const containerRect = document.getElementById('orgChartContainer').getBoundingClientRect();
-      editPanel.style.left = (rect.left - containerRect.left + rect.width + 10) + 'px';
-      editPanel.style.top = (rect.top - containerRect.top) + 'px';
-      editPanel.style.display = 'block';
-    }
-
-    function closeEditPanel() {
-      editPanel.style.display = 'none';
-      currentlyEditingNodeId = null;
-    }
-
-    document.getElementById('saveNodeBtn').addEventListener('click', () => {
-      if (!currentlyEditingNodeId) return;
-      const node = orgData.find(n => n.id === currentlyEditingNodeId);
-      if (!node) return;
-      node.name = nameInput.value;
-      node.title = titleInput.value;
-      node.colorHex = nodeColorInput.value;
-      node.colorAlpha = parseInt(nodeAlphaInput.value, 10);
-
-      const nodeEl = nodeElements[node.id];
-      nodeEl.querySelector('.name').textContent = node.name;
-      nodeEl.querySelector('.title').textContent = node.title;
-      nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
-      closeEditPanel();
-      updateAllConnectors();
-    });
-
-    document.getElementById('closeEditPanelBtn').addEventListener('click', closeEditPanel);
-
-    document.getElementById('deleteNodeBtn').addEventListener('click', () => {
-      if (!currentlyEditingNodeId) return;
-      const nodeId = currentlyEditingNodeId;
-      orgData = orgData.filter(n => n.id !== nodeId);
-
-      connectors.forEach(conn => {
-        if (conn.from === nodeId || conn.to === nodeId) {
-          if (conn.seg1 && conn.seg1.parentNode) conn.seg1.parentNode.removeChild(conn.seg1);
-          if (conn.seg2 && conn.seg2.parentNode) conn.seg2.parentNode.removeChild(conn.seg2);
-        }
-      });
-      connectors = connectors.filter(conn => conn.from !== nodeId && conn.to !== nodeId);
-
-      const nodeEl = nodeElements[nodeId];
-      if (nodeEl && nodeEl.parentNode) {
-        nodeEl.parentNode.removeChild(nodeEl);
-      }
-      delete nodeElements[nodeId];
-      closeEditPanel();
-      updateAllConnectors();
-    });
-
-    // Clicking on the container => close panel (already in your code). We’ll also unselect all if user clicks fully outside any node/editPanel.
-    document.getElementById('orgChartContainer').addEventListener('click', () => {
-      closeEditPanel();
-      // We do NOT unselect here directly, because nodeEl click has e.stopPropagation().
-      // So below we handle truly "outside" clicks:
-    });
-
-    /** 5) ADD A global click that checks if it's outside nodes/editPanel => unselect all */
-    document.addEventListener('click', (e) => {
-      // If it's not a node & not inside #editPanel, unselect everything
-      if (!e.target.closest('.org-node') && !e.target.closest('#editPanel')) {
-        unselectAllNodes();
-      }
-    });
-
-    /** INITIAL SETUP */
+    /***********************************************
+     * INITIAL SETUP
+     ***********************************************/
     createOrgNodes();
+    // Make sure we start with the editing fields locked
+    updateEditFields();
 
-    /** ================== UI BUTTONS / EVENTS ================== */
+    // ================== BUTTON HANDLERS ==================
     document.getElementById('newNodeBtn').addEventListener('click', addNewNode);
     document.getElementById('autoOrganizeBtn').addEventListener('click', autoOrganize);
     document.getElementById('autoSizeBtn').addEventListener('click', autoSizeAllNodes);
+    document.getElementById('exportPDFBtn').addEventListener('click', exportToPDF);
+
     document.getElementById('drawConnectorBtn').addEventListener('click', () => {
       isDrawingConnector = !isDrawingConnector;
       if (isDrawingConnector) {
@@ -703,8 +762,7 @@
       }
     });
     document.getElementById('clearConnectorsBtn').addEventListener('click', clearAllConnectors);
-    document.getElementById('exportPDFBtn').addEventListener('click', exportToPDF);
-    
+
     document.getElementById('connectorColorInput').addEventListener('input', (e) => {
       connectorColorHex = e.target.value;
       updateAllConnectors();
@@ -715,7 +773,6 @@
     });
 
     document.getElementById('saveChartBtn').addEventListener('click', saveChart);
-
     document.getElementById('loadChartBtn').addEventListener('click', () => {
       document.getElementById('loadFile').click();
     });
@@ -727,8 +784,36 @@
         loadChartFromJSON(evt.target.result);
       };
       reader.readAsText(file);
-      e.target.value = ""; // Reset
+      e.target.value = "";
     });
+
+    // Zoom
+    document.getElementById('zoomOutBtn').addEventListener('click', zoomOut);
+    document.getElementById('zoomInBtn').addEventListener('click', zoomIn);
+
+    // Container Dimension Sliders
+    const widthSlider = document.getElementById('containerWidthRange');
+    const heightSlider = document.getElementById('containerHeightRange');
+    widthSlider.addEventListener('input', (e) => {
+      document.getElementById('orgChartContainer').style.width = e.target.value + 'px';
+    });
+    heightSlider.addEventListener('input', (e) => {
+      document.getElementById('orgChartContainer').style.height = e.target.value + 'px';
+    });
+
+    // Z-Index
+    document.getElementById('bringFrontBtn').addEventListener('click', bringSelectedNodesToFront);
+    document.getElementById('sendBackBtn').addEventListener('click', sendSelectedNodesToBack);
+
+    /* Helper: Convert hex+alpha to RGBA string */
+    function hexAlphaToRGBA(hex, alphaVal) {
+      if (!hex.startsWith("#")) return "rgba(0,0,0,1)";
+      let r = parseInt(hex.slice(1,3), 16);
+      let g = parseInt(hex.slice(3,5), 16);
+      let b = parseInt(hex.slice(5,7), 16);
+      let a = alphaVal / 100.0;
+      return `rgba(${r},${g},${b},${a})`;
+    }
   </script>
 </body>
 </html>
