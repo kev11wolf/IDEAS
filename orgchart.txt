@@ -100,10 +100,8 @@
       left: 250px;
       right: 0;
       bottom: 0;
-
       /* Provide scrollbars horizontally and vertically as needed */
       overflow: auto; 
-      
       background: #fafafa;
     }
 
@@ -257,6 +255,14 @@
       </div>
     </div>
 
+    <!-- New "Center" tools block -->
+    <div class="toolbar-column">
+      <h3>Center</h3>
+      <div class="control-row">
+        <button id="autoCenterBtn">Auto Center</button>
+      </div>
+    </div>
+
     <div class="toolbar-column">
       <h3>Connectors & Colors</h3>
       <div class="control-row">
@@ -390,10 +396,18 @@
 
   <!-- Context menu for right-click actions -->
   <div id="contextMenu">
+    <!-- Existing node items -->
     <button id="ctxDeleteNode">Delete Node</button>
     <button id="ctxAutoSizeNode">Auto-Size Node</button>
     <button id="ctxBringFront">Bring to Front</button>
     <button id="ctxSendBack">Send to Back</button>
+    <!-- New node items -->
+    <button id="ctxRemoveConnections">Remove Connections</button>
+    <button id="ctxCopyNode">Copy Node</button>
+    <button id="ctxPasteNode">Paste Node</button>
+    <!-- New background items -->
+    <button id="ctxAddNewNode">Add New Node</button>
+    <button id="ctxAutoCenterBG">Auto Center Org Chart</button>
   </div>
 
   <script>
@@ -474,6 +488,11 @@
     let isDrawingConnector = false;
     let startNodeId = null;
 
+    // For copy/paste
+    let copiedNodeData = null; 
+    let contextClickX = 0;
+    let contextClickY = 0;
+
     // Undo/Redo
     let stateHistory = [];
     let currentHistoryIndex = -1;
@@ -501,6 +520,12 @@
     const ctxAutoSizeNode      = document.getElementById('ctxAutoSizeNode');
     const ctxBringFront        = document.getElementById('ctxBringFront');
     const ctxSendBack          = document.getElementById('ctxSendBack');
+
+    const ctxRemoveConnections = document.getElementById('ctxRemoveConnections');
+    const ctxCopyNode          = document.getElementById('ctxCopyNode');
+    const ctxPasteNode         = document.getElementById('ctxPasteNode');
+    const ctxAddNewNode        = document.getElementById('ctxAddNewNode');
+    const ctxAutoCenterBG      = document.getElementById('ctxAutoCenterBG');
 
     const orgChartOuter        = document.getElementById('orgChartOuter');
     const orgChartContainer    = document.getElementById('orgChartContainer');
@@ -605,14 +630,26 @@
           startNodeResize(e, nodeEl, nodeData);
           return;
         }
-        // If node not selected, unselect others
-        if (!selectedNodes.has(nodeData.id)) {
-          unselectAllNodes();
-          selectedNodes.add(nodeData.id);
-          updateSelectedStyles();
-          updateEditFields();
-          nodeChooser.value = nodeData.id;
+
+        // Multi-select logic with ctrl
+        if (e.ctrlKey) {
+          if (selectedNodes.has(nodeData.id)) {
+            selectedNodes.delete(nodeData.id);
+          } else {
+            selectedNodes.add(nodeData.id);
+          }
+        } else {
+          // Normal (single) select
+          if (!selectedNodes.has(nodeData.id)) {
+            unselectAllNodes();
+            selectedNodes.add(nodeData.id);
+          }
         }
+
+        updateSelectedStyles();
+        updateEditFields();
+        nodeChooser.value = nodeData.id;
+
         startNodeDrag(e, nodeData);
       });
     }
@@ -692,7 +729,8 @@
     });
 
     /************************************************
-     * ZOOM (with clamp)
+     * ZOOM & TRANSFORM
+       (Wheel zoom removed to allow scrolling)
      ************************************************/
     function screenToLocal(screenX, screenY) {
       // Because we are still using transform for zoom, we must
@@ -702,29 +740,6 @@
       let localY = (screenY - rect.top  - translationY) / currentScale;
       return { x: localX, y: localY };
     }
-
-    // Mouse wheel => zoom in/out around the cursor
-    orgChartOuter.addEventListener('wheel', e => {
-      e.preventDefault();
-
-      const rect = orgChartContainer.getBoundingClientRect();
-      const mouseLocalX = (e.clientX - rect.left - translationX) / currentScale;
-      const mouseLocalY = (e.clientY - rect.top  - translationY) / currentScale;
-
-      const delta = (e.deltaY < 0) ? 0.1 : -0.1;
-      let newScale = currentScale + delta;
-      if (newScale < MIN_ZOOM) newScale = MIN_ZOOM;
-      if (newScale > MAX_ZOOM) newScale = MAX_ZOOM;
-
-      const ratio = newScale / currentScale;
-      // keep mouseLocalX,Y in same place
-      translationX -= mouseLocalX * (ratio - 1);
-      translationY -= mouseLocalY * (ratio - 1);
-
-      currentScale = newScale;
-      applyTransform();
-      pushState("Wheel zoom around cursor");
-    }, { passive:false });
 
     function applyTransform() {
       orgChartContainer.style.transformOrigin = 'top left';
@@ -958,8 +973,168 @@
     });
 
     /************************************************
-     * CONTEXT MENU
+     * CONTEXT MENU + NEW FUNCTIONS
      ************************************************/
+
+    // Additional right-click functions:
+    function removeConnectionsFromSelectedNode() {
+      if(selectedNodes.size !== 1) return;
+      const idNum = [...selectedNodes][0];
+      // Remove connectors referencing that node, but do not delete the node
+      connectors.forEach(conn => {
+        if(conn.from === idNum || conn.to === idNum) {
+          if(conn.seg1 && conn.seg1.parentNode) conn.seg1.parentNode.removeChild(conn.seg1);
+          if(conn.seg2 && conn.seg2.parentNode) conn.seg2.parentNode.removeChild(conn.seg2);
+        }
+      });
+      connectors = connectors.filter(c => c.from !== idNum && c.to !== idNum);
+      updateAllConnectors();
+      pushState("Remove connections");
+    }
+
+    function copySelectedNode() {
+      // Copy the data of the first selected node
+      if(selectedNodes.size !== 1) return;
+      const onlyId = [...selectedNodes][0];
+      const srcNode = orgData.find(n => n.id === onlyId);
+      if(!srcNode) return;
+
+      // Make a shallow copy (except id)
+      copiedNodeData = {
+        name: srcNode.name,
+        title: srcNode.title,
+        department: srcNode.department,
+        officeLocation: srcNode.officeLocation,
+        client: srcNode.client,
+        yearsWithCompany: srcNode.yearsWithCompany,
+        width: srcNode.width,
+        height: srcNode.height,
+        colorHex: srcNode.colorHex,
+        colorAlpha: srcNode.colorAlpha,
+        textColor: srcNode.textColor,
+        borderColor: srcNode.borderColor,
+        fontSize: srcNode.fontSize
+      };
+      pushState("Copy node data");
+    }
+
+    function pasteNodeAt(x, y) {
+      if(!copiedNodeData) return;
+      // create new node from copiedNodeData at x,y
+      const maxId = orgData.reduce((acc,n)=>Math.max(acc,n.id),0);
+      const newId = maxId+1;
+      const nn = {
+        id: newId,
+        name: copiedNodeData.name + " (copy)",
+        title: copiedNodeData.title,
+        department: copiedNodeData.department,
+        officeLocation: copiedNodeData.officeLocation,
+        client: copiedNodeData.client,
+        yearsWithCompany: copiedNodeData.yearsWithCompany,
+        x,
+        y,
+        width: copiedNodeData.width,
+        height: copiedNodeData.height,
+        colorHex: copiedNodeData.colorHex,
+        colorAlpha: copiedNodeData.colorAlpha,
+        textColor: copiedNodeData.textColor,
+        borderColor: copiedNodeData.borderColor,
+        fontSize: copiedNodeData.fontSize
+      };
+      orgData.push(nn);
+      createOrgNodes();
+      updateAllConnectors();
+      updateStats();
+      pushState("Paste node");
+    }
+
+    // Show/hide context menu items dynamically
+    function showContextMenuForNode(e, nodeIdNum) {
+      // Show node-related items
+      ctxDeleteNode.style.display        = "block";
+      ctxAutoSizeNode.style.display      = "block";
+      ctxBringFront.style.display        = "block";
+      ctxSendBack.style.display          = "block";
+      ctxRemoveConnections.style.display = "block";
+      ctxCopyNode.style.display          = "block";
+      ctxPasteNode.style.display         = "block";
+      // Hide background items
+      ctxAddNewNode.style.display        = "none";
+      ctxAutoCenterBG.style.display      = "none";
+
+      // Enable/disable paste button
+      ctxPasteNode.disabled = (copiedNodeData === null);
+
+      // Position menu
+      contextMenu.style.display = 'block';
+      contextMenu.style.left = e.pageX + 'px';
+      contextMenu.style.top  = e.pageY + 'px';
+    }
+
+    function showContextMenuForBackground(e) {
+      // Hide node-related items
+      ctxDeleteNode.style.display        = "none";
+      ctxAutoSizeNode.style.display      = "none";
+      ctxBringFront.style.display        = "none";
+      ctxSendBack.style.display          = "none";
+      ctxRemoveConnections.style.display = "none";
+      ctxCopyNode.style.display          = "none";
+      // Show background items
+      ctxAddNewNode.style.display        = "block";
+      ctxPasteNode.style.display         = "block"; 
+      ctxAutoCenterBG.style.display      = "block";
+
+      // Enable/disable paste button
+      ctxPasteNode.disabled = (copiedNodeData === null);
+
+      // Position menu
+      contextMenu.style.display = 'block';
+      contextMenu.style.left = e.pageX + 'px';
+      contextMenu.style.top  = e.pageY + 'px';
+    }
+
+    // Listen for right-click
+    document.addEventListener('contextmenu', e => {
+      e.preventDefault();
+
+      // Hide any open menu first
+      contextMenu.style.display = 'none';
+
+      // Capture click coords for paste or new node
+      contextClickX = e.clientX;
+      contextClickY = e.clientY;
+
+      const nodeDiv = e.target.closest('.org-node');
+      if(nodeDiv) {
+        // If node, if not selected, select it
+        const nodeIdNum = parseInt(nodeDiv.id.replace('node-',''),10);
+        if(!selectedNodes.has(nodeIdNum)) {
+          unselectAllNodes();
+          selectedNodes.add(nodeIdNum);
+          updateSelectedStyles();
+          updateEditFields();
+          nodeChooser.value = nodeIdNum;
+        }
+        showContextMenuForNode(e, nodeIdNum);
+      } else {
+        // Background context
+        showContextMenuForBackground(e);
+      }
+    });
+
+    // Hide context menu on normal click
+    document.addEventListener('click', e => {
+      // Only hide if we click outside the menu
+      if(!e.target.closest('#contextMenu')) {
+        contextMenu.style.display = 'none';
+        if(!e.target.closest('.org-node')
+           && !e.target.closest('#sidePanel')) {
+          unselectAllNodes();
+        }
+      }
+    });
+
+    // Menu item handlers
     ctxDeleteNode.addEventListener('click', () => {
       deleteSelectedNode();
       contextMenu.style.display = 'none';
@@ -976,20 +1151,27 @@
       sendSelectedNodesToBack();
       contextMenu.style.display = 'none';
     });
-
-    function showContextMenu(e){
-      contextMenu.style.display = 'block';
-      contextMenu.style.left = e.pageX + 'px';
-      contextMenu.style.top  = e.pageY + 'px';
-    }
-
-    document.addEventListener('click', e => {
+    ctxRemoveConnections.addEventListener('click', () => {
+      removeConnectionsFromSelectedNode();
       contextMenu.style.display = 'none';
-      if(!e.target.closest('.org-node')
-         && !e.target.closest('#sidePanel')
-         && !e.target.closest('#contextMenu')) {
-        unselectAllNodes();
-      }
+    });
+    ctxCopyNode.addEventListener('click', () => {
+      copySelectedNode();
+      contextMenu.style.display = 'none';
+    });
+    ctxPasteNode.addEventListener('click', () => {
+      const { x, y } = screenToLocal(contextClickX, contextClickY);
+      pasteNodeAt(x, y);
+      contextMenu.style.display = 'none';
+    });
+    ctxAddNewNode.addEventListener('click', () => {
+      const { x, y } = screenToLocal(contextClickX, contextClickY);
+      addNewNode(x, y);
+      contextMenu.style.display = 'none';
+    });
+    ctxAutoCenterBG.addEventListener('click', () => {
+      autoCenter();
+      contextMenu.style.display = 'none';
     });
 
     /************************************************
@@ -1051,6 +1233,37 @@
       applyTransform();
       pushState("Slider zoom");
     });
+
+    /************************************************
+     * AUTO CENTER
+     ************************************************/
+    function autoCenter() {
+      // Calculate bounding box
+      let bounds = getNodesBoundingBox();
+      // If no nodes or invalid bounds, skip
+      if (bounds.width <= 0 || bounds.height <= 0) return;
+
+      let outerWidth = orgChartOuter.clientWidth;
+      let outerHeight= orgChartOuter.clientHeight;
+
+      // Determine a fitting scale (clamped between MIN_ZOOM and MAX_ZOOM)
+      let scaleX = outerWidth / bounds.width;
+      let scaleY = outerHeight / bounds.height;
+      let newScale = Math.min(scaleX, scaleY);
+
+      // Clamp
+      newScale = Math.min(newScale, MAX_ZOOM);
+      newScale = Math.max(newScale, MIN_ZOOM);
+
+      currentScale = newScale;
+
+      // Center translation so that the bounding box is in the middle
+      translationX = (outerWidth - bounds.width * newScale)/2 - bounds.minX * newScale;
+      translationY = (outerHeight - bounds.height * newScale)/2 - bounds.minY * newScale;
+
+      applyTransform();
+      pushState("Auto center");
+    }
 
     /************************************************
      * UPDATE STATS
@@ -1345,6 +1558,8 @@
 
     document.getElementById('bringFrontBtn').addEventListener('click', bringSelectedNodesToFront);
     document.getElementById('sendBackBtn').addEventListener('click', sendSelectedNodesToBack);
+
+    document.getElementById('autoCenterBtn').addEventListener('click', autoCenter);
 
     // Searching & Filtering
     const searchInputEl=document.getElementById('searchInput');
