@@ -2,89 +2,121 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Org Chart with Auto-Save Editable Fields and Click-Off Unselect</title>
-  <!-- Load Roboto font from Google Fonts -->
+  <title>Org Chart - Scrollbars for Entire Chart</title>
+  <!-- Load Roboto font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
-  <!-- Libraries for Export to PDF: html2canvas + jsPDF -->
+
+  <!-- Libraries for Export to PDF/PNG: html2canvas + jsPDF -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <style>
-    /* Use Roboto font for everything */
-    body, button, input, .org-node {
+    body, button, input, .org-node, select {
       font-family: 'Roboto', sans-serif;
-    }
-    body {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
+    }
+    body {
       background-color: #f3f4f6;
       color: #333;
+      /* Let the rest be covered by our layout */
+      overflow: hidden; 
     }
 
-    /* Container for the top controls, multiple rows */
-    #controls {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 10px;
-      background: #ffffff;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      position: sticky;
+    /* Left side panel with tools */
+    #sidePanel {
+      position: absolute;
       top: 0;
+      left: 0;
+      width: 250px;
+      bottom: 0; 
+      background: #fff;
+      overflow-y: auto;
+      border-right: 1px solid #ccc;
+      box-shadow: 2px 0 4px rgba(0,0,0,0.1);
       z-index: 9999;
+      padding: 8px;
     }
+
+    #sidePanel h3 {
+      margin-top: 0;
+      font-size: 1rem;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+
+    .toolbar-column {
+      margin-bottom: 16px;
+    }
+
     .control-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 8px;
+      gap: 6px;
+      margin-bottom: 6px;
       align-items: center;
     }
-    #controls button,
-    #controls input[type="color"],
-    #controls input[type="range"],
-    #controls input[type="text"] {
-      padding: 6px 10px;
+
+    #sidePanel button,
+    #sidePanel input[type="color"],
+    #sidePanel input[type="range"],
+    #sidePanel input[type="text"],
+    #sidePanel select,
+    #sidePanel input[type="number"] {
+      padding: 4px 6px;
       border: 1px solid #ccc;
       border-radius: 4px;
       background: #eee;
       cursor: pointer;
       transition: background 0.2s;
+      font-size: 0.85rem;
     }
-    #controls button:hover {
+    #sidePanel button:hover {
       background: #ddd;
     }
-    #controls input[type="color"] {
-      height: 34px;
-      width: 34px;
+    #sidePanel input[type="color"] {
+      height: 28px;
+      width: 28px;
       padding: 0;
       border: 1px solid #ccc;
     }
-    .opacity-range,
-    #containerWidthRange,
-    #containerHeightRange {
-      width: 80px;
+    .opacity-range {
+      width: 60px;
     }
-    /* Disabled inputs style */
-    input[disabled], button[disabled] {
+
+    /* Disabled style */
+    input[disabled], button[disabled], select[disabled] {
       cursor: not-allowed;
       opacity: 0.6;
     }
 
-    /* The org chart container */
-    #orgChartContainer {
-      width: 2000px;       /* default large width */
-      height: 2000px;      /* default large height */
-      position: relative;
-      border-top: 1px solid #e0e0e0;
-      overflow: auto;      /* scroll if needed */
+    /* Outer container: now we allow scrollbars for the entire chart */
+    #orgChartOuter {
+      position: absolute;
+      top: 0; 
+      left: 250px;
+      right: 0;
+      bottom: 0;
+
+      /* Provide scrollbars horizontally and vertically as needed */
+      overflow: auto; 
+      
       background: #fafafa;
-      transform-origin: top left; /* for zooming */
-      transform: scale(1);       /* default scale */
     }
 
-    /* Basic styling for an org node */
+    /* Main chart container: We'll still use transform for zoom levels,
+       but the user can scroll around the 2000x2000 space via #orgChartOuter. */
+    #orgChartContainer {
+      width: 2000px; 
+      height: 2000px;
+      transform-origin: top left;
+      transform: translate(0px, 0px) scale(1);
+      position: relative;
+    }
+
     .org-node {
       position: absolute;
       min-height: 40px;
@@ -100,9 +132,9 @@
       z-index: 1;
       white-space: normal;
       word-wrap: break-word;
-      resize: none;
       overflow: hidden;
     }
+
     .org-node .name {
       font-weight: bold;
       margin-bottom: 4px;
@@ -111,8 +143,16 @@
       font-size: 12px;
       color: #666;
     }
+    .org-node .department,
+    .org-node .officeLocation,
+    .org-node .client,
+    .org-node .years {
+      font-size: 12px;
+      color: #888;
+      margin-top: 2px;
+      display: none; 
+    }
 
-    /* Invisible resize corner in the bottom-right */
     .resize-handle {
       position: absolute;
       bottom: 0;
@@ -124,163 +164,578 @@
       user-select: none;
     }
 
-    /* Connector line segments behind nodes */
+    /* Connectors */
     .connector-segment {
       position: absolute;
       background-color: #333;
       z-index: 0;
     }
 
-    /* Highlight selected nodes with a blue outline & bold text */
+    /* Selected node highlight */
     .org-node.selected {
       outline: 2px solid blue;
       font-weight: bold;
     }
+
+    /* Context menu */
+    #contextMenu {
+      position: absolute;
+      display: none;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      z-index: 99999;
+      padding: 5px;
+    }
+    #contextMenu button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 4px 10px;
+      margin: 0;
+      border: none;
+      background: #fff;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    #contextMenu button:hover {
+      background: #eee;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* Sticky panel for node editing at bottom of sidePanel */
+    #nodeEditPanel {
+      position: sticky;
+      bottom: 0;
+      background: #fff;
+      border-top: 1px solid #ccc;
+      padding: 8px;
+      margin-top: 12px;
+    }
+    #nodeEditPanel h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 4px;
+      font-size: 1rem;
+    }
   </style>
 </head>
 <body>
-  <!-- Controls at the top -->
-  <div id="controls">
-    <!-- (1) Row for Node & Chart Management -->
-    <div class="control-row">
-      <button id="newNodeBtn">New Node</button>
-      <button id="autoOrganizeBtn">Auto-Organize</button>
-      <button id="autoSizeBtn">Auto Size All Nodes</button>
-      <button id="exportPDFBtn">Export to PDF</button>
+  <div id="sidePanel">
+    <div class="toolbar-column">
+      <h3>Nodes</h3>
+      <div class="control-row">
+        <button id="newNodeBtn">New Node</button>
+        <button id="autoOrganizeBtn">Auto-Organize</button>
+      </div>
+      <div class="control-row">
+        <button id="autoSizeBtn">Auto Size All</button>
+        <button id="autoSizeSelectedBtn">Auto Size Sel</button>
+      </div>
+      <div class="control-row">
+        <button id="deleteNodeBtn">Delete Node</button>
+      </div>
+      <div class="control-row" style="font-size:0.85rem;">
+        <label for="nodeChooser">Edit Node:</label>
+        <select id="nodeChooser" style="max-width:100%;"></select>
+      </div>
     </div>
 
-    <!-- (2) Row for Zoom & Container Size Sliders -->
-    <div class="control-row">
-      <button id="zoomOutBtn">Zoom Out</button>
-      <button id="zoomInBtn">Zoom In</button>
-      <label for="containerWidthRange">Width:</label>
-      <input type="range" id="containerWidthRange" min="1000" max="5000" value="2000" />
-      <label for="containerHeightRange">Height:</label>
-      <input type="range" id="containerHeightRange" min="1000" max="5000" value="2000" />
+    <div class="toolbar-column">
+      <h3>Zoom</h3>
+      <div class="control-row">
+        <button id="zoomOutBtn">- Zoom</button>
+        <button id="zoomInBtn">+ Zoom</button>
+      </div>
+      <div class="control-row">
+        <label for="zoomSlider">Zoom Slider:</label>
+        <input type="range" id="zoomSlider" min="10" max="300" value="100" />
+      </div>
     </div>
 
-    <!-- (3) Row for Connectors, Colors, Save/Load, Z-index -->
-    <div class="control-row">
-      <button id="drawConnectorBtn">Draw Connector</button>
-      <button id="clearConnectorsBtn">Clear Connectors</button>
-      <label for="connectorColorInput">Connector Color:</label>
-      <input type="color" id="connectorColorInput" value="#333333" />
-      <input type="range" id="connectorAlphaRange" class="opacity-range" min="0" max="100" value="100" />
-      <button id="saveChartBtn">Save Chart</button>
-      <button id="loadChartBtn">Load Chart</button>
-      <input type="file" id="loadFile" accept="application/json" style="display: none;" />
-      <button id="bringFrontBtn">Bring to Front</button>
-      <button id="sendBackBtn">Send to Back</button>
+    <div class="toolbar-column">
+      <h3>Connectors & Colors</h3>
+      <div class="control-row">
+        <button id="drawConnectorBtn">Connector</button>
+        <button id="clearConnectorsBtn">Clear</button>
+      </div>
+      <div class="control-row">
+        <label>Color:</label>
+        <input type="color" id="connectorColorInput" value="#333333" />
+        <input type="range" id="connectorAlphaRange" class="opacity-range" min="0" max="100" value="100" />
+      </div>
     </div>
 
-    <!-- (4) Row for Node Editing (inline, auto-save) -->
-    <div class="control-row">
-      <label>Name:</label>
-      <input type="text" id="editNodeName" />
-      <label>Title:</label>
-      <input type="text" id="editNodeTitle" />
-      <label>Color:</label>
-      <input type="color" id="editNodeColor" value="#ffffff" />
-      <label>Alpha:</label>
-      <input type="range" id="editNodeAlpha" class="opacity-range" min="0" max="100" value="100" />
-      <button id="deleteNodeBtn">Delete Node</button>
+    <div class="toolbar-column">
+      <h3>Load/Save & Exports</h3>
+      <div class="control-row">
+        <button id="saveChartBtn">Save</button>
+        <button id="loadChartBtn">Load</button>
+        <input type="file" id="loadFile" accept="application/json" style="display:none;" />
+      </div>
+      <div class="control-row">
+        <button id="exportPNGBtn">Export PNG</button>
+        <button id="exportPDFBtn">Print/PDF</button>
+      </div>
+    </div>
+
+    <div class="toolbar-column">
+      <h3>Z-Index</h3>
+      <div class="control-row">
+        <button id="bringFrontBtn">Front</button>
+        <button id="sendBackBtn">Back</button>
+      </div>
+    </div>
+
+    <div class="toolbar-column">
+      <h3>History & Create</h3>
+      <div class="control-row">
+        <button id="undoBtn">Undo</button>
+        <button id="redoBtn">Redo</button>
+      </div>
+      <div class="control-row">
+        <div id="dndTemplate" draggable="true" 
+          style="width:100px;height:30px;text-align:center;line-height:30px;background:#ddd;cursor:grab;border:1px dashed #333;">
+          Drag Node
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar-column">
+      <h3>Search & Filter</h3>
+      <div class="control-row">
+        <input type="text" id="searchInput" placeholder="Name/Dept" style="flex:1;" />
+        <button id="clearFilterBtn">Clear</button>
+      </div>
+      <div class="control-row" style="font-size: 0.85rem;">
+        <label for="attributeSelect">Attr:</label>
+        <select id="attributeSelect">
+          <option value="name">Name</option>
+          <option value="department">Department</option>
+          <option value="officeLocation">Office</option>
+          <option value="client">Client</option>
+          <option value="title">Title</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <input type="text" id="attributeInput" placeholder="Filter text" style="flex:1;" />
+        <button id="attributeFilterBtn">Filter</button>
+        <button id="clearAttributeFilterBtn">Clear</button>
+      </div>
+    </div>
+
+    <div class="toolbar-column" style="margin-bottom:50px;">
+      <h3>Stats</h3>
+      <div class="control-row" style="font-size:0.9rem;">
+        <span>Nodes: <span id="nodesCount">0</span></span>
+        <span>Connectors: <span id="connectorsCount">0</span></span>
+      </div>
+    </div>
+
+    <!-- Sticky Edit Panel at the bottom -->
+    <div id="nodeEditPanel">
+      <h3>Edit Node</h3>
+      <div class="control-row" style="font-size:0.85rem;">
+        <label>Name:</label>
+        <input type="text" id="editNodeName" style="width:130px;" />
+      </div>
+      <div class="control-row" style="font-size:0.85rem;">
+        <label>Title:</label>
+        <input type="text" id="editNodeTitle" style="width:130px;" />
+      </div>
+      <div class="control-row" style="font-size:0.85rem;">
+        <label>Dept:</label>
+        <input type="text" id="editNodeDepartment" style="width:130px;" />
+      </div>
+      <div class="control-row" style="font-size:0.85rem;">
+        <label>Color:</label>
+        <input type="color" id="editNodeColor" value="#ffffff" />
+        <input type="range" id="editNodeAlpha" class="opacity-range" min="0" max="100" value="100" />
+      </div>
+      <div class="control-row" style="font-size:0.85rem;">
+        <label>Office:</label>
+        <input type="text" id="editNodeOffice" style="width:60px;" />
+        <label>Client:</label>
+        <input type="text" id="editNodeClient" style="width:60px;" />
+      </div>
+      <div class="control-row" style="font-size:0.85rem;">
+        <label>Years:</label>
+        <input type="number" id="editNodeYears" min="0" style="width:60px;" />
+      </div>
+      <div class="control-row" style="font-size:0.85rem;">
+        <label>TxtC:</label>
+        <input type="color" id="editTextColor" value="#000000" />
+        <label>Bord:</label>
+        <input type="color" id="editBorderColor" value="#333333" />
+      </div>
+      <div class="control-row" style="font-size:0.85rem;">
+        <label>F.Size:</label>
+        <input type="number" id="editFontSize" min="8" max="30" value="14" style="width:50px;" />
+      </div>
+      <div class="control-row" style="font-size: 0.85rem; margin-top:6px;">
+        <button id="deleteNodeBtn" disabled>Delete Node</button>
+      </div>
     </div>
   </div>
 
-  <!-- Main container for the org chart -->
-  <div id="orgChartContainer"></div>
+  <!-- Outer container with scrollbars -->
+  <div id="orgChartOuter">
+    <!-- The main chart container -->
+    <div id="orgChartContainer"></div>
+  </div>
+
+  <!-- Context menu for right-click actions -->
+  <div id="contextMenu">
+    <button id="ctxDeleteNode">Delete Node</button>
+    <button id="ctxAutoSizeNode">Auto-Size Node</button>
+    <button id="ctxBringFront">Bring to Front</button>
+    <button id="ctxSendBack">Send to Back</button>
+  </div>
 
   <script>
     /**
-     * Each node: { id, name, title, x, y, width, height, colorHex, colorAlpha (0-100) }
+     * Node data structure:
+     * {
+     *   id, name, title, department, officeLocation, client, yearsWithCompany,
+     *   x, y, width, height,
+     *   colorHex, colorAlpha (0-100),
+     *   textColor, borderColor, fontSize
+     * }
+     * 
      * Connectors: { from, to, seg1, seg2 }
      */
+
+    // Example node data
     let orgData = [
-      { id: 1, name: "Alice", title: "CEO", x: 200, y: 70,  width:130, height:60, colorHex: "#ffffff", colorAlpha: 100 },
-      { id: 2, name: "Bob",   title: "CTO", x: 100, y:220, width:130, height:60, colorHex: "#ffffff", colorAlpha: 100 },
-      { id: 3, name: "Carol", title: "CFO", x: 300, y:220, width:130, height:60, colorHex: "#ffffff", colorAlpha: 100 },
+      {
+        id: 1,
+        name: "Alice",
+        title: "CEO",
+        department: "Head Office",
+        officeLocation: "New York",
+        client: "HQ Client",
+        yearsWithCompany: 5,
+        x: 300,
+        y: 100,
+        width: 130,
+        height: 60,
+        colorHex: "#ffffff",
+        colorAlpha: 100,
+        textColor: "#000000",
+        borderColor: "#333333",
+        fontSize: 14
+      },
+      {
+        id: 2,
+        name: "Bob",
+        title: "CTO",
+        department: "Technology",
+        officeLocation: "Los Angeles",
+        client: "CloudCore",
+        yearsWithCompany: 3,
+        x: 600,
+        y: 300,
+        width: 130,
+        height: 60,
+        colorHex: "#ffffff",
+        colorAlpha: 100,
+        textColor: "#000000",
+        borderColor: "#333333",
+        fontSize: 14
+      },
     ];
 
     let nodeElements = {};
     let connectors = [];
-    let isDrawingConnector = false;
-    let startNodeId = null;
 
-    /* Multi-select & multi-drag */
+    // Keep track of selected nodes
     let selectedNodes = new Set();
-    let isDraggingNodes = false;
-    let groupOffsets = {};
 
-    /* Z-index layering */
-    let maxZIndex = 1;
-
-    /* Zoom */
+    // Zoom transforms
     let currentScale = 1.0;
+    let translationX = 0;
+    let translationY = 0;
 
-    const GRID_SIZE = 10;
+    // We'll clamp zoom to avoid losing track
+    const MIN_ZOOM = 0.3;
+    const MAX_ZOOM = 3.0;
+
+    // Connector styling
     let connectorColorHex = "#333333";
     let connectorAlpha = 100;
 
-    /* Node editing fields refs */
-    const editNameInput = document.getElementById('editNodeName');
-    const editTitleInput = document.getElementById('editNodeTitle');
-    const editColorInput = document.getElementById('editNodeColor');
-    const editAlphaInput = document.getElementById('editNodeAlpha');
-    const deleteNodeBtn = document.getElementById('deleteNodeBtn');
+    // Node drag state
+    let isDraggingNodes = false;
+    let groupOffsets = {}; 
+    let isDrawingConnector = false;
+    let startNodeId = null;
 
-    /***********************************************
-     * CREATE / DRAW NODES
-     ***********************************************/
+    // Undo/Redo
+    let stateHistory = [];
+    let currentHistoryIndex = -1;
+
+    // References to UI elements
+    const editNameInput        = document.getElementById('editNodeName');
+    const editTitleInput       = document.getElementById('editNodeTitle');
+    const editDeptInput        = document.getElementById('editNodeDepartment');
+    const editColorInput       = document.getElementById('editNodeColor');
+    const editAlphaInput       = document.getElementById('editNodeAlpha');
+    const editOfficeInput      = document.getElementById('editNodeOffice');
+    const editClientInput      = document.getElementById('editNodeClient');
+    const editYearsInput       = document.getElementById('editNodeYears');
+    const editTextColorInput   = document.getElementById('editTextColor');
+    const editBorderColorInput = document.getElementById('editBorderColor');
+    const editFontSizeInput    = document.getElementById('editFontSize');
+
+    const deleteNodeBtn        = document.getElementById('deleteNodeBtn');
+    const nodeChooser          = document.getElementById('nodeChooser');
+
+    const nodesCountEl         = document.getElementById('nodesCount');
+    const connectorsCountEl    = document.getElementById('connectorsCount');
+    const contextMenu          = document.getElementById('contextMenu');
+    const ctxDeleteNode        = document.getElementById('ctxDeleteNode');
+    const ctxAutoSizeNode      = document.getElementById('ctxAutoSizeNode');
+    const ctxBringFront        = document.getElementById('ctxBringFront');
+    const ctxSendBack          = document.getElementById('ctxSendBack');
+
+    const orgChartOuter        = document.getElementById('orgChartOuter');
+    const orgChartContainer    = document.getElementById('orgChartContainer');
+
+    /************************************************
+     * CREATE NODES
+     ************************************************/
     function createOrgNodes() {
-      const container = document.getElementById('orgChartContainer');
-      // Remove existing DOM elements
-      Object.values(nodeElements).forEach(el => {
-        if (el.parentNode) {
-          el.parentNode.removeChild(el);
-        }
-      });
+      // Remove old nodes
+      Object.values(nodeElements).forEach(el => el.parentNode && el.parentNode.removeChild(el));
       nodeElements = {};
 
-      // Build DOM from orgData
+      // Create new
       orgData.forEach(node => {
         const nodeEl = document.createElement('div');
         nodeEl.classList.add('org-node');
         nodeEl.id = `node-${node.id}`;
-        nodeEl.style.left = node.x + 'px';
-        nodeEl.style.top = node.y + 'px';
-        nodeEl.style.width = node.width + 'px';
+        nodeEl.style.left   = node.x + 'px';
+        nodeEl.style.top    = node.y + 'px';
+        nodeEl.style.width  = node.width + 'px';
         nodeEl.style.height = node.height + 'px';
-        nodeEl.style.zIndex = 1;
-        const rgba = hexAlphaToRGBA(node.colorHex || "#ffffff", node.colorAlpha ?? 100);
-        nodeEl.style.backgroundColor = rgba;
+
+        nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
+        nodeEl.style.color          = node.textColor;
+        nodeEl.style.borderColor    = node.borderColor;
+        nodeEl.style.fontSize       = node.fontSize + 'px';
 
         nodeEl.innerHTML = `
-          <div class="name">${node.name}</div>
-          <div class="title">${node.title}</div>
+          <div class="name"></div>
+          <div class="title"></div>
+          <div class="department"></div>
+          <div class="officeLocation"></div>
+          <div class="client"></div>
+          <div class="years"></div>
           <div class="resize-handle"></div>
         `;
-        container.appendChild(nodeEl);
+        orgChartContainer.appendChild(nodeEl);
         nodeElements[node.id] = nodeEl;
 
-        makeDraggable(nodeEl);
-        makeResizable(nodeEl, node);
+        makeDraggableAndResizable(nodeEl, node);
+        updateNodeElement(node.id);
+      });
 
-        // Single click => either connect or select
-        nodeEl.addEventListener('click', (e) => {
+      updateNodeDropdown();
+      updateStats();
+    }
+
+    function updateNodeElement(nodeId, autoSize=false) {
+      const node = orgData.find(n => n.id === nodeId);
+      if (!node) return;
+      const nodeEl = nodeElements[nodeId];
+      if (!nodeEl) return;
+
+      nodeEl.querySelector('.name').textContent  = node.name;
+      nodeEl.querySelector('.title').textContent = node.title;
+
+      const depEl    = nodeEl.querySelector('.department');
+      const offEl    = nodeEl.querySelector('.officeLocation');
+      const clientEl = nodeEl.querySelector('.client');
+      const yearsEl  = nodeEl.querySelector('.years');
+
+      // Show or hide fields accordingly
+      if (node.department) {
+        depEl.style.display = 'block';
+        depEl.textContent   = node.department;
+      } else depEl.style.display = 'none';
+
+      if (node.officeLocation) {
+        offEl.style.display = 'block';
+        offEl.textContent   = "Office: " + node.officeLocation;
+      } else offEl.style.display = 'none';
+
+      if (node.client) {
+        clientEl.style.display = 'block';
+        clientEl.textContent   = "Client: " + node.client;
+      } else clientEl.style.display = 'none';
+
+      if (node.yearsWithCompany) {
+        yearsEl.style.display = 'block';
+        yearsEl.textContent   = "Years: " + node.yearsWithCompany;
+      } else yearsEl.style.display  = 'none';
+
+      // Update styling
+      nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
+      nodeEl.style.color           = node.textColor;
+      nodeEl.style.borderColor     = node.borderColor;
+      nodeEl.style.fontSize        = node.fontSize + 'px';
+
+      if (autoSize) autoSizeSingleNode(nodeId);
+    }
+
+    /************************************************
+     * DRAG & RESIZE
+     ************************************************/
+    function makeDraggableAndResizable(nodeEl, nodeData) {
+      const resizeHandle = nodeEl.querySelector('.resize-handle');
+
+      nodeEl.addEventListener('mousedown', e => {
+        // If on the resize handle
+        if (e.target.classList.contains('resize-handle')) {
           e.stopPropagation();
-          if (isDrawingConnector) {
-            handleConnectorClick(node.id);
-          } else {
-            handleNodeSelection(e, node.id);
-          }
-        });
+          startNodeResize(e, nodeEl, nodeData);
+          return;
+        }
+        // If node not selected, unselect others
+        if (!selectedNodes.has(nodeData.id)) {
+          unselectAllNodes();
+          selectedNodes.add(nodeData.id);
+          updateSelectedStyles();
+          updateEditFields();
+          nodeChooser.value = nodeData.id;
+        }
+        startNodeDrag(e, nodeData);
       });
     }
 
-    /***********************************************
+    function startNodeDrag(e, nodeData) {
+      isDraggingNodes = true;
+      groupOffsets = {};
+      // get local coords
+      const { x: mouseX, y: mouseY } = screenToLocal(e.clientX, e.clientY);
+      selectedNodes.forEach(selId => {
+        const theNode = orgData.find(n => n.id === selId);
+        if (!theNode) return;
+        groupOffsets[selId] = {
+          offsetX: theNode.x - mouseX,
+          offsetY: theNode.y - mouseY
+        };
+      });
+    }
+
+    function startNodeResize(e, nodeEl, nodeData) {
+      let startW = nodeEl.offsetWidth;
+      let startH = nodeEl.offsetHeight;
+      let startX = e.clientX;
+      let startY = e.clientY;
+
+      function mouseMoveResize(ev) {
+        ev.preventDefault();
+        let newW = startW + (ev.clientX - startX);
+        let newH = startH + (ev.clientY - startY);
+        if (newW < 60) newW = 60;
+        if (newH < 40) newH = 40;
+        nodeEl.style.width  = newW + 'px';
+        nodeEl.style.height = newH + 'px';
+        nodeData.width  = newW;
+        nodeData.height = newH;
+        updateAllConnectors();
+      }
+      function mouseUpResize() {
+        document.removeEventListener('mousemove', mouseMoveResize);
+        document.removeEventListener('mouseup', mouseUpResize);
+        pushState("Resize node");
+      }
+
+      document.addEventListener('mousemove', mouseMoveResize);
+      document.addEventListener('mouseup', mouseUpResize);
+    }
+
+    document.addEventListener('mousemove', e => {
+      if (isDraggingNodes) {
+        e.preventDefault();
+        const { x: mouseX, y: mouseY } = screenToLocal(e.clientX, e.clientY);
+
+        selectedNodes.forEach(selId => {
+          const theNode = orgData.find(n => n.id === selId);
+          if (!theNode) return;
+          let newX = mouseX + groupOffsets[selId].offsetX;
+          let newY = mouseY + groupOffsets[selId].offsetY;
+
+          // optional snap
+          newX = Math.round(newX / 10) * 10;
+          newY = Math.round(newY / 10) * 10;
+
+          theNode.x = newX;
+          theNode.y = newY;
+          nodeElements[selId].style.left = newX + 'px';
+          nodeElements[selId].style.top  = newY + 'px';
+        });
+        updateAllConnectors();
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (isDraggingNodes) {
+        isDraggingNodes = false;
+        pushState("Move nodes");
+      }
+    });
+
+    /************************************************
+     * ZOOM (with clamp)
+     ************************************************/
+    function screenToLocal(screenX, screenY) {
+      // Because we are still using transform for zoom, we must
+      // invert the transform for local coords
+      const rect = orgChartContainer.getBoundingClientRect();
+      let localX = (screenX - rect.left - translationX) / currentScale;
+      let localY = (screenY - rect.top  - translationY) / currentScale;
+      return { x: localX, y: localY };
+    }
+
+    // Mouse wheel => zoom in/out around the cursor
+    orgChartOuter.addEventListener('wheel', e => {
+      e.preventDefault();
+
+      const rect = orgChartContainer.getBoundingClientRect();
+      const mouseLocalX = (e.clientX - rect.left - translationX) / currentScale;
+      const mouseLocalY = (e.clientY - rect.top  - translationY) / currentScale;
+
+      const delta = (e.deltaY < 0) ? 0.1 : -0.1;
+      let newScale = currentScale + delta;
+      if (newScale < MIN_ZOOM) newScale = MIN_ZOOM;
+      if (newScale > MAX_ZOOM) newScale = MAX_ZOOM;
+
+      const ratio = newScale / currentScale;
+      // keep mouseLocalX,Y in same place
+      translationX -= mouseLocalX * (ratio - 1);
+      translationY -= mouseLocalY * (ratio - 1);
+
+      currentScale = newScale;
+      applyTransform();
+      pushState("Wheel zoom around cursor");
+    }, { passive:false });
+
+    function applyTransform() {
+      orgChartContainer.style.transformOrigin = 'top left';
+      orgChartContainer.style.transform =
+        `translate(${translationX}px, ${translationY}px) scale(${currentScale})`;
+    }
+
+    /************************************************
      * CONNECTORS
-     ***********************************************/
-    function createConnector(nodeIdA, nodeIdB) {
+     ************************************************/
+    function createConnector(a, b) {
       const seg1 = document.createElement('div');
       seg1.classList.add('connector-segment');
       const seg2 = document.createElement('div');
@@ -289,87 +744,68 @@
       seg1.style.backgroundColor = hexAlphaToRGBA(connectorColorHex, connectorAlpha);
       seg2.style.backgroundColor = hexAlphaToRGBA(connectorColorHex, connectorAlpha);
 
-      const container = document.getElementById('orgChartContainer');
-      container.appendChild(seg1);
-      container.appendChild(seg2);
+      orgChartContainer.appendChild(seg1);
+      orgChartContainer.appendChild(seg2);
 
-      const connectorObj = { from: nodeIdA, to: nodeIdB, seg1, seg2 };
-      connectors.push(connectorObj);
-      updateConnectorPositions(connectorObj);
-    }
-
-    function handleConnectorClick(nodeId) {
-      if (startNodeId === null) {
-        startNodeId = nodeId;
-      } else {
-        if (startNodeId !== nodeId) {
-          createConnector(startNodeId, nodeId);
-        }
-        startNodeId = null;
-        isDrawingConnector = false;
-      }
+      const obj = { from:a, to:b, seg1, seg2 };
+      connectors.push(obj);
+      updateConnectorPositions(obj);
+      updateStats();
     }
 
     function updateConnectorPositions(conn) {
       const { from, to, seg1, seg2 } = conn;
-      const containerRect = document.getElementById('orgChartContainer').getBoundingClientRect();
+      const cRect = orgChartContainer.getBoundingClientRect();
       const elA = nodeElements[from].getBoundingClientRect();
       const elB = nodeElements[to].getBoundingClientRect();
 
-      // Center points
       const centerA = {
-        x: elA.left - containerRect.left + elA.width / 2,
-        y: elA.top - containerRect.top + elA.height / 2
+        x: elA.left - cRect.left + elA.width/2,
+        y: elA.top  - cRect.top  + elA.height/2
       };
       const centerB = {
-        x: elB.left - containerRect.left + elB.width / 2,
-        y: elB.top - containerRect.top + elB.height / 2
+        x: elB.left - cRect.left + elB.width/2,
+        y: elB.top  - cRect.top  + elB.height/2
       };
 
-      // Horizontal segment
+      // Horizontal line
       const left1 = Math.min(centerA.x, centerB.x);
-      const width1 = Math.abs(centerB.x - centerA.x);
-      seg1.style.left = left1 + 'px';
-      seg1.style.top = centerA.y + 'px';
-      seg1.style.width = width1 + 'px';
+      const width1= Math.abs(centerB.x - centerA.x);
+      seg1.style.left   = left1 + 'px';
+      seg1.style.top    = centerA.y + 'px';
+      seg1.style.width  = width1 + 'px';
       seg1.style.height = '2px';
       seg1.style.backgroundColor = hexAlphaToRGBA(connectorColorHex, connectorAlpha);
 
-      // Vertical segment
-      const top2 = Math.min(centerA.y, centerB.y);
-      const height2 = Math.abs(centerB.y - centerA.y);
-      seg2.style.left = centerB.x + 'px';
-      seg2.style.top = top2 + 'px';
-      seg2.style.width = '2px';
+      // Vertical line
+      const top2   = Math.min(centerA.y, centerB.y);
+      const height2= Math.abs(centerB.y - centerA.y);
+      seg2.style.left   = centerB.x + 'px';
+      seg2.style.top    = top2 + 'px';
+      seg2.style.width  = '2px';
       seg2.style.height = height2 + 'px';
       seg2.style.backgroundColor = hexAlphaToRGBA(connectorColorHex, connectorAlpha);
     }
 
     function updateAllConnectors() {
       connectors.forEach(conn => updateConnectorPositions(conn));
+      updateStats();
     }
 
-    /***********************************************
-     * SELECTION & MULTI-DRAG
-     ***********************************************/
-    function handleNodeSelection(e, nodeId) {
-      const isMultiSelect = e.ctrlKey || e.metaKey;
-      if (!isMultiSelect) {
-        unselectAllNodes();
-      }
-      if (selectedNodes.has(nodeId) && isMultiSelect) {
-        selectedNodes.delete(nodeId);
-      } else {
-        selectedNodes.add(nodeId);
-      }
+    /************************************************
+     * SELECTION
+     ************************************************/
+    function unselectAllNodes() {
+      selectedNodes.clear();
       updateSelectedStyles();
-      updateEditFields(); // Refresh the inline editing state
+      updateEditFields();
+      nodeChooser.value = "";
     }
 
     function updateSelectedStyles() {
       Object.keys(nodeElements).forEach(idStr => {
-        const idNum = parseInt(idStr, 10);
-        if (selectedNodes.has(idNum)) {
+        const idNum = parseInt(idStr,10);
+        if(selectedNodes.has(idNum)){
           nodeElements[idNum].classList.add('selected');
         } else {
           nodeElements[idNum].classList.remove('selected');
@@ -377,471 +813,600 @@
       });
     }
 
-    function unselectAllNodes() {
-      selectedNodes.clear();
-      updateSelectedStyles();
-      updateEditFields();
-    }
-
-    function makeDraggable(nodeEl) {
-      const nodeId = parseInt(nodeEl.id.replace('node-',''),10);
-      let isResizing = false;
-
-      nodeEl.addEventListener('mousedown', (e) => {
-        // If clicked the resize handle, do not drag
-        if (e.target.classList.contains('resize-handle')) {
-          isResizing = true;
-          return;
-        }
-        isResizing = false;
-
-        // Small delay so click selection is handled
-        setTimeout(() => {
-          if (selectedNodes.size > 0 && selectedNodes.has(nodeId)) {
-            isDraggingNodes = true;
-            groupOffsets = {};
-            selectedNodes.forEach(selId => {
-              const selEl = nodeElements[selId];
-              groupOffsets[selId] = {
-                offsetX: selEl.offsetLeft - e.clientX,
-                offsetY: selEl.offsetTop - e.clientY
-              };
-            });
-          }
-        }, 0);
-      });
-
-      document.addEventListener('mouseup', () => {
-        isDraggingNodes = false;
-      });
-
-      document.addEventListener('mousemove', (e) => {
-        if (!isDraggingNodes) return;
-        e.preventDefault();
-
-        selectedNodes.forEach(selId => {
-          const selEl = nodeElements[selId];
-          let x = e.clientX + groupOffsets[selId].offsetX;
-          let y = e.clientY + groupOffsets[selId].offsetY;
-
-          // Snap to grid
-          x = Math.round(x / GRID_SIZE) * GRID_SIZE;
-          y = Math.round(y / GRID_SIZE) * GRID_SIZE;
-
-          selEl.style.left = x + 'px';
-          selEl.style.top = y + 'px';
-
-          // Update data
-          const theNode = orgData.find(n => n.id === selId);
-          if (theNode) {
-            theNode.x = x;
-            theNode.y = y;
-          }
-        });
-        updateAllConnectors();
-      });
-    }
-
-    function makeResizable(nodeEl, nodeData) {
-      const handle = nodeEl.querySelector('.resize-handle');
-      if (!handle) return;
-      let isResizing = false;
-      let startWidth = 0, startHeight = 0;
-      let startMouseX = 0, startMouseY = 0;
-
-      handle.addEventListener('mousedown', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        isResizing = true;
-        startMouseX = e.clientX;
-        startMouseY = e.clientY;
-        startWidth = nodeEl.offsetWidth;
-        startHeight = nodeEl.offsetHeight;
-      });
-
-      document.addEventListener('mousemove', (e) => {
-        if (!isResizing) return;
-        e.preventDefault();
-        let newW = startWidth + (e.clientX - startMouseX);
-        let newH = startHeight + (e.clientY - startMouseY);
-        newW = Math.max(newW, 60);
-        newH = Math.max(newH, 40);
-        nodeEl.style.width = newW + 'px';
-        nodeEl.style.height = newH + 'px';
-        nodeData.width = newW;
-        nodeData.height = newH;
-        updateAllConnectors();
-      });
-
-      document.addEventListener('mouseup', () => {
-        isResizing = false;
-      });
-    }
-
-    /***********************************************
-     * NODE EDITING (INLINE, AUTO-SAVE)
-     ***********************************************/
+    /************************************************
+     * NODE EDIT PANEL
+     ************************************************/
     function updateEditFields() {
-      const selCount = selectedNodes.size;
-
-      if (selCount === 0) {
-        // No node selected
-        editNameInput.value = "Select node to edit attributes";
-        editTitleInput.value = "Select node to edit attributes";
-        editColorInput.value = "#ffffff";
-        editAlphaInput.value = 100;
-
-        editNameInput.disabled = true;
-        editTitleInput.disabled = true;
-        editColorInput.disabled = true;
-        editAlphaInput.disabled = true;
-        deleteNodeBtn.disabled = true;
-        return;
+      const c = selectedNodes.size;
+      if(!c) {
+        disableEditFields("Select node to edit attributes");
+      } else if(c>1){
+        disableEditFields("Cannot batch edit");
+      } else {
+        enableEditFields();
       }
-
-      if (selCount > 1) {
-        // Multiple nodes
-        editNameInput.value = "Cannot batch edit multiple nodes info";
-        editTitleInput.value = "Cannot batch edit multiple nodes info";
-        editColorInput.value = "#ffffff";
-        editAlphaInput.value = 100;
-
-        editNameInput.disabled = true;
-        editTitleInput.disabled = true;
-        editColorInput.disabled = true;
-        editAlphaInput.disabled = true;
-        deleteNodeBtn.disabled = true;
-        return;
-      }
-
-      // Exactly one node
-      const nodeId = Array.from(selectedNodes)[0];
-      const node = orgData.find(n => n.id === nodeId);
-      if (!node) return; // safety check
-
-      editNameInput.value = node.name;
-      editTitleInput.value = node.title;
-      editColorInput.value = node.colorHex;
-      editAlphaInput.value = node.colorAlpha;
-
-      editNameInput.disabled = false;
-      editTitleInput.disabled = false;
-      editColorInput.disabled = false;
-      editAlphaInput.disabled = false;
-      deleteNodeBtn.disabled = false;
     }
 
-    // Name changes => auto-update
-    editNameInput.addEventListener('input', () => {
-      if (selectedNodes.size === 1) {
-        const nodeId = Array.from(selectedNodes)[0];
-        const node = orgData.find(n => n.id === nodeId);
-        if (node) {
-          node.name = editNameInput.value;
-          const nodeEl = nodeElements[nodeId];
-          nodeEl.querySelector('.name').textContent = node.name;
-        }
-      }
-    });
-    // Title changes => auto-update
-    editTitleInput.addEventListener('input', () => {
-      if (selectedNodes.size === 1) {
-        const nodeId = Array.from(selectedNodes)[0];
-        const node = orgData.find(n => n.id === nodeId);
-        if (node) {
-          node.title = editTitleInput.value;
-          const nodeEl = nodeElements[nodeId];
-          nodeEl.querySelector('.title').textContent = node.title;
-        }
-      }
-    });
-    // Color changes => auto-update
-    editColorInput.addEventListener('input', () => {
-      if (selectedNodes.size === 1) {
-        const nodeId = Array.from(selectedNodes)[0];
-        const node = orgData.find(n => n.id === nodeId);
-        if (node) {
-          node.colorHex = editColorInput.value;
-          const nodeEl = nodeElements[nodeId];
-          nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
-        }
-      }
-    });
-    // Alpha changes => auto-update
-    editAlphaInput.addEventListener('input', () => {
-      if (selectedNodes.size === 1) {
-        const nodeId = Array.from(selectedNodes)[0];
-        const node = orgData.find(n => n.id === nodeId);
-        if (node) {
-          node.colorAlpha = parseInt(editAlphaInput.value, 10);
-          const nodeEl = nodeElements[nodeId];
-          nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
-        }
-      }
-    });
+    function disableEditFields(msg){
+      editNameInput.value         = msg;
+      editTitleInput.value        = msg;
+      editDeptInput.value         = msg;
+      editOfficeInput.value       = "";
+      editClientInput.value       = "";
+      editYearsInput.value        = "";
+      editColorInput.value        = "#ffffff";
+      editAlphaInput.value        = 100;
+      editTextColorInput.value    = "#000000";
+      editBorderColorInput.value  = "#333333";
+      editFontSizeInput.value     = 14;
 
-    // Delete Node
-    deleteNodeBtn.addEventListener('click', () => {
-      if (selectedNodes.size !== 1) return;
-      const nodeId = Array.from(selectedNodes)[0];
-      // Remove from orgData
-      orgData = orgData.filter(n => n.id !== nodeId);
+      [
+        editNameInput, editTitleInput, editDeptInput, editOfficeInput,
+        editClientInput, editYearsInput, editColorInput, editAlphaInput,
+        editTextColorInput, editBorderColorInput, editFontSizeInput, deleteNodeBtn
+      ].forEach(el => el.disabled = true);
+    }
 
-      // Remove connectors referencing this node
+    function enableEditFields(){
+      const onlyId = [...selectedNodes][0];
+      const node = orgData.find(n => n.id === onlyId);
+      if(!node)return;
+      editNameInput.value        = node.name;
+      editTitleInput.value       = node.title;
+      editDeptInput.value        = node.department || "";
+      editOfficeInput.value      = node.officeLocation || "";
+      editClientInput.value      = node.client || "";
+      editYearsInput.value       = node.yearsWithCompany || "";
+      editColorInput.value       = node.colorHex || "#ffffff";
+      editAlphaInput.value       = node.colorAlpha;
+      editTextColorInput.value   = node.textColor;
+      editBorderColorInput.value = node.borderColor;
+      editFontSizeInput.value    = node.fontSize;
+
+      [
+        editNameInput, editTitleInput, editDeptInput, editOfficeInput,
+        editClientInput, editYearsInput, editColorInput, editAlphaInput,
+        editTextColorInput, editBorderColorInput, editFontSizeInput, deleteNodeBtn
+      ].forEach(el => el.disabled = false);
+    }
+
+    function onFieldChange(){
+      if(selectedNodes.size !== 1)return;
+      const onlyId = [...selectedNodes][0];
+      const node   = orgData.find(n => n.id === onlyId);
+      if(!node)return;
+
+      node.name            = editNameInput.value;
+      node.title           = editTitleInput.value;
+      node.department      = editDeptInput.value;
+      node.officeLocation  = editOfficeInput.value;
+      node.client          = editClientInput.value;
+      const yrsVal         = parseInt(editYearsInput.value,10);
+      node.yearsWithCompany= isNaN(yrsVal)? 0 : yrsVal;
+      node.colorHex        = editColorInput.value;
+      node.colorAlpha      = parseInt(editAlphaInput.value,10);
+      node.textColor       = editTextColorInput.value;
+      node.borderColor     = editBorderColorInput.value;
+      node.fontSize        = parseInt(editFontSizeInput.value,10);
+
+      updateNodeElement(onlyId,true);
+      pushState("Edit node fields");
+    }
+
+    [
+      editNameInput, editTitleInput, editDeptInput, editOfficeInput,
+      editClientInput, editYearsInput, editColorInput, editAlphaInput,
+      editTextColorInput, editBorderColorInput, editFontSizeInput
+    ].forEach(inp => inp.addEventListener('input', onFieldChange));
+
+    function deleteSelectedNode() {
+      if(selectedNodes.size !== 1)return;
+      const idNum = [...selectedNodes][0];
+      orgData = orgData.filter(n => n.id !== idNum);
+      // Remove connectors referencing that node
       connectors.forEach(conn => {
-        if (conn.from === nodeId || conn.to === nodeId) {
-          if (conn.seg1 && conn.seg1.parentNode) conn.seg1.parentNode.removeChild(conn.seg1);
-          if (conn.seg2 && conn.seg2.parentNode) conn.seg2.parentNode.removeChild(conn.seg2);
+        if(conn.from === idNum || conn.to === idNum) {
+          if(conn.seg1 && conn.seg1.parentNode) conn.seg1.parentNode.removeChild(conn.seg1);
+          if(conn.seg2 && conn.seg2.parentNode) conn.seg2.parentNode.removeChild(conn.seg2);
         }
       });
-      connectors = connectors.filter(conn => conn.from !== nodeId && conn.to !== nodeId);
+      connectors = connectors.filter(c => c.from !== idNum && c.to !== idNum);
 
-      // Remove DOM element
-      const nodeEl = nodeElements[nodeId];
-      if (nodeEl && nodeEl.parentNode) {
-        nodeEl.parentNode.removeChild(nodeEl);
-      }
-      delete nodeElements[nodeId];
-
-      unselectAllNodes(); 
+      const el = nodeElements[idNum];
+      if(el && el.parentNode) el.parentNode.removeChild(el);
+      delete nodeElements[idNum];
+      unselectAllNodes();
       updateAllConnectors();
+      updateNodeDropdown();
+      updateStats();
+      pushState("Delete node");
+    }
+    deleteNodeBtn.addEventListener('click', deleteSelectedNode);
+
+    /************************************************
+     * NODE DROPDOWN
+     ************************************************/
+    function updateNodeDropdown() {
+      nodeChooser.innerHTML = '';
+      const opt = document.createElement('option');
+      opt.value = "";
+      opt.textContent = "Select a node...";
+      nodeChooser.appendChild(opt);
+
+      const sorted = [...orgData].sort((a,b) => a.name.localeCompare(b.name));
+      sorted.forEach(n => {
+        const o = document.createElement('option');
+        o.value = n.id;
+        o.textContent = n.name;
+        nodeChooser.appendChild(o);
+      });
+
+      if(selectedNodes.size === 1){
+        nodeChooser.value = [...selectedNodes][0];
+      } else {
+        nodeChooser.value = "";
+      }
+    }
+    nodeChooser.addEventListener('change', e => {
+      const idNum = parseInt(e.target.value,10);
+      if(!isNaN(idNum)){
+        unselectAllNodes();
+        selectedNodes.add(idNum);
+        updateSelectedStyles();
+        updateEditFields();
+      }
     });
 
-    /***********************************************
-     * Z-INDEX / LAYERING
-     ***********************************************/
-    function bringSelectedNodesToFront() {
-      if (selectedNodes.size === 0) return;
-      selectedNodes.forEach(selId => {
-        maxZIndex++;
-        nodeElements[selId].style.zIndex = maxZIndex;
-      });
+    /************************************************
+     * CONTEXT MENU
+     ************************************************/
+    ctxDeleteNode.addEventListener('click', () => {
+      deleteSelectedNode();
+      contextMenu.style.display = 'none';
+    });
+    ctxAutoSizeNode.addEventListener('click', () => {
+      autoSizeSelectedNodes();
+      contextMenu.style.display = 'none';
+    });
+    ctxBringFront.addEventListener('click', () => {
+      bringSelectedNodesToFront();
+      contextMenu.style.display = 'none';
+    });
+    ctxSendBack.addEventListener('click', () => {
+      sendSelectedNodesToBack();
+      contextMenu.style.display = 'none';
+    });
+
+    function showContextMenu(e){
+      contextMenu.style.display = 'block';
+      contextMenu.style.left = e.pageX + 'px';
+      contextMenu.style.top  = e.pageY + 'px';
     }
 
-    function sendSelectedNodesToBack() {
-      if (selectedNodes.size === 0) return;
-      selectedNodes.forEach(selId => {
-        nodeElements[selId].style.zIndex = 1;
-      });
-    }
-
-    /***********************************************
-     * ZOOM
-     ***********************************************/
-    function zoomIn() {
-      currentScale += 0.1;
-      if (currentScale > 3.0) {
-        currentScale = 3.0; // optional max
+    document.addEventListener('click', e => {
+      contextMenu.style.display = 'none';
+      if(!e.target.closest('.org-node')
+         && !e.target.closest('#sidePanel')
+         && !e.target.closest('#contextMenu')) {
+        unselectAllNodes();
       }
-      updateZoom();
-    }
-    function zoomOut() {
-      currentScale -= 0.1;
-      if (currentScale < 0.1) {
-        currentScale = 0.1; // optional min
+    });
+
+    /************************************************
+     * CONNECTOR HELPER
+     ************************************************/
+    function handleConnectorClick(nodeId){
+      if(startNodeId===null){
+        startNodeId=nodeId;
+      } else {
+        if(startNodeId!==nodeId){
+          createConnector(startNodeId,nodeId);
+          pushState("Create connector");
+        }
+        startNodeId=null;
+        isDrawingConnector=false;
       }
-      updateZoom();
-    }
-    function updateZoom() {
-      const container = document.getElementById('orgChartContainer');
-      container.style.transformOrigin = 'top left';
-      container.style.transform = `scale(${currentScale})`;
     }
 
-    /***********************************************
-     * OTHER CHART UTILITIES
-     ***********************************************/
-    function addNewNode() {
-      const maxId = orgData.reduce((m, n) => Math.max(m, n.id), 0);
-      const newId = maxId + 1;
-      const newNodeData = {
+    /************************************************
+     * Z-INDEX
+     ************************************************/
+    function bringSelectedNodesToFront(){
+      selectedNodes.forEach(idNum => {
+        nodeElements[idNum].style.zIndex = 1000;
+      });
+      pushState("Bring front");
+    }
+    function sendSelectedNodesToBack(){
+      selectedNodes.forEach(idNum => {
+        nodeElements[idNum].style.zIndex = 1;
+      });
+      pushState("Send back");
+    }
+
+    /************************************************
+     * ZOOM (Buttons / Slider)
+     ************************************************/
+    function zoomIn(){
+      let newScale = currentScale + 0.1;
+      if(newScale > MAX_ZOOM) newScale = MAX_ZOOM;
+      currentScale = newScale;
+      applyTransform();
+      pushState("Zoom in");
+    }
+    function zoomOut(){
+      let newScale = currentScale - 0.1;
+      if(newScale < MIN_ZOOM) newScale = MIN_ZOOM;
+      currentScale = newScale;
+      applyTransform();
+      pushState("Zoom out");
+    }
+    const zoomSlider = document.getElementById('zoomSlider');
+    zoomSlider.addEventListener('input', e => {
+      let val = parseInt(e.target.value,10);
+      let newScale = val / 100;
+      if(newScale < MIN_ZOOM) newScale = MIN_ZOOM;
+      if(newScale > MAX_ZOOM) newScale = MAX_ZOOM;
+      currentScale = newScale;
+      applyTransform();
+      pushState("Slider zoom");
+    });
+
+    /************************************************
+     * UPDATE STATS
+     ************************************************/
+    function updateStats(){
+      nodesCountEl.textContent = orgData.length;
+      connectorsCountEl.textContent = connectors.length;
+    }
+
+    /************************************************
+     * UTILITIES
+     ************************************************/
+    function addNewNode(x=300, y=200){
+      const maxId = orgData.reduce((acc,n)=>Math.max(acc,n.id),0);
+      const newId = maxId+1;
+      const nn = {
         id: newId,
-        name: `Node ${newId}`,
-        title: "",
-        x: 50,
-        y: 50,
-        width: 130,
-        height: 60,
-        colorHex: "#ffffff",
-        colorAlpha: 100
+        name:`Node ${newId}`,
+        title:"",
+        department:"",
+        officeLocation:"",
+        client:"",
+        yearsWithCompany:0,
+        x,y,
+        width:130,
+        height:60,
+        colorHex:"#ffffff",
+        colorAlpha:100,
+        textColor:"#000000",
+        borderColor:"#333333",
+        fontSize:14
       };
-      orgData.push(newNodeData);
+      orgData.push(nn);
       createOrgNodes();
       updateAllConnectors();
+      updateStats();
+      pushState("Add node");
     }
 
-    function autoOrganize() {
-      let xStart = 50;
-      let yStart = 50;
-      const xGap = 200;
-      const yGap = 150;
-      orgData.forEach((node, index) => {
-        const row = Math.floor(index / 3);
-        const col = index % 3;
-        node.x = xStart + col * xGap;
-        node.y = yStart + row * yGap;
+    function autoOrganize(){
+      let xStart=300, yStart=100, xGap=200, yGap=150;
+      orgData.forEach((n,i)=>{
+        n.x = xStart + (i%3)*xGap;
+        n.y = yStart + Math.floor(i/3)*yGap;
       });
       createOrgNodes();
       updateAllConnectors();
+      pushState("Auto-organize");
     }
 
-    function clearAllConnectors() {
-      connectors.forEach(conn => {
-        if (conn.seg1 && conn.seg1.parentNode) {
-          conn.seg1.parentNode.removeChild(conn.seg1);
-        }
-        if (conn.seg2 && conn.seg2.parentNode) {
-          conn.seg2.parentNode.removeChild(conn.seg2);
-        }
+    function autoSizeSingleNode(idNum){
+      const nodeEl = nodeElements[idNum];
+      const node   = orgData.find(n=>n.id===idNum);
+      if(!nodeEl || !node)return;
+      nodeEl.style.width='auto';
+      nodeEl.style.height='auto';
+      nodeEl.style.whiteSpace='nowrap';
+      const newW = nodeEl.offsetWidth+10;
+      const newH = nodeEl.offsetHeight+10;
+      nodeEl.style.whiteSpace='normal';
+      node.width=newW;
+      node.height=newH;
+      nodeEl.style.width=newW+'px';
+      nodeEl.style.height=newH+'px';
+      updateAllConnectors();
+    }
+
+    function autoSizeAllNodes(){
+      orgData.forEach(n=>autoSizeSingleNode(n.id));
+      pushState("Auto-size all");
+    }
+    function autoSizeSelectedNodes(){
+      selectedNodes.forEach(id=>autoSizeSingleNode(id));
+      pushState("Auto-size selected");
+    }
+
+    function clearAllConnectors(){
+      connectors.forEach(c=>{
+        if(c.seg1 && c.seg1.parentNode) c.seg1.parentNode.removeChild(c.seg1);
+        if(c.seg2 && c.seg2.parentNode) c.seg2.parentNode.removeChild(c.seg2);
       });
       connectors = [];
+      updateStats();
     }
 
-    function exportToPDF() {
-      const container = document.getElementById('orgChartContainer');
-      html2canvas(container).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: 'a4' });
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
-        const imgWidth = canvas.width * ratio;
-        const imgHeight = canvas.height * ratio;
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+    function exportToPNG(){
+      html2canvas(orgChartContainer).then(canvas=>{
+        const link=document.createElement('a');
+        link.href=canvas.toDataURL('image/png');
+        link.download="orgchart.png";
+        link.click();
+      });
+    }
+
+    function exportToPDF(){
+      const bounds=getNodesBoundingBox();
+      const clone=orgChartContainer.cloneNode(true);
+      clone.style.position='absolute';
+      clone.style.left=-bounds.minX+'px';
+      clone.style.top=-bounds.minY+'px';
+      clone.style.width=(bounds.width+100)+'px';
+      clone.style.height=(bounds.height+100)+'px';
+      clone.style.transform='translate(0px,0px) scale(1)';
+      document.body.appendChild(clone);
+
+      html2canvas(clone,{
+        width:bounds.width+100,
+        height:bounds.height+100,
+        x:bounds.minX-50,
+        y:bounds.minY-50
+      }).then(canvas=>{
+        document.body.removeChild(clone);
+        const { jsPDF }=window.jspdf;
+        const pdf=new jsPDF({ orientation:'landscape', unit:'px', format:'a4' });
+        const pageW=pdf.internal.pageSize.getWidth();
+        const pageH=pdf.internal.pageSize.getHeight();
+        const ratio=Math.min(pageW/canvas.width, pageH/canvas.height);
+        const imgW=canvas.width*ratio;
+        const imgH=canvas.height*ratio;
+        pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,imgW,imgH);
         pdf.save('orgchart.pdf');
       });
     }
 
-    function saveChart() {
-      const connectorPairs = connectors.map(conn => ({ from: conn.from, to: conn.to }));
-      const chartObject = { orgData, connectorPairs };
-      const jsonStr = JSON.stringify(chartObject, null, 2);
-      const blob = new Blob([jsonStr], { type: "application/json" });
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = "orgchart.json";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    function getNodesBoundingBox(){
+      if(orgData.length===0)return{minX:0,minY:0,width:0,height:0};
+      let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+      orgData.forEach(n=>{
+        const x2=n.x+n.width;
+        const y2=n.y+n.height;
+        if(n.x<minX) minX=n.x;
+        if(n.y<minY) minY=n.y;
+        if(x2>maxX) maxX=x2;
+        if(y2>maxY) maxY=y2;
+      });
+      return{minX,minY,width:maxX-minX,height:maxY-minY};
     }
 
-    function loadChartFromJSON(jsonStr) {
-      try {
-        const parsed = JSON.parse(jsonStr);
-        if (!parsed.orgData || !parsed.connectorPairs) {
-          alert("Invalid file format. Missing necessary fields.");
+    function saveChart(){
+      const connectorPairs=connectors.map(c=>({from:c.from,to:c.to}));
+      const data={orgData,connectorPairs};
+      const str=JSON.stringify(data,null,2);
+      const blob=new Blob([str],{type:"application/json"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download="orgchart.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function loadChartFromJSON(str){
+      try{
+        const parsed=JSON.parse(str);
+        if(!parsed.orgData||!parsed.connectorPairs){
+          alert("Invalid file format.");
           return;
         }
         clearAllConnectors();
-        orgData = parsed.orgData;
+        orgData=parsed.orgData;
         createOrgNodes();
-        connectors = [];
-        parsed.connectorPairs.forEach(cp => {
-          createConnector(cp.from, cp.to);
-        });
+        parsed.connectorPairs.forEach(cp=>createConnector(cp.from,cp.to));
         updateAllConnectors();
-      } catch (err) {
-        alert("Error reading file. Ensure it's valid JSON.\n" + err);
+        pushState("Load from JSON");
+      } catch(e){
+        alert("Error reading file:\n"+e);
       }
     }
 
-    function autoSizeAllNodes() {
-      orgData.forEach(node => {
-        const nodeEl = nodeElements[node.id];
-        nodeEl.style.width = 'auto';
-        nodeEl.style.height = 'auto';
-        const newW = nodeEl.offsetWidth;
-        const newH = nodeEl.offsetHeight;
-        node.width = newW;
-        node.height = newH;
-        nodeEl.style.width = newW + 'px';
-        nodeEl.style.height = newH + 'px';
-      });
-      updateAllConnectors();
+    /************************************************
+     * STATE HISTORY
+     ************************************************/
+    function pushState(actionDesc=""){
+      const connectorPairs=connectors.map(c=>({from:c.from,to:c.to}));
+      const snapshot={
+        orgData:JSON.parse(JSON.stringify(orgData)),
+        connectorPairs
+      };
+      if(currentHistoryIndex<stateHistory.length-1){
+        stateHistory.splice(currentHistoryIndex+1);
+      }
+      stateHistory.push(snapshot);
+      currentHistoryIndex=stateHistory.length-1;
+
+      // also store localStorage
+      localStorage.setItem('orgChartAutoSave', JSON.stringify(snapshot));
     }
 
-    /***********************************************
-     * INITIAL SETUP
-     ***********************************************/
-    createOrgNodes();
-    // Start with editing fields locked
-    updateEditFields();
+    function restoreState(index){
+      if(index<0||index>=stateHistory.length)return;
+      const saved=stateHistory[index];
+      orgData=JSON.parse(JSON.stringify(saved.orgData));
+      clearAllConnectors();
+      createOrgNodes();
+      saved.connectorPairs.forEach(cp=>createConnector(cp.from,cp.to));
+      updateAllConnectors();
+      updateStats();
+    }
 
-    // ================== BUTTON HANDLERS ==================
-    document.getElementById('newNodeBtn').addEventListener('click', addNewNode);
+    function undoChart(){
+      if(currentHistoryIndex>0){
+        currentHistoryIndex--;
+        restoreState(currentHistoryIndex);
+      }
+    }
+
+    function redoChart(){
+      if(currentHistoryIndex<stateHistory.length-1){
+        currentHistoryIndex++;
+        restoreState(currentHistoryIndex);
+      }
+    }
+
+    function loadFromLocalStorage(){
+      const autoSaved=localStorage.getItem('orgChartAutoSave');
+      if(autoSaved){
+        try{
+          const parsed=JSON.parse(autoSaved);
+          if(parsed.orgData&&parsed.connectorPairs){
+            orgData=parsed.orgData;
+            createOrgNodes();
+            connectors=[];
+            parsed.connectorPairs.forEach(cp=>createConnector(cp.from,cp.to));
+            updateAllConnectors();
+            updateStats();
+            pushState("Load from localStorage");
+          }
+        }catch(e){
+          console.warn("Local storage data invalid:", e);
+        }
+      }
+    }
+
+    /************************************************
+     * INIT
+     ************************************************/
+    createOrgNodes();
+    updateEditFields();
+    updateStats();
+    pushState("Initial load");
+    loadFromLocalStorage();
+
+    // Buttons
+    document.getElementById('newNodeBtn').addEventListener('click', () => addNewNode());
     document.getElementById('autoOrganizeBtn').addEventListener('click', autoOrganize);
     document.getElementById('autoSizeBtn').addEventListener('click', autoSizeAllNodes);
-    document.getElementById('exportPDFBtn').addEventListener('click', exportToPDF);
+    document.getElementById('autoSizeSelectedBtn').addEventListener('click', autoSizeSelectedNodes);
 
-    document.getElementById('drawConnectorBtn').addEventListener('click', () => {
-      isDrawingConnector = !isDrawingConnector;
-      if (isDrawingConnector) {
-        startNodeId = null;
-      }
+    document.getElementById('drawConnectorBtn').addEventListener('click',()=>{
+      isDrawingConnector=!isDrawingConnector;
+      if(isDrawingConnector) startNodeId=null;
     });
-    document.getElementById('clearConnectorsBtn').addEventListener('click', clearAllConnectors);
-
-    document.getElementById('connectorColorInput').addEventListener('input', (e) => {
-      connectorColorHex = e.target.value;
-      updateAllConnectors();
+    document.getElementById('clearConnectorsBtn').addEventListener('click',()=>{
+      clearAllConnectors();
+      pushState("Clear connectors");
     });
-    document.getElementById('connectorAlphaRange').addEventListener('input', (e) => {
-      connectorAlpha = parseInt(e.target.value, 10);
+    document.getElementById('connectorColorInput').addEventListener('input', e=>{
+      connectorColorHex=e.target.value;
       updateAllConnectors();
+      pushState("Connector color");
+    });
+    document.getElementById('connectorAlphaRange').addEventListener('input', e=>{
+      connectorAlpha=parseInt(e.target.value,10);
+      updateAllConnectors();
+      pushState("Connector alpha");
     });
 
     document.getElementById('saveChartBtn').addEventListener('click', saveChart);
-    document.getElementById('loadChartBtn').addEventListener('click', () => {
+    document.getElementById('loadChartBtn').addEventListener('click',()=>{
       document.getElementById('loadFile').click();
     });
-    document.getElementById('loadFile').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
+    document.getElementById('loadFile').addEventListener('change',e=>{
+      const f=e.target.files[0];
+      if(!f)return;
+      const r=new FileReader();
+      r.onload=evt=>{
         loadChartFromJSON(evt.target.result);
       };
-      reader.readAsText(file);
-      e.target.value = "";
+      r.readAsText(f);
+      e.target.value="";
     });
 
-    // Zoom
+    document.getElementById('exportPNGBtn').addEventListener('click', exportToPNG);
+    document.getElementById('exportPDFBtn').addEventListener('click', exportToPDF);
+
     document.getElementById('zoomOutBtn').addEventListener('click', zoomOut);
     document.getElementById('zoomInBtn').addEventListener('click', zoomIn);
 
-    // Container Dimension Sliders
-    const widthSlider = document.getElementById('containerWidthRange');
-    const heightSlider = document.getElementById('containerHeightRange');
-    widthSlider.addEventListener('input', (e) => {
-      document.getElementById('orgChartContainer').style.width = e.target.value + 'px';
-    });
-    heightSlider.addEventListener('input', (e) => {
-      document.getElementById('orgChartContainer').style.height = e.target.value + 'px';
-    });
+    document.getElementById('undoBtn').addEventListener('click', undoChart);
+    document.getElementById('redoBtn').addEventListener('click', redoChart);
 
-    // Z-Index
     document.getElementById('bringFrontBtn').addEventListener('click', bringSelectedNodesToFront);
     document.getElementById('sendBackBtn').addEventListener('click', sendSelectedNodesToBack);
 
-    /* 1) Helper: Convert hex+alpha to RGBA string */
-    function hexAlphaToRGBA(hex, alphaVal) {
-      if (!hex.startsWith("#")) return "rgba(0,0,0,1)";
-      let r = parseInt(hex.slice(1,3), 16);
-      let g = parseInt(hex.slice(3,5), 16);
-      let b = parseInt(hex.slice(5,7), 16);
-      let a = alphaVal / 100.0;
-      return `rgba(${r},${g},${b},${a})`;
+    // Searching & Filtering
+    const searchInputEl=document.getElementById('searchInput');
+    const clearFilterBtnEl=document.getElementById('clearFilterBtn');
+    function filterNodesByNameDept(){
+      const q=searchInputEl.value.toLowerCase().trim();
+      orgData.forEach(n=>{
+        const el=nodeElements[n.id];
+        if(!el)return;
+        const c=(n.name+" "+n.department).toLowerCase();
+        if(q && !c.includes(q)) el.classList.add('hidden');
+        else el.classList.remove('hidden');
+      });
     }
+    searchInputEl.addEventListener('input', filterNodesByNameDept);
+    clearFilterBtnEl.addEventListener('click', ()=>{
+      searchInputEl.value="";
+      filterNodesByNameDept();
+    });
 
-    /* 2) NEW: If the user clicks anywhere NOT on a node (and not on the controls), unselect all nodes */
-    document.addEventListener('click', (e) => {
-      // If user clicked outside any .org-node and also not on the #controls panel => unselect
-      if (!e.target.closest('.org-node') && !e.target.closest('#controls')) {
-        unselectAllNodes();
+    const attributeSelectEl  =document.getElementById('attributeSelect');
+    const attributeInputEl   =document.getElementById('attributeInput');
+    const attributeFilterBtnEl=document.getElementById('attributeFilterBtn');
+    const clearAttributeFilterBtnEl=document.getElementById('clearAttributeFilterBtn');
+
+    attributeFilterBtnEl.addEventListener('click',()=>{
+      const attr=attributeSelectEl.value;
+      const val =attributeInputEl.value.toLowerCase().trim();
+      orgData.forEach(n=>{
+        const el=nodeElements[n.id];
+        if(!el)return;
+        const nodeVal=(n[attr]||"").toString().toLowerCase();
+        if(val && !nodeVal.includes(val)) el.classList.add('hidden');
+        else el.classList.remove('hidden');
+      });
+    });
+    clearAttributeFilterBtnEl.addEventListener('click',()=>{
+      attributeInputEl.value="";
+      orgData.forEach(n=>{
+        const el=nodeElements[n.id];
+        if(el) el.classList.remove('hidden');
+      });
+    });
+
+    // If user clicks on a node while drawing connectors
+    orgChartContainer.addEventListener('click',e=>{
+      const nodeDiv=e.target.closest('.org-node');
+      if(nodeDiv && isDrawingConnector){
+        const nodeIdNum=parseInt(nodeDiv.id.replace('node-',''),10);
+        handleConnectorClick(nodeIdNum);
       }
     });
+
+    // Helper: convert hex+alpha => RGBA
+    function hexAlphaToRGBA(hex, alphaVal){
+      if(!hex.startsWith("#")) return "rgba(0,0,0,1)";
+      const r=parseInt(hex.slice(1,3),16);
+      const g=parseInt(hex.slice(3,5),16);
+      const b=parseInt(hex.slice(5,7),16);
+      const a=alphaVal/100;
+      return `rgba(${r},${g},${b},${a})`;
+    }
   </script>
 </body>
 </html>
