@@ -98,10 +98,8 @@
 <div class="card">
   <h1>Photo Editor / High-Resolution Export</h1>
 
-  <!-- Buttons bar -->
+  <!-- Buttons bar (orientation buttons removed to fix layout) -->
   <div class="buttons-bar">
-    <button id="orientationBtn">Canvas: Vertical (4×6)</button>
-    <button id="lineOrientBtn">Line: Vertical</button>
     <button id="rotateImg1">Rotate Image 1</button>
     <button id="rotateImg2">Rotate Image 2</button>
     <button id="saveBtn">Export Combined Image</button>
@@ -121,7 +119,9 @@
 
   <!-- Canvas Container -->
   <div id="canvasContainer">
-    <canvas id="previewCanvas" width="400" height="600"></canvas>
+    <!-- Adjusted default to 800x600 => always horizontal (long ways),
+         line always vertical splitting into two 2×3 halves -->
+    <canvas id="previewCanvas" width="800" height="600"></canvas>
   </div>
 </div>
 
@@ -132,23 +132,20 @@
 const canvas = document.getElementById('previewCanvas');
 const ctx = canvas.getContext('2d');
 
-const orientationBtn = document.getElementById('orientationBtn');
-const lineOrientBtn = document.getElementById('lineOrientBtn');
 const file1 = document.getElementById('file1');
 const file2 = document.getElementById('file2');
 const saveBtn = document.getElementById('saveBtn');
 const rotateImg1Btn = document.getElementById('rotateImg1');
 const rotateImg2Btn = document.getElementById('rotateImg2');
 
-// Orientation & line-split
-let orientation = 'vertical';   // 'vertical' => 4×6, 'horizontal' => 6×4
-let lineOrientation = 'vertical'; // 'vertical' => side-by-side, 'horizontal' => top/bottom
+// Force the layout: always horizontal, always vertical split
+const orientation = 'horizontal';   // fixed
+const lineOrientation = 'vertical'; // fixed
 
-// Canvas dimensions (preview)
-const dimensions = {
-  vertical:   { w: 400, h: 600 },  // 4×6
-  horizontal: { w: 600, h: 400 }   // 6×4
-};
+// We’ll use a fixed canvas dimension for "horizontal" orientation
+// so each half is effectively 2×3 ratio
+canvas.width = 800;
+canvas.height = 600;
 
 /*
 Each image: {
@@ -170,34 +167,40 @@ let offsetX = 0;
 let offsetY = 0;
 
 /* =========================================
-   INIT & UTILS
+   UTILS
 ========================================= */
+
 /**
- * Sets the PREVIEW canvas size based on orientation (4x6 or 6x4).
+ * The bounding region for the half (0 => left, 1 => right),
+ * line is always vertical.
+ * Returns { x, y, w, h }
  */
-function updateCanvasSize() {
-  const { w, h } = (orientation === 'vertical')
-    ? dimensions.vertical
-    : dimensions.horizontal;
-  
-  canvas.width = w;
-  canvas.height = h;
-
-  // Adjust container
-  const container = canvas.parentElement;
-  container.style.width = w + 'px';
-  container.style.height = h + 'px';
-
-  draw();
+function getRegionBounds(index) {
+  const w = canvas.width;
+  const h = canvas.height;
+  const lineWidth = 5;
+  // vertical always
+  const mid = w / 2;
+  if (index === 0) {
+    return {
+      x: 0,
+      y: 0,
+      w: mid - lineWidth / 2,
+      h: h
+    };
+  } else {
+    return {
+      x: mid + lineWidth / 2,
+      y: 0,
+      w: w - (mid + lineWidth / 2),
+      h: h
+    };
+  }
 }
 
 /**
- * Auto-fit a newly uploaded (or newly rotated) image
- * into its half (PREVIEW). This ensures it is entirely visible
- * and centered in that half of the preview canvas.
- *
- * We ignore rotation when computing the scale to fit the raw image,
- * then re-apply the angle afterward.
+ * Auto-fit a newly uploaded (or newly loaded) image into its half.
+ * Ensures entire image is visible and centered in that half.
  */
 function autoFitImage(index) {
   const imgData = images[index];
@@ -207,7 +210,7 @@ function autoFitImage(index) {
   const savedAngle = imgData.angle;
   imgData.angle = 0; // temporarily ignore rotation for size calc
 
-  // We'll figure out the bounding region for that half in the preview
+  // The region for that half
   const region = getRegionBounds(index);
 
   // The raw image size
@@ -218,19 +221,17 @@ function autoFitImage(index) {
   const regionW = region.w;
   const regionH = region.h;
 
-  // Fit scale to ensure the entire raw (unrotated) image fits
+  // Fit scale so the entire raw image fits
   const scaleX = regionW / iw;
   const scaleY = regionH / ih;
   const fitScale = Math.min(scaleX, scaleY);
 
-  // Put that in imgData
+  // Assign scale
   imgData.scale = fitScale;
 
-  // Scaled width/height
+  // Center in region
   const scaledW = iw * fitScale;
   const scaledH = ih * fitScale;
-
-  // Center in region
   const centerX = region.x + regionW / 2;
   const centerY = region.y + regionH / 2;
   imgData.x = centerX - scaledW / 2;
@@ -241,51 +242,25 @@ function autoFitImage(index) {
 }
 
 /**
- * The bounding region for the half (0 => left/top, 1 => right/bottom)
- * in the PREVIEW canvas. Returns { x, y, w, h }
+ * Re-center image to the middle of its half (keeping its current scale & new angle).
  */
-function getRegionBounds(index) {
-  const w = canvas.width;
-  const h = canvas.height;
-  const lineWidth = 5;
+function reCenterImage(index) {
+  const data = images[index];
+  if (!data.img) return;
 
-  if (lineOrientation === 'vertical') {
-    // left half => index=0, right half => index=1
-    const mid = w / 2;
-    if (index === 0) {
-      return {
-        x: 0,
-        y: 0,
-        w: mid - lineWidth / 2,
-        h: h
-      };
-    } else {
-      return {
-        x: mid + lineWidth / 2,
-        y: 0,
-        w: w - (mid + lineWidth / 2),
-        h: h
-      };
-    }
-  } else {
-    // horizontal => top => index=0, bottom => index=1
-    const mid = h / 2;
-    if (index === 0) {
-      return {
-        x: 0,
-        y: 0,
-        w: w,
-        h: mid - lineWidth / 2
-      };
-    } else {
-      return {
-        x: 0,
-        y: mid + lineWidth / 2,
-        w: w,
-        h: h - (mid + lineWidth / 2)
-      };
-    }
-  }
+  const region = getRegionBounds(index);
+  const angleRad = data.angle * Math.PI / 180;
+  const cosA = Math.abs(Math.cos(angleRad));
+  const sinA = Math.abs(Math.sin(angleRad));
+  const w = data.img.width * data.scale;
+  const h = data.img.height * data.scale;
+  const boundingW = w * cosA + h * sinA;
+  const boundingH = w * sinA + h * cosA;
+
+  const centerX = region.x + region.w / 2;
+  const centerY = region.y + region.h / 2;
+  data.x = centerX - boundingW / 2;
+  data.y = centerY - boundingH / 2;
 }
 
 /**
@@ -303,7 +278,7 @@ function handleFile(input, index) {
       // Reset transformations
       images[index].angle = 0;
       images[index].scale = 1;
-      // Auto-fit to its half
+      // Fit into half
       autoFitImage(index);
       draw();
     };
@@ -318,16 +293,11 @@ function handleFile(input, index) {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // 5px white line
+  // 5px dividing line, always vertical
   ctx.save();
   ctx.fillStyle = 'white';
-  if (lineOrientation === 'vertical') {
-    const mid = canvas.width / 2;
-    ctx.fillRect(mid - 2.5, 0, 5, canvas.height);
-  } else {
-    const mid = canvas.height / 2;
-    ctx.fillRect(0, mid - 2.5, canvas.width, 5);
-  }
+  const mid = canvas.width / 2;
+  ctx.fillRect(mid - 2.5, 0, 5, canvas.height);
   ctx.restore();
 
   // Draw each image clipped to its half
@@ -458,32 +428,16 @@ canvas.addEventListener('wheel', (e) => {
 /* =========================================
    BUTTON HANDLERS
 ========================================= */
-orientationBtn.addEventListener('click', () => {
-  orientation = (orientation === 'vertical') ? 'horizontal' : 'vertical';
-  orientationBtn.textContent = (orientation === 'vertical')
-    ? 'Canvas: Vertical (4×6)'
-    : 'Canvas: Horizontal (6×4)';
-  updateCanvasSize();
-});
-
-lineOrientBtn.addEventListener('click', () => {
-  lineOrientation = (lineOrientation === 'vertical') ? 'horizontal' : 'vertical';
-  lineOrientBtn.textContent = (lineOrientation === 'vertical')
-    ? 'Line: Vertical'
-    : 'Line: Horizontal';
-  draw();
-});
-
 rotateImg1Btn.addEventListener('click', () => {
   images[0].angle = (images[0].angle + 90) % 360;
-  // Re-fit after rotation
-  autoFitImage(0);
+  // Re-center after rotation
+  reCenterImage(0);
   draw();
 });
 rotateImg2Btn.addEventListener('click', () => {
   images[1].angle = (images[1].angle + 90) % 360;
-  // Re-fit after rotation
-  autoFitImage(1);
+  // Re-center after rotation
+  reCenterImage(1);
   draw();
 });
 
@@ -492,20 +446,14 @@ file2.addEventListener('change', () => handleFile(file2, 1));
 
 /**
  * Clicking "Export Combined Image" => create a large
- * offscreen canvas replicating user transformations in
- * "full resolution" (based on each image’s original pixel size
- * times the user’s scale, etc.), then download a PNG.
+ * offscreen canvas replicating user transformations
+ * then download a PNG.
  */
-
 saveBtn.addEventListener('click', () => {
   const offscreen = document.createElement('canvas');
   const ctx2 = offscreen.getContext('2d');
 
-  // We’ll compute the final bounding dimensions for the two images
-  // based on their "full-resolution" scaled size, plus 5px line.
-
   // A helper function to get bounding box (width, height) after rotation
-  // for an image of size (w,h) rotated by angle:
   function rotatedBoundingBox(w, h, angleDeg) {
     const r = angleDeg * Math.PI / 180;
     const cosA = Math.abs(Math.cos(r));
@@ -516,18 +464,10 @@ saveBtn.addEventListener('click', () => {
     };
   }
 
-  // For each image:
-  // final scaled width = origWidth * scale
-  // final scaled height = origHeight * scale
-  // then we compute bounding box if angle != 0
-  // We'll also replicate the user’s x,y offsets proportionally.
-
-  // Let’s define a function to gather final data from the preview’s x,y
-  // so we can shift them consistently.
+  // Gather final info for each image
   function getFinalInfo(i) {
     const { img, x, y, scale, angle } = images[i];
     if (!img) return null;
-    // bounding box for rotation
     const box = rotatedBoundingBox(img.width * scale, img.height * scale, angle);
     return {
       angle,
@@ -549,35 +489,16 @@ saveBtn.addEventListener('click', () => {
     return;
   }
 
-  // The preview canvas size:
-  const previewW = canvas.width;
-  const previewH = canvas.height;
-
-  // We'll track how large the offscreen canvas should be:
+  // Always vertical split => place image0 on the left, image1 on the right,
+  // plus a 5px gap for the line
   let offW = 0;
   let offH = 0;
 
-  // For line orientation "vertical": place image0 on the left, image1 on the right
-  // final width = boundingW0 + boundingW1 + 5
-  // final height = max(boundingH0, boundingH1)
-  // For line orientation "horizontal": stacked top/bottom
-  if (lineOrientation === 'vertical') {
-    offW = 0; 
-    offH = 0;
-    if (info0) offW += info0.boundingW;
-    if (info1) offW += info1.boundingW;
-    offW += 5; // line
-    offH = Math.max(info0 ? info0.boundingH : 0, info1 ? info1.boundingH : 0);
-  } else {
-    // horizontal
-    offW = Math.max(info0 ? info0.boundingW : 0, info1 ? info1.boundingW : 0);
-    offH = 0;
-    if (info0) offH += info0.boundingH;
-    if (info1) offH += info1.boundingH;
-    offH += 5; // line
-  }
+  // total width = boundingW0 + boundingW1 + 5
+  // total height = max(boundingH0, boundingH1)
+  offW = (info0 ? info0.boundingW : 0) + (info1 ? info1.boundingW : 0) + 5;
+  offH = Math.max(info0 ? info0.boundingH : 0, info1 ? info1.boundingH : 0);
 
-  // Round up for safety
   offscreen.width = Math.ceil(offW);
   offscreen.height = Math.ceil(offH);
 
@@ -585,74 +506,35 @@ saveBtn.addEventListener('click', () => {
   ctx2.fillStyle = "#ffffff";
   ctx2.fillRect(0, 0, offscreen.width, offscreen.height);
 
-  // Draw the line
+  // Draw the vertical line
   ctx2.save();
   ctx2.fillStyle = 'white';
-  if (lineOrientation === 'vertical') {
-    // We'll place a vertical line between the two bounding boxes
-    // We must figure out where image0 ends and image1 starts.
-    let splitX = info0 ? info0.boundingW : 0;
-    // place a 5px line
-    ctx2.fillRect(splitX, 0, 5, offscreen.height);
-  } else {
-    // horizontal line
-    let splitY = info0 ? info0.boundingH : 0;
-    ctx2.fillRect(0, splitY, offscreen.width, 5);
-  }
+  const splitX = info0 ? info0.boundingW : 0;
+  ctx2.fillRect(splitX, 0, 5, offscreen.height);
   ctx2.restore();
 
-  /**
-   * Helper: draw one image into ctx2 at “full resolution” 
-   *   offsetX, offsetY => where we place the top-left bounding box
-   *   (in the final big canvas).
-   */
+  // Helper to draw one image into ctx2 at “full resolution” 
   function drawImageFull(i, offsetX, offsetY) {
     const { img, x, y, scale, angle } = images[i];
-    // The user’s x,y is in preview coordinates =>  
-    // we want to replicate that offset proportionally in final. 
-    // If previewW = 400 but final bounding box is e.g. info0.boundingW,
-    // we can interpret that ratio. 
-    // A simple solution:
-    //   finalX = offsetX + (x / previewW) * (some factor)
-    // But we want the *exact same relative position* the user sees in the preview.
-    //
-    // The simplest approach is to interpret scale=1 as “draw the image at its full raw dimension.” 
-    // Then the user’s x,y in preview is scaled up by the factor 
-    //   (img.width * scale) / (img.width * scale in preview).
-    // But in the preview, “img.width * scale” is displayed in some fraction of  (regionW).
-    //
-    // To keep it straightforward, let’s define:
-    //   ratioX = offscreen.width / previewW
-    //   ratioY = offscreen.height / previewH
-    // Then finalX = (x) * ratioX, finalY = (y) * ratioY
-    // This is a coarse approach if the images are partially overlapping or if the line orientation changes the partial bounding. 
-    // But it’s a workable demonstration. 
-    // For more robust logic, we’d replicate the EXACT 2D transform from the preview.
 
-    const ratioX = (lineOrientation === 'vertical') 
-      ? (info0 && info1) 
-        ? (info0.boundingW + info1.boundingW + 5) / previewW
-        : offscreen.width / previewW
-      : offscreen.width / previewW;
+    // We replicate the relative position from preview:
+    // ratioX = offscreen.totalWidth / previewWidth
+    // ratioY = offscreen.totalHeight / previewHeight
+    // But we only need it horizontally because we’re placing side-by-side,
+    // and we keep the vertical ratio as well.
+    const previewW = canvas.width;
+    const previewH = canvas.height;
 
-    const ratioY = (lineOrientation === 'horizontal')
-      ? (info0 && info1)
-        ? (info0.boundingH + info1.boundingH + 5) / previewH
-        : offscreen.height / previewH
-      : offscreen.height / previewH;
+    const ratioX = offscreen.width / previewW;
+    const ratioY = offscreen.height / previewH;
 
-    // The scaled offset from the user’s transforms
     const finalX = offsetX + x * ratioX;
     const finalY = offsetY + y * ratioY;
 
-    // Now draw
     ctx2.save();
     ctx2.translate(finalX, finalY);
     ctx2.rotate(angle * Math.PI / 180);
 
-    // scale in final = (original dimension) * scale
-    // But we also multiply by ratioX for consistency with user’s overall preview
-    // so it “positions” similarly.
     const finalScaleX = scale * ratioX;
     const finalScaleY = scale * ratioY;
 
@@ -661,26 +543,12 @@ saveBtn.addEventListener('click', () => {
     ctx2.restore();
   }
 
-  // Actually draw image 0 and image 1:
-  let currentOffsetX = 0;
-  let currentOffsetY = 0;
-
-  if (lineOrientation === 'vertical') {
-    // place image0 at offsetX=0, image1 at offsetX=(info0? info0.boundingW : 0)+5
-    if (info0) {
-      drawImageFull(0, 0, 0);
-    }
-    if (info1) {
-      drawImageFull(1, (info0 ? info0.boundingW : 0) + 5, 0);
-    }
-  } else {
-    // horizontal => top/bottom
-    if (info0) {
-      drawImageFull(0, 0, 0);
-    }
-    if (info1) {
-      drawImageFull(1, 0, (info0 ? info0.boundingH : 0) + 5);
-    }
+  // Draw both images
+  if (info0) {
+    drawImageFull(0, 0, 0);
+  }
+  if (info1) {
+    drawImageFull(1, (info0 ? info0.boundingW : 0) + 5, 0);
   }
 
   // Export
@@ -692,9 +560,8 @@ saveBtn.addEventListener('click', () => {
 });
 
 /* =========================================
-   INITIAL SETUP
+   INITIAL DRAW
 ========================================= */
-updateCanvasSize();
 draw();
 </script>
 </body>
