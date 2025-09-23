@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Org Chart - Scrollbars for Entire Chart</title>
+  <title>Org Chart - Improved Version</title>
   <!-- Load Roboto font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
@@ -21,7 +21,7 @@
     body {
       background-color: #f3f4f6;
       color: #333;
-      /* Let the rest be covered by our layout */
+      /* Hide main scroll, we'll use #orgChartOuter for scroll */
       overflow: hidden; 
     }
 
@@ -31,7 +31,7 @@
       top: 0;
       left: 0;
       width: 250px;
-      bottom: 0; 
+      bottom: 0;
       background: #fff;
       overflow-y: auto;
       border-right: 1px solid #ccc;
@@ -51,7 +51,6 @@
     .toolbar-column {
       margin-bottom: 16px;
     }
-
     .control-row {
       display: flex;
       flex-wrap: wrap;
@@ -93,26 +92,33 @@
       opacity: 0.6;
     }
 
-    /* Outer container: now we allow scrollbars for the entire chart */
+    /* Outer container with scrollbars for the chart */
     #orgChartOuter {
       position: absolute;
       top: 0; 
       left: 250px;
       right: 0;
       bottom: 0;
-      /* Provide scrollbars horizontally and vertically as needed */
       overflow: auto; 
       background: #fafafa;
     }
 
-    /* Main chart container: We'll still use transform for zoom levels,
-       but the user can scroll around the 2000x2000 space via #orgChartOuter. */
+    /* Main container for nodes and connectors (fixed large area) */
     #orgChartContainer {
+      position: relative;
       width: 2000px; 
       height: 2000px;
       transform-origin: top left;
       transform: translate(0px, 0px) scale(1);
-      position: relative;
+    }
+    #connectorSVG {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 2000px;
+      height: 2000px;
+      overflow: visible;
+      z-index: 0;
     }
 
     .org-node {
@@ -127,7 +133,7 @@
       cursor: move;
       box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
       user-select: none;
-      z-index: 1;
+      z-index: 10; /* above SVG */
       white-space: normal;
       word-wrap: break-word;
       overflow: hidden;
@@ -160,13 +166,6 @@
       background: transparent;
       cursor: se-resize;
       user-select: none;
-    }
-
-    /* Connectors */
-    .connector-segment {
-      position: absolute;
-      background-color: #333;
-      z-index: 0;
     }
 
     /* Selected node highlight */
@@ -243,6 +242,7 @@
       </div>
     </div>
 
+    <!-- Reverting the Zoom controls back to the side panel -->
     <div class="toolbar-column">
       <h3>Zoom</h3>
       <div class="control-row">
@@ -255,7 +255,6 @@
       </div>
     </div>
 
-    <!-- New "Center" tools block -->
     <div class="toolbar-column">
       <h3>Center</h3>
       <div class="control-row">
@@ -342,7 +341,7 @@
       </div>
     </div>
 
-    <!-- Sticky Edit Panel at the bottom -->
+    <!-- Sticky Edit Panel -->
     <div id="nodeEditPanel">
       <h3>Edit Node</h3>
       <div class="control-row" style="font-size:0.85rem;">
@@ -391,7 +390,10 @@
   <!-- Outer container with scrollbars -->
   <div id="orgChartOuter">
     <!-- The main chart container -->
-    <div id="orgChartContainer"></div>
+    <div id="orgChartContainer">
+      <!-- SVG for connectors -->
+      <svg id="connectorSVG"></svg>
+    </div>
   </div>
 
   <!-- Context menu for right-click actions -->
@@ -401,29 +403,18 @@
     <button id="ctxAutoSizeNode">Auto-Size Node</button>
     <button id="ctxBringFront">Bring to Front</button>
     <button id="ctxSendBack">Send to Back</button>
-    <!-- New node items -->
     <button id="ctxRemoveConnections">Remove Connections</button>
     <button id="ctxCopyNode">Copy Node</button>
     <button id="ctxPasteNode">Paste Node</button>
-    <!-- New background items -->
+    <!-- Background items -->
     <button id="ctxAddNewNode">Add New Node</button>
     <button id="ctxAutoCenterBG">Auto Center Org Chart</button>
   </div>
 
   <script>
-    /**
-     * Node data structure:
-     * {
-     *   id, name, title, department, officeLocation, client, yearsWithCompany,
-     *   x, y, width, height,
-     *   colorHex, colorAlpha (0-100),
-     *   textColor, borderColor, fontSize
-     * }
-     * 
-     * Connectors: { from, to, seg1, seg2 }
-     */
-
-    // Example node data
+    /************************************************
+     * Global Data & Settings
+     ************************************************/
     let orgData = [
       {
         id: 1,
@@ -463,41 +454,49 @@
       },
     ];
 
+    // Node references
     let nodeElements = {};
+
+    // Connectors stored as { from: idNum, to: idNum, line: <svg line> }
     let connectors = [];
 
-    // Keep track of selected nodes
+    // Selections & states
     let selectedNodes = new Set();
-
-    // Zoom transforms
     let currentScale = 1.0;
     let translationX = 0;
     let translationY = 0;
-
-    // We'll clamp zoom to avoid losing track
     const MIN_ZOOM = 0.3;
     const MAX_ZOOM = 3.0;
 
-    // Connector styling
     let connectorColorHex = "#333333";
     let connectorAlpha = 100;
 
-    // Node drag state
     let isDraggingNodes = false;
     let groupOffsets = {}; 
     let isDrawingConnector = false;
     let startNodeId = null;
 
-    // For copy/paste
     let copiedNodeData = null; 
     let contextClickX = 0;
     let contextClickY = 0;
+
+    // Basic snap-to-grid (configurable)
+    let snapGridSize = 10;
 
     // Undo/Redo
     let stateHistory = [];
     let currentHistoryIndex = -1;
 
-    // References to UI elements
+    // UI references
+    const orgChartOuter       = document.getElementById('orgChartOuter');
+    const orgChartContainer   = document.getElementById('orgChartContainer');
+    const connectorSVG        = document.getElementById('connectorSVG');
+    const contextMenu         = document.getElementById('contextMenu');
+    const nodeChooser         = document.getElementById('nodeChooser');
+    const nodesCountEl        = document.getElementById('nodesCount');
+    const connectorsCountEl   = document.getElementById('connectorsCount');
+
+    // Edit panel references
     const editNameInput        = document.getElementById('editNodeName');
     const editTitleInput       = document.getElementById('editNodeTitle');
     const editDeptInput        = document.getElementById('editNodeDepartment');
@@ -509,36 +508,41 @@
     const editTextColorInput   = document.getElementById('editTextColor');
     const editBorderColorInput = document.getElementById('editBorderColor');
     const editFontSizeInput    = document.getElementById('editFontSize');
-
     const deleteNodeBtn        = document.getElementById('deleteNodeBtn');
-    const nodeChooser          = document.getElementById('nodeChooser');
 
-    const nodesCountEl         = document.getElementById('nodesCount');
-    const connectorsCountEl    = document.getElementById('connectorsCount');
-    const contextMenu          = document.getElementById('contextMenu');
+    // Context menu items
     const ctxDeleteNode        = document.getElementById('ctxDeleteNode');
     const ctxAutoSizeNode      = document.getElementById('ctxAutoSizeNode');
     const ctxBringFront        = document.getElementById('ctxBringFront');
     const ctxSendBack          = document.getElementById('ctxSendBack');
-
     const ctxRemoveConnections = document.getElementById('ctxRemoveConnections');
     const ctxCopyNode          = document.getElementById('ctxCopyNode');
     const ctxPasteNode         = document.getElementById('ctxPasteNode');
     const ctxAddNewNode        = document.getElementById('ctxAddNewNode');
     const ctxAutoCenterBG      = document.getElementById('ctxAutoCenterBG');
 
-    const orgChartOuter        = document.getElementById('orgChartOuter');
-    const orgChartContainer    = document.getElementById('orgChartContainer');
+    /************************************************
+     * INIT FUNCTIONS
+     ************************************************/
+    function init() {
+      createOrgNodes(); 
+      updateEditFields();
+      updateStats();
+      pushState("Initial load");
+      loadFromLocalStorage();
+    }
 
     /************************************************
-     * CREATE NODES
+     * CREATE & UPDATE NODES
      ************************************************/
     function createOrgNodes() {
-      // Remove old nodes
-      Object.values(nodeElements).forEach(el => el.parentNode && el.parentNode.removeChild(el));
+      // Clear old node elements
+      Object.values(nodeElements).forEach(el => {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      });
       nodeElements = {};
 
-      // Create new
+      // Create new DOM elements
       orgData.forEach(node => {
         const nodeEl = document.createElement('div');
         nodeEl.classList.add('org-node');
@@ -547,7 +551,6 @@
         nodeEl.style.top    = node.y + 'px';
         nodeEl.style.width  = node.width + 'px';
         nodeEl.style.height = node.height + 'px';
-
         nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
         nodeEl.style.color          = node.textColor;
         nodeEl.style.borderColor    = node.borderColor;
@@ -565,6 +568,7 @@
         orgChartContainer.appendChild(nodeEl);
         nodeElements[node.id] = nodeEl;
 
+        // Make draggable/resizable
         makeDraggableAndResizable(nodeEl, node);
         updateNodeElement(node.id);
       });
@@ -587,26 +591,33 @@
       const clientEl = nodeEl.querySelector('.client');
       const yearsEl  = nodeEl.querySelector('.years');
 
-      // Show or hide fields accordingly
       if (node.department) {
         depEl.style.display = 'block';
         depEl.textContent   = node.department;
-      } else depEl.style.display = 'none';
+      } else {
+        depEl.style.display = 'none';
+      }
 
       if (node.officeLocation) {
         offEl.style.display = 'block';
         offEl.textContent   = "Office: " + node.officeLocation;
-      } else offEl.style.display = 'none';
+      } else {
+        offEl.style.display = 'none';
+      }
 
       if (node.client) {
         clientEl.style.display = 'block';
         clientEl.textContent   = "Client: " + node.client;
-      } else clientEl.style.display = 'none';
+      } else {
+        clientEl.style.display = 'none';
+      }
 
       if (node.yearsWithCompany) {
         yearsEl.style.display = 'block';
         yearsEl.textContent   = "Years: " + node.yearsWithCompany;
-      } else yearsEl.style.display  = 'none';
+      } else {
+        yearsEl.style.display  = 'none';
+      }
 
       // Update styling
       nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
@@ -624,14 +635,12 @@
       const resizeHandle = nodeEl.querySelector('.resize-handle');
 
       nodeEl.addEventListener('mousedown', e => {
-        // If on the resize handle
         if (e.target.classList.contains('resize-handle')) {
           e.stopPropagation();
           startNodeResize(e, nodeEl, nodeData);
           return;
         }
-
-        // Multi-select logic with ctrl
+        // Handle selection logic (Ctrl = multi-select)
         if (e.ctrlKey) {
           if (selectedNodes.has(nodeData.id)) {
             selectedNodes.delete(nodeData.id);
@@ -639,13 +648,11 @@
             selectedNodes.add(nodeData.id);
           }
         } else {
-          // Normal (single) select
           if (!selectedNodes.has(nodeData.id)) {
             unselectAllNodes();
             selectedNodes.add(nodeData.id);
           }
         }
-
         updateSelectedStyles();
         updateEditFields();
         nodeChooser.value = nodeData.id;
@@ -656,9 +663,8 @@
 
     function startNodeDrag(e, nodeData) {
       isDraggingNodes = true;
-      groupOffsets = {};
-      // get local coords
       const { x: mouseX, y: mouseY } = screenToLocal(e.clientX, e.clientY);
+      groupOffsets = {};
       selectedNodes.forEach(selId => {
         const theNode = orgData.find(n => n.id === selId);
         if (!theNode) return;
@@ -692,7 +698,6 @@
         document.removeEventListener('mouseup', mouseUpResize);
         pushState("Resize node");
       }
-
       document.addEventListener('mousemove', mouseMoveResize);
       document.addEventListener('mouseup', mouseUpResize);
     }
@@ -708,9 +713,11 @@
           let newX = mouseX + groupOffsets[selId].offsetX;
           let newY = mouseY + groupOffsets[selId].offsetY;
 
-          // optional snap
-          newX = Math.round(newX / 10) * 10;
-          newY = Math.round(newY / 10) * 10;
+          // snap
+          if (snapGridSize > 0) {
+            newX = Math.round(newX / snapGridSize) * snapGridSize;
+            newY = Math.round(newY / snapGridSize) * snapGridSize;
+          }
 
           theNode.x = newX;
           theNode.y = newY;
@@ -720,7 +727,6 @@
         updateAllConnectors();
       }
     });
-
     document.addEventListener('mouseup', () => {
       if (isDraggingNodes) {
         isDraggingNodes = false;
@@ -730,15 +736,13 @@
 
     /************************************************
      * ZOOM & TRANSFORM
-       (Wheel zoom removed to allow scrolling)
      ************************************************/
-    function screenToLocal(screenX, screenY) {
-      // Because we are still using transform for zoom, we must
-      // invert the transform for local coords
-      const rect = orgChartContainer.getBoundingClientRect();
-      let localX = (screenX - rect.left - translationX) / currentScale;
-      let localY = (screenY - rect.top  - translationY) / currentScale;
-      return { x: localX, y: localY };
+    function setZoom(newScale, reason = "") {
+      if (newScale < MIN_ZOOM) newScale = MIN_ZOOM;
+      if (newScale > MAX_ZOOM) newScale = MAX_ZOOM;
+      currentScale = newScale;
+      applyTransform();
+      pushState(reason);
     }
 
     function applyTransform() {
@@ -747,63 +751,66 @@
         `translate(${translationX}px, ${translationY}px) scale(${currentScale})`;
     }
 
+    function screenToLocal(screenX, screenY) {
+      const rect = orgChartContainer.getBoundingClientRect();
+      let localX = (screenX - rect.left - translationX) / currentScale;
+      let localY = (screenY - rect.top  - translationY) / currentScale;
+      return { x: localX, y: localY };
+    }
+
     /************************************************
-     * CONNECTORS
+     * CONNECTORS (with SVG)
      ************************************************/
     function createConnector(a, b) {
-      const seg1 = document.createElement('div');
-      seg1.classList.add('connector-segment');
-      const seg2 = document.createElement('div');
-      seg2.classList.add('connector-segment');
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("stroke-width", 2);
+      line.setAttribute("stroke", connectorColorHex);
+      line.setAttribute("stroke-opacity", connectorAlpha/100);
+      connectorSVG.appendChild(line);
 
-      seg1.style.backgroundColor = hexAlphaToRGBA(connectorColorHex, connectorAlpha);
-      seg2.style.backgroundColor = hexAlphaToRGBA(connectorColorHex, connectorAlpha);
-
-      orgChartContainer.appendChild(seg1);
-      orgChartContainer.appendChild(seg2);
-
-      const obj = { from:a, to:b, seg1, seg2 };
+      const obj = { from:a, to:b, line };
       connectors.push(obj);
       updateConnectorPositions(obj);
       updateStats();
     }
 
+    // Uses node data for connector positioning
     function updateConnectorPositions(conn) {
-      const { from, to, seg1, seg2 } = conn;
-      const cRect = orgChartContainer.getBoundingClientRect();
-      const elA = nodeElements[from].getBoundingClientRect();
-      const elB = nodeElements[to].getBoundingClientRect();
+      const { from, to, line } = conn;
+      const nodeA = orgData.find(n => n.id === from);
+      const nodeB = orgData.find(n => n.id === to);
+      if (!nodeA || !nodeB) return;
 
+      // Midpoint in local coordinate space
       const centerA = {
-        x: elA.left - cRect.left + elA.width/2,
-        y: elA.top  - cRect.top  + elA.height/2
+        x: nodeA.x + nodeA.width / 2,
+        y: nodeA.y + nodeA.height / 2
       };
       const centerB = {
-        x: elB.left - cRect.left + elB.width/2,
-        y: elB.top  - cRect.top  + elB.height/2
+        x: nodeB.x + nodeB.width / 2,
+        y: nodeB.y + nodeB.height / 2
       };
 
-      // Horizontal line
-      const left1 = Math.min(centerA.x, centerB.x);
-      const width1= Math.abs(centerB.x - centerA.x);
-      seg1.style.left   = left1 + 'px';
-      seg1.style.top    = centerA.y + 'px';
-      seg1.style.width  = width1 + 'px';
-      seg1.style.height = '2px';
-      seg1.style.backgroundColor = hexAlphaToRGBA(connectorColorHex, connectorAlpha);
-
-      // Vertical line
-      const top2   = Math.min(centerA.y, centerB.y);
-      const height2= Math.abs(centerB.y - centerA.y);
-      seg2.style.left   = centerB.x + 'px';
-      seg2.style.top    = top2 + 'px';
-      seg2.style.width  = '2px';
-      seg2.style.height = height2 + 'px';
-      seg2.style.backgroundColor = hexAlphaToRGBA(connectorColorHex, connectorAlpha);
+      line.setAttribute("x1", centerA.x);
+      line.setAttribute("y1", centerA.y);
+      line.setAttribute("x2", centerB.x);
+      line.setAttribute("y2", centerB.y);
+      line.setAttribute("stroke", connectorColorHex);
+      line.setAttribute("stroke-opacity", connectorAlpha / 100);
     }
 
     function updateAllConnectors() {
       connectors.forEach(conn => updateConnectorPositions(conn));
+      updateStats();
+    }
+
+    function clearAllConnectors() {
+      connectors.forEach(c => {
+        if (c.line && c.line.parentNode) {
+          c.line.parentNode.removeChild(c.line);
+        }
+      });
+      connectors = [];
       updateStats();
     }
 
@@ -829,7 +836,7 @@
     }
 
     /************************************************
-     * NODE EDIT PANEL
+     * EDIT PANEL
      ************************************************/
     function updateEditFields() {
       const c = selectedNodes.size;
@@ -871,7 +878,8 @@
       editDeptInput.value        = node.department || "";
       editOfficeInput.value      = node.officeLocation || "";
       editClientInput.value      = node.client || "";
-      editYearsInput.value       = node.yearsWithCompany || "";
+      const yrsVal         = parseInt(editYearsInput.value,10);
+      editYearsInput.value       = isNaN(yrsVal)? node.yearsWithCompany : yrsVal;
       editColorInput.value       = node.colorHex || "#ffffff";
       editAlphaInput.value       = node.colorAlpha;
       editTextColorInput.value   = node.textColor;
@@ -917,19 +925,22 @@
     function deleteSelectedNode() {
       if(selectedNodes.size !== 1)return;
       const idNum = [...selectedNodes][0];
+      // Remove from orgData
       orgData = orgData.filter(n => n.id !== idNum);
-      // Remove connectors referencing that node
+
+      // Remove any connectors referencing that node
       connectors.forEach(conn => {
         if(conn.from === idNum || conn.to === idNum) {
-          if(conn.seg1 && conn.seg1.parentNode) conn.seg1.parentNode.removeChild(conn.seg1);
-          if(conn.seg2 && conn.seg2.parentNode) conn.seg2.parentNode.removeChild(conn.seg2);
+          if(conn.line && conn.line.parentNode) conn.line.parentNode.removeChild(conn.line);
         }
       });
       connectors = connectors.filter(c => c.from !== idNum && c.to !== idNum);
 
+      // Remove DOM
       const el = nodeElements[idNum];
       if(el && el.parentNode) el.parentNode.removeChild(el);
       delete nodeElements[idNum];
+
       unselectAllNodes();
       updateAllConnectors();
       updateNodeDropdown();
@@ -973,83 +984,32 @@
     });
 
     /************************************************
-     * CONTEXT MENU + NEW FUNCTIONS
+     * CONTEXT MENU
      ************************************************/
+    document.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      contextMenu.style.display = 'none';
+      contextClickX = e.clientX;
+      contextClickY = e.clientY;
 
-    // Additional right-click functions:
-    function removeConnectionsFromSelectedNode() {
-      if(selectedNodes.size !== 1) return;
-      const idNum = [...selectedNodes][0];
-      // Remove connectors referencing that node, but do not delete the node
-      connectors.forEach(conn => {
-        if(conn.from === idNum || conn.to === idNum) {
-          if(conn.seg1 && conn.seg1.parentNode) conn.seg1.parentNode.removeChild(conn.seg1);
-          if(conn.seg2 && conn.seg2.parentNode) conn.seg2.parentNode.removeChild(conn.seg2);
+      const nodeDiv = e.target.closest('.org-node');
+      if(nodeDiv) {
+        // If right-click on node
+        const nodeIdNum = parseInt(nodeDiv.id.replace('node-',''),10);
+        if(!selectedNodes.has(nodeIdNum)) {
+          unselectAllNodes();
+          selectedNodes.add(nodeIdNum);
+          updateSelectedStyles();
+          updateEditFields();
+          nodeChooser.value = nodeIdNum;
         }
-      });
-      connectors = connectors.filter(c => c.from !== idNum && c.to !== idNum);
-      updateAllConnectors();
-      pushState("Remove connections");
-    }
+        showContextMenuForNode(e);
+      } else {
+        showContextMenuForBackground(e);
+      }
+    });
 
-    function copySelectedNode() {
-      // Copy the data of the first selected node
-      if(selectedNodes.size !== 1) return;
-      const onlyId = [...selectedNodes][0];
-      const srcNode = orgData.find(n => n.id === onlyId);
-      if(!srcNode) return;
-
-      // Make a shallow copy (except id)
-      copiedNodeData = {
-        name: srcNode.name,
-        title: srcNode.title,
-        department: srcNode.department,
-        officeLocation: srcNode.officeLocation,
-        client: srcNode.client,
-        yearsWithCompany: srcNode.yearsWithCompany,
-        width: srcNode.width,
-        height: srcNode.height,
-        colorHex: srcNode.colorHex,
-        colorAlpha: srcNode.colorAlpha,
-        textColor: srcNode.textColor,
-        borderColor: srcNode.borderColor,
-        fontSize: srcNode.fontSize
-      };
-      pushState("Copy node data");
-    }
-
-    function pasteNodeAt(x, y) {
-      if(!copiedNodeData) return;
-      // create new node from copiedNodeData at x,y
-      const maxId = orgData.reduce((acc,n)=>Math.max(acc,n.id),0);
-      const newId = maxId+1;
-      const nn = {
-        id: newId,
-        name: copiedNodeData.name + " (copy)",
-        title: copiedNodeData.title,
-        department: copiedNodeData.department,
-        officeLocation: copiedNodeData.officeLocation,
-        client: copiedNodeData.client,
-        yearsWithCompany: copiedNodeData.yearsWithCompany,
-        x,
-        y,
-        width: copiedNodeData.width,
-        height: copiedNodeData.height,
-        colorHex: copiedNodeData.colorHex,
-        colorAlpha: copiedNodeData.colorAlpha,
-        textColor: copiedNodeData.textColor,
-        borderColor: copiedNodeData.borderColor,
-        fontSize: copiedNodeData.fontSize
-      };
-      orgData.push(nn);
-      createOrgNodes();
-      updateAllConnectors();
-      updateStats();
-      pushState("Paste node");
-    }
-
-    // Show/hide context menu items dynamically
-    function showContextMenuForNode(e, nodeIdNum) {
+    function showContextMenuForNode(e) {
       // Show node-related items
       ctxDeleteNode.style.display        = "block";
       ctxAutoSizeNode.style.display      = "block";
@@ -1062,17 +1022,15 @@
       ctxAddNewNode.style.display        = "none";
       ctxAutoCenterBG.style.display      = "none";
 
-      // Enable/disable paste button
+      // Enable/disable paste
       ctxPasteNode.disabled = (copiedNodeData === null);
 
-      // Position menu
       contextMenu.style.display = 'block';
       contextMenu.style.left = e.pageX + 'px';
       contextMenu.style.top  = e.pageY + 'px';
     }
-
     function showContextMenuForBackground(e) {
-      // Hide node-related items
+      // Hide node items
       ctxDeleteNode.style.display        = "none";
       ctxAutoSizeNode.style.display      = "none";
       ctxBringFront.style.display        = "none";
@@ -1081,60 +1039,26 @@
       ctxCopyNode.style.display          = "none";
       // Show background items
       ctxAddNewNode.style.display        = "block";
-      ctxPasteNode.style.display         = "block"; 
+      ctxPasteNode.style.display         = "block";
       ctxAutoCenterBG.style.display      = "block";
 
-      // Enable/disable paste button
+      // Enable/disable paste
       ctxPasteNode.disabled = (copiedNodeData === null);
 
-      // Position menu
       contextMenu.style.display = 'block';
       contextMenu.style.left = e.pageX + 'px';
       contextMenu.style.top  = e.pageY + 'px';
     }
 
-    // Listen for right-click
-    document.addEventListener('contextmenu', e => {
-      e.preventDefault();
-
-      // Hide any open menu first
-      contextMenu.style.display = 'none';
-
-      // Capture click coords for paste or new node
-      contextClickX = e.clientX;
-      contextClickY = e.clientY;
-
-      const nodeDiv = e.target.closest('.org-node');
-      if(nodeDiv) {
-        // If node, if not selected, select it
-        const nodeIdNum = parseInt(nodeDiv.id.replace('node-',''),10);
-        if(!selectedNodes.has(nodeIdNum)) {
-          unselectAllNodes();
-          selectedNodes.add(nodeIdNum);
-          updateSelectedStyles();
-          updateEditFields();
-          nodeChooser.value = nodeIdNum;
-        }
-        showContextMenuForNode(e, nodeIdNum);
-      } else {
-        // Background context
-        showContextMenuForBackground(e);
-      }
-    });
-
-    // Hide context menu on normal click
     document.addEventListener('click', e => {
-      // Only hide if we click outside the menu
       if(!e.target.closest('#contextMenu')) {
         contextMenu.style.display = 'none';
-        if(!e.target.closest('.org-node')
-           && !e.target.closest('#sidePanel')) {
+        if(!e.target.closest('.org-node') && !e.target.closest('#sidePanel')) {
           unselectAllNodes();
         }
       }
     });
 
-    // Menu item handlers
     ctxDeleteNode.addEventListener('click', () => {
       deleteSelectedNode();
       contextMenu.style.display = 'none';
@@ -1178,15 +1102,15 @@
      * CONNECTOR HELPER
      ************************************************/
     function handleConnectorClick(nodeId){
-      if(startNodeId===null){
-        startNodeId=nodeId;
+      if(startNodeId === null){
+        startNodeId = nodeId;
       } else {
-        if(startNodeId!==nodeId){
-          createConnector(startNodeId,nodeId);
+        if(startNodeId !== nodeId){
+          createConnector(startNodeId, nodeId);
           pushState("Create connector");
         }
-        startNodeId=null;
-        isDrawingConnector=false;
+        startNodeId = null;
+        isDrawingConnector = false;
       }
     }
 
@@ -1210,54 +1134,41 @@
      * ZOOM (Buttons / Slider)
      ************************************************/
     function zoomIn(){
-      let newScale = currentScale + 0.1;
-      if(newScale > MAX_ZOOM) newScale = MAX_ZOOM;
-      currentScale = newScale;
-      applyTransform();
-      pushState("Zoom in");
+      setZoom(currentScale + 0.1, "Zoom in");
     }
     function zoomOut(){
-      let newScale = currentScale - 0.1;
-      if(newScale < MIN_ZOOM) newScale = MIN_ZOOM;
-      currentScale = newScale;
-      applyTransform();
-      pushState("Zoom out");
+      setZoom(currentScale - 0.1, "Zoom out");
     }
     const zoomSlider = document.getElementById('zoomSlider');
     zoomSlider.addEventListener('input', e => {
       let val = parseInt(e.target.value,10);
       let newScale = val / 100;
-      if(newScale < MIN_ZOOM) newScale = MIN_ZOOM;
-      if(newScale > MAX_ZOOM) newScale = MAX_ZOOM;
-      currentScale = newScale;
-      applyTransform();
-      pushState("Slider zoom");
+      setZoom(newScale, "Slider zoom");
     });
 
     /************************************************
      * AUTO CENTER
      ************************************************/
     function autoCenter() {
-      // Calculate bounding box
       let bounds = getNodesBoundingBox();
-      // If no nodes or invalid bounds, skip
       if (bounds.width <= 0 || bounds.height <= 0) return;
 
       let outerWidth = orgChartOuter.clientWidth;
       let outerHeight= orgChartOuter.clientHeight;
 
-      // Determine a fitting scale (clamped between MIN_ZOOM and MAX_ZOOM)
       let scaleX = outerWidth / bounds.width;
       let scaleY = outerHeight / bounds.height;
       let newScale = Math.min(scaleX, scaleY);
 
-      // Clamp
+      // Add some margin to avoid flush edges
+      newScale *= 0.95;
+
       newScale = Math.min(newScale, MAX_ZOOM);
       newScale = Math.max(newScale, MIN_ZOOM);
 
       currentScale = newScale;
 
-      // Center translation so that the bounding box is in the middle
+      // Center with some offset
       translationX = (outerWidth - bounds.width * newScale)/2 - bounds.minX * newScale;
       translationY = (outerHeight - bounds.height * newScale)/2 - bounds.minY * newScale;
 
@@ -1266,7 +1177,7 @@
     }
 
     /************************************************
-     * UPDATE STATS
+     * STATS
      ************************************************/
     function updateStats(){
       nodesCountEl.textContent = orgData.length;
@@ -1274,7 +1185,7 @@
     }
 
     /************************************************
-     * UTILITIES
+     * NODE UTILS
      ************************************************/
     function addNewNode(x=300, y=200){
       const maxId = orgData.reduce((acc,n)=>Math.max(acc,n.id),0);
@@ -1303,6 +1214,71 @@
       pushState("Add node");
     }
 
+    function removeConnectionsFromSelectedNode() {
+      if(selectedNodes.size !== 1) return;
+      const idNum = [...selectedNodes][0];
+      connectors.forEach(conn => {
+        if(conn.from === idNum || conn.to === idNum) {
+          if(conn.line && conn.line.parentNode) conn.line.parentNode.removeChild(conn.line);
+        }
+      });
+      connectors = connectors.filter(c => c.from !== idNum && c.to !== idNum);
+      updateAllConnectors();
+      pushState("Remove connections");
+    }
+
+    function copySelectedNode() {
+      if(selectedNodes.size !== 1) return;
+      const onlyId = [...selectedNodes][0];
+      const srcNode = orgData.find(n => n.id === onlyId);
+      if(!srcNode) return;
+
+      copiedNodeData = {
+        name: srcNode.name,
+        title: srcNode.title,
+        department: srcNode.department,
+        officeLocation: srcNode.officeLocation,
+        client: srcNode.client,
+        yearsWithCompany: srcNode.yearsWithCompany,
+        width: srcNode.width,
+        height: srcNode.height,
+        colorHex: srcNode.colorHex,
+        colorAlpha: srcNode.colorAlpha,
+        textColor: srcNode.textColor,
+        borderColor: srcNode.borderColor,
+        fontSize: srcNode.fontSize
+      };
+      pushState("Copy node data");
+    }
+
+    function pasteNodeAt(x, y) {
+      if(!copiedNodeData) return;
+      const maxId = orgData.reduce((acc,n)=>Math.max(acc,n.id),0);
+      const newId = maxId+1;
+      const nn = {
+        id: newId,
+        name: copiedNodeData.name + " (copy)",
+        title: copiedNodeData.title,
+        department: copiedNodeData.department,
+        officeLocation: copiedNodeData.officeLocation,
+        client: copiedNodeData.client,
+        yearsWithCompany: copiedNodeData.yearsWithCompany,
+        x, y,
+        width: copiedNodeData.width,
+        height: copiedNodeData.height,
+        colorHex: copiedNodeData.colorHex,
+        colorAlpha: copiedNodeData.colorAlpha,
+        textColor: copiedNodeData.textColor,
+        borderColor: copiedNodeData.borderColor,
+        fontSize: copiedNodeData.fontSize
+      };
+      orgData.push(nn);
+      createOrgNodes();
+      updateAllConnectors();
+      updateStats();
+      pushState("Paste node");
+    }
+
     function autoOrganize(){
       let xStart=300, yStart=100, xGap=200, yGap=150;
       orgData.forEach((n,i)=>{
@@ -1318,12 +1294,18 @@
       const nodeEl = nodeElements[idNum];
       const node   = orgData.find(n=>n.id===idNum);
       if(!nodeEl || !node)return;
+      // Temporarily measure with no wrapping
       nodeEl.style.width='auto';
       nodeEl.style.height='auto';
       nodeEl.style.whiteSpace='nowrap';
-      const newW = nodeEl.offsetWidth+10;
-      const newH = nodeEl.offsetHeight+10;
+
+      // record
+      const newW = nodeEl.offsetWidth + 10;
+      const newH = nodeEl.offsetHeight + 10;
+
+      // revert wrapping
       nodeEl.style.whiteSpace='normal';
+
       node.width=newW;
       node.height=newH;
       nodeEl.style.width=newW+'px';
@@ -1340,15 +1322,9 @@
       pushState("Auto-size selected");
     }
 
-    function clearAllConnectors(){
-      connectors.forEach(c=>{
-        if(c.seg1 && c.seg1.parentNode) c.seg1.parentNode.removeChild(c.seg1);
-        if(c.seg2 && c.seg2.parentNode) c.seg2.parentNode.removeChild(c.seg2);
-      });
-      connectors = [];
-      updateStats();
-    }
-
+    /************************************************
+     * EXPORT & IMPORT
+     ************************************************/
     function exportToPNG(){
       html2canvas(orgChartContainer).then(canvas=>{
         const link=document.createElement('a');
@@ -1366,7 +1342,7 @@
       clone.style.top=-bounds.minY+'px';
       clone.style.width=(bounds.width+100)+'px';
       clone.style.height=(bounds.height+100)+'px';
-      clone.style.transform='translate(0px,0px) scale(1)';
+      clone.style.transform='translate(0,0) scale(1)';
       document.body.appendChild(clone);
 
       html2canvas(clone,{
@@ -1388,29 +1364,15 @@
       });
     }
 
-    function getNodesBoundingBox(){
-      if(orgData.length===0)return{minX:0,minY:0,width:0,height:0};
-      let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
-      orgData.forEach(n=>{
-        const x2=n.x+n.width;
-        const y2=n.y+n.height;
-        if(n.x<minX) minX=n.x;
-        if(n.y<minY) minY=n.y;
-        if(x2>maxX) maxX=x2;
-        if(y2>maxY) maxY=y2;
-      });
-      return{minX,minY,width:maxX-minX,height:maxY-minY};
-    }
-
     function saveChart(){
-      const connectorPairs=connectors.map(c=>({from:c.from,to:c.to}));
-      const data={orgData,connectorPairs};
-      const str=JSON.stringify(data,null,2);
-      const blob=new Blob([str],{type:"application/json"});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;
-      a.download="orgchart.json";
+      const connectorPairs = connectors.map(c=>({from:c.from, to:c.to}));
+      const data = { orgData, connectorPairs };
+      const str = JSON.stringify(data,null,2);
+      const blob = new Blob([str], { type:"application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "orgchart.json";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1418,24 +1380,24 @@
 
     function loadChartFromJSON(str){
       try{
-        const parsed=JSON.parse(str);
-        if(!parsed.orgData||!parsed.connectorPairs){
+        const parsed = JSON.parse(str);
+        if(!parsed.orgData || !parsed.connectorPairs){
           alert("Invalid file format.");
           return;
         }
         clearAllConnectors();
-        orgData=parsed.orgData;
+        orgData = parsed.orgData;
         createOrgNodes();
-        parsed.connectorPairs.forEach(cp=>createConnector(cp.from,cp.to));
+        parsed.connectorPairs.forEach(cp => createConnector(cp.from, cp.to));
         updateAllConnectors();
         pushState("Load from JSON");
       } catch(e){
-        alert("Error reading file:\n"+e);
+        alert("Error reading file:\n"+ e);
       }
     }
 
     /************************************************
-     * STATE HISTORY
+     * HISTORY
      ************************************************/
     function pushState(actionDesc=""){
       const connectorPairs=connectors.map(c=>({from:c.from,to:c.to}));
@@ -1449,12 +1411,11 @@
       stateHistory.push(snapshot);
       currentHistoryIndex=stateHistory.length-1;
 
-      // also store localStorage
       localStorage.setItem('orgChartAutoSave', JSON.stringify(snapshot));
     }
 
     function restoreState(index){
-      if(index<0||index>=stateHistory.length)return;
+      if(index<0 || index>=stateHistory.length)return;
       const saved=stateHistory[index];
       orgData=JSON.parse(JSON.stringify(saved.orgData));
       clearAllConnectors();
@@ -1470,7 +1431,6 @@
         restoreState(currentHistoryIndex);
       }
     }
-
     function redoChart(){
       if(currentHistoryIndex<stateHistory.length-1){
         currentHistoryIndex++;
@@ -1483,7 +1443,7 @@
       if(autoSaved){
         try{
           const parsed=JSON.parse(autoSaved);
-          if(parsed.orgData&&parsed.connectorPairs){
+          if(parsed.orgData && parsed.connectorPairs){
             orgData=parsed.orgData;
             createOrgNodes();
             connectors=[];
@@ -1499,23 +1459,47 @@
     }
 
     /************************************************
-     * INIT
+     * MISC UTILS
      ************************************************/
-    createOrgNodes();
-    updateEditFields();
-    updateStats();
-    pushState("Initial load");
-    loadFromLocalStorage();
+    function getNodesBoundingBox(){
+      if(orgData.length === 0) return {minX:0, minY:0, width:0, height:0};
+      let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+      orgData.forEach(n=>{
+        const x2=n.x+n.width;
+        const y2=n.y+n.height;
+        if(n.x<minX) minX=n.x;
+        if(n.y<minY) minY=n.y;
+        if(x2>maxX) maxX=x2;
+        if(y2>maxY) maxY=y2;
+      });
+      return {
+        minX, 
+        minY, 
+        width: maxX - minX, 
+        height: maxY - minY
+      };
+    }
 
-    // Buttons
+    function hexAlphaToRGBA(hex, alphaVal){
+      if(!hex.startsWith("#")) return "rgba(0,0,0,1)";
+      const r=parseInt(hex.slice(1,3),16);
+      const g=parseInt(hex.slice(3,5),16);
+      const b=parseInt(hex.slice(5,7),16);
+      const a=alphaVal/100;
+      return `rgba(${r},${g},${b},${a})`;
+    }
+
+    /************************************************
+     * EVENT LISTENERS (Buttons)
+     ************************************************/
     document.getElementById('newNodeBtn').addEventListener('click', () => addNewNode());
     document.getElementById('autoOrganizeBtn').addEventListener('click', autoOrganize);
     document.getElementById('autoSizeBtn').addEventListener('click', autoSizeAllNodes);
     document.getElementById('autoSizeSelectedBtn').addEventListener('click', autoSizeSelectedNodes);
 
     document.getElementById('drawConnectorBtn').addEventListener('click',()=>{
-      isDrawingConnector=!isDrawingConnector;
-      if(isDrawingConnector) startNodeId=null;
+      isDrawingConnector = !isDrawingConnector;
+      if(isDrawingConnector) startNodeId = null;
     });
     document.getElementById('clearConnectorsBtn').addEventListener('click',()=>{
       clearAllConnectors();
@@ -1561,24 +1545,24 @@
 
     document.getElementById('autoCenterBtn').addEventListener('click', autoCenter);
 
-    // Searching & Filtering
+    // Node searching & filtering
     const searchInputEl=document.getElementById('searchInput');
     const clearFilterBtnEl=document.getElementById('clearFilterBtn');
-    function filterNodesByNameDept(){
-      const q=searchInputEl.value.toLowerCase().trim();
-      orgData.forEach(n=>{
-        const el=nodeElements[n.id];
-        if(!el)return;
-        const c=(n.name+" "+n.department).toLowerCase();
-        if(q && !c.includes(q)) el.classList.add('hidden');
-        else el.classList.remove('hidden');
-      });
-    }
     searchInputEl.addEventListener('input', filterNodesByNameDept);
     clearFilterBtnEl.addEventListener('click', ()=>{
       searchInputEl.value="";
       filterNodesByNameDept();
     });
+    function filterNodesByNameDept(){
+      const q=searchInputEl.value.toLowerCase().trim();
+      orgData.forEach(n=>{
+        const el=nodeElements[n.id];
+        if(!el) return;
+        const c=(n.name+" "+n.department).toLowerCase();
+        if(q && !c.includes(q)) el.classList.add('hidden');
+        else el.classList.remove('hidden');
+      });
+    }
 
     const attributeSelectEl  =document.getElementById('attributeSelect');
     const attributeInputEl   =document.getElementById('attributeInput');
@@ -1587,7 +1571,7 @@
 
     attributeFilterBtnEl.addEventListener('click',()=>{
       const attr=attributeSelectEl.value;
-      const val =attributeInputEl.value.toLowerCase().trim();
+      const val=attributeInputEl.value.toLowerCase().trim();
       orgData.forEach(n=>{
         const el=nodeElements[n.id];
         if(!el)return;
@@ -1604,8 +1588,8 @@
       });
     });
 
-    // If user clicks on a node while drawing connectors
-    orgChartContainer.addEventListener('click',e=>{
+    // If user clicks a node while drawing connectors
+    orgChartContainer.addEventListener('click', e=>{
       const nodeDiv=e.target.closest('.org-node');
       if(nodeDiv && isDrawingConnector){
         const nodeIdNum=parseInt(nodeDiv.id.replace('node-',''),10);
@@ -1613,15 +1597,10 @@
       }
     });
 
-    // Helper: convert hex+alpha => RGBA
-    function hexAlphaToRGBA(hex, alphaVal){
-      if(!hex.startsWith("#")) return "rgba(0,0,0,1)";
-      const r=parseInt(hex.slice(1,3),16);
-      const g=parseInt(hex.slice(3,5),16);
-      const b=parseInt(hex.slice(5,7),16);
-      const a=alphaVal/100;
-      return `rgba(${r},${g},${b},${a})`;
-    }
+    /************************************************
+     * START
+     ************************************************/
+    init();
   </script>
 </body>
 </html>
