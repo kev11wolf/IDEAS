@@ -1,19 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>My Portfolio Repository</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Portfolio Repository</title>
+  
+  <!-- Google Fonts: Use a modern, neutral font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  
+  <style>
+    /* Reset some default styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f5f7fa; /* Light neutral background */
+      color: #333;
+      line-height: 1.6;
+    }
+
+    /* Header styles */
+    header {
+      background-color: #ffffff;
+      padding: 2rem 1rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    header h1 {
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      color: #222;
+    }
+
+    /* Cards container */
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* Individual card styles */
+    .card {
+      background-color: #ffffff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      transition: box-shadow 0.3s ease, transform 0.3s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      transform: translateY(-5px);
+    }
+
+    /* Card titles */
+    .card h2 {
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: #444;
+    }
+
+    /* Links styling */
+    a {
+      text-decoration: none;
+      color: #007bff;
+      font-weight: 600;
+    }
+
+    a:hover {
+      text-decoration: underline;
+      color: #0056b3;
+    }
+
+    /* About Card specific styles */
+    .about-card {
+      background-color: #e0e0e0;
+      color: #222;
+    }
+
+    /* Responsive header adjustment */
+    @media(max-width: 600px) {
+      header h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
 </head>
 <body>
-<h1>Welcome to My Web Repository</h1>
-<nav>
-  <ul>
-    <li><a href="orgchart.html">Org Chart Tool</a></li>
-    <li><a href="page2.html">Page 2</a></li>
-    <li><a href="blog.html">Blog</a></li>
-    <!-- Add more links as needed -->
-  </ul>
-</nav>
+
+  <!-- Stylish Header -->
+  <header>
+    <h1>My Web Repository</h1>
+  </header>
+
+  <!-- Container for all cards -->
+  <div class="container">
+
+    <!-- About this website card -->
+    <div class="card about-card">
+      <h2>About This Website</h2>
+      <p>This is a centralized hub for all my projects and websites. Use the menu below to navigate to each page or project I have hosted here. Built with a modern, clean design for easy access and beautiful presentation.</p>
+    </div>
+
+    <!-- Navigation cards -->
+    <div class="card">
+      <h2>Navigation</h2>
+      <ul style="list-style: none; padding:0;">
+        <li style="margin-bottom: 0.75rem;"><a href="orgchart.html">Org Chart Tool</a></li>
+        <li style="margin-bottom: 0.75rem;"><a href="page2.html">Page 2</a></li>
+        <li style="margin-bottom: 0.75rem;"><a href="blog.html">Blog</a></li>
+        <!-- Add more links as needed -->
+      </ul>
+    </div>
+  </div>
+
 </body>
 </html>
