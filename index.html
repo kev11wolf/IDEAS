@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Portfolio Repository</title>
   
-  <!-- Google Fonts: Use a modern, neutral font -->
+  <!-- Google Fonts: Modern, neutral font -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   
   <style>
-    /* Reset some default styles */
+    /* Reset styles */
     * {
       box-sizing: border-box;
       margin: 0;
@@ -39,7 +39,7 @@
       color: #222;
     }
 
-    /* Cards container */
+    /* Container styles for cards */
     .container {
       max-width: 1200px;
       margin: 2rem auto;
@@ -49,7 +49,7 @@
       gap: 1.5rem;
     }
 
-    /* Individual card styles */
+    /* Card styles */
     .card {
       background-color: #ffffff;
       padding: 1.5rem;
@@ -63,13 +63,23 @@
       transform: translateY(-5px);
     }
 
-    /* Card titles */
+    /* Card headers */
     .card h2 {
       font-family: 'Inter', sans-serif;
       font-weight: 600;
       font-size: 1.25rem;
       margin-bottom: 1rem;
       color: #444;
+    }
+
+    /* List styles inside cards */
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 0.75rem;
     }
 
     /* Links styling */
@@ -84,13 +94,13 @@
       color: #0056b3;
     }
 
-    /* About Card specific styles */
+    /* Specific style for About card if needed */
     .about-card {
       background-color: #e0e0e0;
       color: #222;
     }
 
-    /* Responsive header adjustment */
+    /* Responsive adjustments */
     @media(max-width: 600px) {
       header h1 {
         font-size: 2rem;
@@ -100,30 +110,62 @@
 </head>
 <body>
 
-  <!-- Stylish Header -->
+  <!-- Header -->
   <header>
     <h1>My Web Repository</h1>
   </header>
 
-  <!-- Container for all cards -->
+  <!-- Main container for categorized cards -->
   <div class="container">
 
-    <!-- About this website card -->
+    <!-- About this website -->
     <div class="card about-card">
       <h2>About This Website</h2>
-      <p>This is a centralized hub for all my projects and websites. Use the menu below to navigate to each page or project I have hosted here. Built with a modern, clean design for easy access and beautiful presentation.</p>
+      <p>This is a centralized hub for all my projects and websites. Use the categories below to find links related to different aspects of my work and interests.</p>
     </div>
-
-    <!-- Navigation cards -->
+<!--
+    <!-- Category: General Navigation -->
+    <!--
     <div class="card">
       <h2>Navigation</h2>
-      <ul style="list-style: none; padding:0;">
-        <li style="margin-bottom: 0.75rem;"><a href="orgchart.html">Org Chart Tool</a></li>
-        <li style="margin-bottom: 0.75rem;"><a href="page2.html">Page 2</a></li>
-        <li style="margin-bottom: 0.75rem;"><a href="blog.html">Blog</a></li>
-        <!-- Add more links as needed -->
+      <ul>
+        <li><a href="orgchart.html">Org Chart Tool</a></li>
+        <li><a href="page2.html">Page 2</a></li>
+        <li><a href="blog.html">Blog</a></li>
+        <!-- Add more links here -->
       </ul>
     </div>
+    -->
+
+    <!-- Category: Camera Editing & Printing -->
+    <div class="card">
+      <h2>Camera & Printing</h2>
+      <ul>
+        <li><a href="cameraimgfilter.html">Photo Editing Tools</a></li>
+        <li><a href="img 4x6 printer.html">Print Services</a></li>
+        <!-- Add your links here -->
+      </ul>
+    </div>
+
+    <!-- Category: Scheduling & Planning -->
+    <div class="card">
+      <h2>Scheduling & Planning</h2>
+      <ul>
+        <li><a href="p6healthchecker.html">P6 Health Checker</a></li>
+        <li><a href="p6 visualizer">Easy Gannt Chart Maker</a></li>
+        <!-- Add your links here -->
+      </ul>
+    </div>
+
+    <!-- Category: Productivity -->
+    <div class="card">
+      <h2>Productivity</h2>
+      <ul>
+        <li><a href="orgchart.html">Org Chart Maker</a></li>
+        <!-- Add your links here -->
+      </ul>
+    </div>
+
   </div>
 
 </body>
