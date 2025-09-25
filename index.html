@@ -2,11 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Portfolio Repository</title>
-  
-  <!-- Google Fonts: Modern, neutral font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   
   <style>
     /* Reset styles */
@@ -106,67 +103,82 @@
         font-size: 2rem;
       }
     }
+
+    /* Denied message */
+    #deniedMessage {
+      padding: 2rem;
+      text-align: center;
+      font-size: 1.25rem;
+      color: red;
+      display: none;
+    }
   </style>
+
+  <script>
+    // Simple password check on load
+    window.onload = function() {
+      const correctPassword = "Kevin"; // Replace with your desired password
+      const userInput = prompt("Please enter the password to view this site:");
+
+      if (userInput === correctPassword) {
+        // If correct, show protected content
+        document.getElementById("protectedContent").style.display = "block";
+      } else {
+        // Otherwise, display 'Access Denied' message
+        document.getElementById("deniedMessage").style.display = "block";
+      }
+    };
+  </script>
 </head>
+
 <body>
 
-  <!-- Header -->
-  <header>
-    <h1>My Web Repository</h1>
-  </header>
+  <!-- Access Denied Message (Hidden by default) -->
+  <div id="deniedMessage">Access Denied</div>
 
-  <!-- Main container for categorized cards -->
-  <div class="container">
+  <!-- Protected Content - Hidden until correct password is entered -->
+  <div id="protectedContent" style="display:none;">
+    <!-- Header -->
+    <header>
+      <h1>My Web Repository</h1>
+    </header>
 
-    <!-- About this website -->
-    <div class="card about-card">
-      <h2>About This Website</h2>
-      <p>This is a centralized hub for all my projects and websites. Use the categories below to find links related to different aspects of my work and interests.</p>
+    <!-- Main container for categorized cards -->
+    <div class="container">
+
+      <!-- About this website -->
+      <div class="card about-card">
+        <h2>About This Website</h2>
+        <p>This is a centralized hub for all my projects and websites. Use the categories below to find links related to different aspects of my work and interests.</p>
+      </div>
+
+      <!-- Category: Camera Editing & Printing -->
+      <div class="card">
+        <h2>Camera & Printing</h2>
+        <ul>
+          <li><a href="cameraimgfilter.html"> Simple Photo Editing Tools</a></li>
+          <li><a href="img 4x6 printer.html">2x 4x6 Print Utility</a></li>
+        </ul>
+      </div>
+
+      <!-- Category: Scheduling & Planning -->
+      <div class="card">
+        <h2>Scheduling & Planning</h2>
+        <ul>
+          <li><a href="p6healthchecker.html">P6 Health Checker</a></li>
+          <li><a href="p6 visualizer">Easy Gannt Chart Maker</a></li>
+        </ul>
+      </div>
+
+      <!-- Category: Productivity -->
+      <div class="card">
+        <h2>Productivity</h2>
+        <ul>
+          <li><a href="orgchart.html">Org Chart Maker</a></li>
+        </ul>
+      </div>
     </div>
-    
-<!--
-    <!-- Category: General Navigation -->
-    <!--
-    <div class="card">
-      <h2>Navigation</h2>
-      <ul>
-        <li><a href="orgchart.html">Org Chart Tool</a></li>
-        <li><a href="page2.html">Page 2</a></li>
-        <li><a href="blog.html">Blog</a></li>
-      </ul>
-    </div>
-    -->
-
-    <!-- Category: Camera Editing & Printing -->
-    <div class="card">
-      <h2>Camera & Printing</h2>
-      <ul>
-        <li><a href="cameraimgfilter.html"> Simple Photo Editing Tools</a></li>
-        <li><a href="img 4x6 printer.html">2x 4x6 Print Utility </a></li>
-        <!-- Add your links here -->
-      </ul>
-    </div>
-
-    <!-- Category: Scheduling & Planning -->
-    <div class="card">
-      <h2>Scheduling & Planning</h2>
-      <ul>
-        <li><a href="p6healthchecker.html">P6 Health Checker</a></li>
-        <li><a href="p6 visualizer">Easy Gannt Chart Maker</a></li>
-        <!-- Add your links here -->
-      </ul>
-    </div>
-
-    <!-- Category: Productivity -->
-    <div class="card">
-      <h2>Productivity</h2>
-      <ul>
-        <li><a href="orgchart.html">Org Chart Maker</a></li>
-        <!-- Add your links here -->
-      </ul>
-    </div>
-
+    <!-- End of protected content -->
   </div>
-
 </body>
 </html>
