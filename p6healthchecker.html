@@ -25,6 +25,10 @@
             color: #495057;
             margin-bottom: 30px;
         }
+        h2 {
+            color: #495057;
+            margin-top: 0;
+        }
         .upload-section {
             text-align: center;
             margin-bottom: 30px;
@@ -58,6 +62,7 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             padding: 20px;
             border-left: 4px solid #007bff;
+            margin-bottom: 20px;
         }
         .card.fail {
             border-left-color: #dc3545;
@@ -112,6 +117,40 @@
 <body>
     <div class="container">
         <h1>P6 Schedule Health Check Suite</h1>
+        
+        <!-- About this Tool Card -->
+        <div class="card">
+            <h2>About this Tool</h2>
+            <p>
+                This tool analyzes a Primavera P6 schedule exported to a CSV file.
+                It applies several metrics – commonly known as “14-Point” or “Schedule Health” checks – 
+                to evaluate overall schedule quality and identify potential flaws.
+            </p>
+            <p><strong>Sample Columns Expected:</strong></p>
+            <ul>
+                <li><code>Activity ID</code>, <code>Activity Name</code></li>
+                <li><code>Original Duration</code>, <code>Remaining Duration</code>, <code>Total Float</code></li>
+                <li><code>Predecessors</code>, <code>Successors</code></li>
+                <li><code>Constraint Type</code>, <code>Actual Start</code>, <code>Actual Finish</code></li>
+                <li><code>Baseline Finish</code>, <code>Primary Resource</code>/<code>Resource Names</code></li>
+            </ul>
+            <p><strong>Metrics and Checks Performed:</strong></p>
+            <ul>
+                <li>Logic (Open Ends), Negative Lags, Lags, Long Lags</li>
+                <li>Relationship Types (FS), Hard/Soft Constraints</li>
+                <li>Large Float, Negative Float, Large Durations</li>
+                <li>Invalid Progress Dates, Resource/Cost Loading</li>
+                <li>Late Activities, Baseline Execution Index (BEI)</li>
+            </ul>
+            <p>
+                Every check calculates a percentage of potential issues in the schedule and compares
+                that result to a typical benchmark or threshold. A result below (or above, where
+                applicable) the threshold is considered a pass, otherwise a fail. The Overall Health
+                Score sums up how many checks passed.
+            </p>
+        </div>
+        <!-- End About this Tool Card -->
+
         <div class="upload-section">
             <input type="file" id="csvFile" accept=".csv">
             <input type="text" id="dataDate" placeholder="Data Date (mm/dd/yyyy)" style="width: 200px;">
@@ -167,7 +206,7 @@
             return new Date(year, parseInt(parts[0]) - 1, parseInt(parts[1]));
         }
 
-        // Parse relationship string e.g., "ACT1:FS:5d,ACT2:SS:-2h"
+        // Parse relationship string e.g. "ACT1:FS:5d,ACT2:SS:-2h"
         function parseRelationships(relStr) {
             if (!relStr) return [];
             return relStr.split(',').map(rel => {
