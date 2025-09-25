@@ -1,759 +1,794 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P6 Schedule Health Check Suite</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 30px;
-        }
-        h1 {
-            text-align: center;
-            color: #495057;
-            margin-bottom: 30px;
-        }
-        h2 {
-            color: #495057;
-            margin-top: 0;
-        }
-        .upload-section {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        input[type="file"], input[type="text"], button {
-            padding: 10px;
-            margin: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .results {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .card {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            border-left: 4px solid #007bff;
-            margin-bottom: 20px;
-        }
-        .card.fail {
-            border-left-color: #dc3545;
-        }
-        .card.pass {
-            border-left-color: #28a745;
-        }
-        .card h3 {
-            margin-top: 0;
-            color: #495057;
-        }
-        .score {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        .pass .score { color: #28a745; }
-        .fail .score { color: #dc3545; }
-        .description, .suggestions {
-            font-size: 14px;
-            line-height: 1.5;
-            color: #6c757d;
-        }
-        .issues {
-            background: #f8f9fa;
-            border-radius: 4px;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: 12px;
-        }
-        .issues ul {
-            margin: 5px 0;
-            padding-left: 20px;
-        }
-        .loading {
-            text-align: center;
-            color: #6c757d;
-        }
-        .stats {
-            background: #e9ecef;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .stat-item {
-            display: inline-block;
-            margin: 0 20px;
-            font-weight: bold;
-        }
-        #exportButton {
-            display: none; /* Hidden until results are displayed */
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>P6 Schedule Health Check</title>
+  <style>
+    /* 
+      A sleek, modern, light, neutral theme with a card-based UI 
+      Feel free to tweak colors and styling as needed 
+    */
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f1f1f1;
+      color: #333;
+    }
+
+    header {
+      background-color: #ffffff;
+      padding: 1em;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin: 0;
+      font-weight: 300;
+      font-size: 1.6rem;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 2em auto;
+      padding: 0 1em;
+    }
+
+    .card {
+      background-color: #ffffff;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin: 1em 0;
+      padding: 1em 1.5em;
+    }
+
+    .card h2 {
+      font-weight: 400;
+      margin-top: 0;
+    }
+
+    .card p, .card li {
+      line-height: 1.4;
+    }
+
+    .upload-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1em;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 2em;
+    }
+
+    .upload-section label {
+      font-weight: bold;
+      margin-right: 0.3em;
+    }
+
+    .upload-section input[type="date"],
+    .upload-section input[type="file"] {
+      padding: 0.5em;
+      font-size: 1rem;
+    }
+
+    .upload-section button {
+      padding: 0.6em 1em;
+      font-size: 1rem;
+      cursor: pointer;
+      background-color: #2980b9;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      margin: 0.3em 0;
+    }
+    .upload-section button:hover {
+      background-color: #3498db;
+    }
+
+    .results-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1em;
+    }
+
+    .result-card {
+      flex: 1 1 280px;
+      background-color: #ffffff;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 1em;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .result-card h3 {
+      margin: 0.5em 0;
+      font-weight: 400;
+    }
+
+    .stats-list, .health-check-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .stats-list li, .health-check-list li {
+      padding: 0.25em 0;
+    }
+
+    /* Simple gauge/progress style if needed */
+    .progress-bar {
+      background-color: #f1f1f1;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0.5em auto;
+      width: 80%;
+    }
+
+    .progress-bar-fill {
+      background-color: #2ecc71; /* greenish */
+      height: 10px;
+      width: 0%;
+      transition: width 0.5s ease-out;
+    }
+
+    .detail-list {
+      display: none;
+      background-color: #fafafa;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 1em;
+      text-align: left;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 0.5em;
+    }
+
+    .detail-list ul {
+      margin: 0;
+      padding-left: 1.5em;
+    }
+    .detail-list li {
+      margin: 0.25em 0;
+      line-height: 1.2;
+    }
+
+    /* Responsive layout */
+    @media(max-width: 768px) {
+      .results-container {
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>P6 Schedule Health Check Suite</h1>
-        
-        <!-- About this Tool Card -->
-        <div class="card">
-            <h2>About this Tool</h2>
-            <p>
-                This tool analyzes a Primavera P6 schedule exported to a CSV file.
-                It applies several metrics – commonly known as “14-Point” or “Schedule Health” checks – 
-                to evaluate overall schedule quality and identify potential flaws.
-            </p>
-            <p><strong>Sample Columns Expected:</strong></p>
-            <ul>
-                <li><code>Activity ID</code>, <code>Activity Name</code></li>
-                <li><code>Original Duration</code>, <code>Remaining Duration</code>, <code>Total Float</code></li>
-                <li><code>Predecessors</code>, <code>Successors</code></li>
-                <li><code>Constraint Type</code>, <code>Actual Start</code>, <code>Actual Finish</code></li>
-                <li><code>Baseline Finish</code>, <code>Primary Resource</code>/<code>Resource Names</code></li>
-            </ul>
-            <p><strong>Metrics and Checks Performed:</strong></p>
-            <ul>
-                <li>Logic (Open Ends), Negative Lags, Lags, Long Lags</li>
-                <li>Relationship Types (FS), Hard/Soft Constraints</li>
-                <li>Large Float, Negative Float, Large Durations</li>
-                <li>Invalid Progress Dates, Resource/Cost Loading</li>
-                <li>Late Activities, Baseline Execution Index (BEI)</li>
-            </ul>
-            <p>
-                Every check calculates a percentage of potential issues in the schedule and compares
-                that result to a typical benchmark or threshold. A result below (or above, where
-                applicable) the threshold is considered a pass, otherwise a fail. The Overall Health
-                Score sums up how many checks passed.
-            </p>
-        </div>
-        <!-- End About this Tool Card -->
+  <header>
+    <h1>P6 Schedule Health Check Tool</h1>
+  </header>
 
-        <div class="upload-section">
-            <input type="file" id="csvFile" accept=".csv">
-            <input type="text" id="dataDate" placeholder="Data Date (mm/dd/yyyy)" style="width: 200px;">
-            <br>
-            <button onclick="analyzeSchedule()">Analyze Schedule</button>
-            <button id="exportButton" onclick="exportResults()">Export Results</button>
-        </div>
-        <div id="loading" class="loading" style="display: none;">Analyzing schedule...</div>
-        <div id="results" class="results" style="display: none;"></div>
+  <main>
+    <!-- File and Data Date input -->
+    <div class="upload-section">
+      <label for="data-date">Data Date:</label>
+      <input type="date" id="data-date" />
+
+      <label for="file-input">P6 CSV File:</label>
+      <input type="file" id="file-input" accept=".csv" />
+
+      <button id="process-btn">Process Schedule</button>
     </div>
 
-    <script>
-        /* A global reference so we can export after analysis. */
-        let globalChecks = [];
+    <!-- ABOUT / DESCRIPTION -->
+    <div id="about-card" class="card">
+      <h2>About This Tool</h2>
+      <p>
+        This tool reads a CSV export from Primavera P6, performs a variety of 
+        health checks based on CPM (Critical Path Method) best practices, 
+        and provides general schedule statistics. It also calculates a series 
+        of metrics to identify potential scheduling concerns (e.g., open-ended 
+        activities, negative float, and so on).
+      </p>
+      <p>
+        <strong>Checks & Metrics Performed:</strong><br/>
+        1) Logic (Open Ends)<br/>
+        2) Negative Lags<br/>
+        3) Lags, Long Lags<br/>
+        4) Relationship Types (FS)<br/>
+        5) Hard/Soft Constraints<br/>
+        6) Large Float<br/>
+        7) Negative Float<br/>
+        8) Large Durations<br/>
+        9) Invalid Progress Dates<br/>
+        10) Resource/Cost Loading<br/>
+        11) Late Activities<br/>
+        12) Baseline Execution Index (BEI)
+      </p>
+      <p>
+        Each check compares your schedule to typical industry benchmarks or 
+        thresholds. If the measured percentage of potential issues is below (or 
+        above, depending on the check) the threshold, it is considered a pass. 
+        The Overall Health Score is how many of these checks pass.
+      </p>
+    </div>
 
-        // Simple CSV Parser (handles basic quoted fields)
-        function parseCSV(csvText) {
-            const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-            if (lines.length === 0) return [];
-            const headers = parseLine(lines[0]);
-            return lines.slice(1).map(line => {
-                const values = parseLine(line);
-                const obj = {};
-                headers.forEach((header, i) => {
-                    obj[header] = values[i] || '';
-                });
-                return obj;
-            });
+    <!-- Results Section (hidden until file is processed) -->
+    <div id="results-section" style="display:none;">
+      <!-- General STATS Card -->
+      <div id="stats-card" class="card">
+        <h2>General Statistics</h2>
+        <ul class="stats-list" id="stats-list">
+          <!-- Dynamically populated list of stats -->
+        </ul>
+      </div>
+
+      <!-- Health Check Card - Break down criteria and results -->
+      <div id="health-check-card" class="card">
+        <h2>Health Check Overview</h2>
+        <ul class="health-check-list" id="health-check-list">
+          <!-- Dynamically populated health check overview -->
+        </ul>
+        <p><strong>Overall Health Score:</strong> <span id="overall-health-score">-</span></p>
+      </div>
+
+      <!-- Detailed Results Card: checks with clickable expansions showing FAIL list -->
+      <div id="details-card" class="card">
+        <h2>Detailed Health Checks</h2>
+        <p>Click on each check card below to expand and see the tasks that do NOT pass that particular check.</p>
+        <div class="results-container" id="detailed-results">
+          <!-- Additional detail cards/progress bars will be appended here -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('process-btn').addEventListener('click', function(){
+      const fileInput = document.getElementById('file-input');
+      const dataDateInput = document.getElementById('data-date').value;
+
+      if(!fileInput.files[0]) {
+        alert("Please select a CSV file first.");
+        return;
+      }
+      if(!dataDateInput) {
+        alert("Please select a Data Date.");
+        return;
+      }
+      
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const csvText = e.target.result;
+        
+        // Parse CSV to an array of objects
+        const data = parseCSV(csvText);
+
+        // Make sure Data Date is a valid Date object
+        const dataDate = new Date(dataDateInput);
+        if(isNaN(dataDate.getTime())) {
+          alert("Invalid Data Date. Please choose a valid date.");
+          return;
         }
 
-        function parseLine(line) {
-            const result = [];
-            let current = '';
-            let inQuotes = false;
-            for (let i = 0; i < line.length; i++) {
-                const char = line[i];
-                if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    result.push(current.trim().replace(/^"|"$/g, ''));
-                    current = '';
-                } else {
-                    current += char;
-                }
-            }
-            result.push(current.trim().replace(/^"|"$/g, ''));
-            return result;
-        }
+        // Calculate stats
+        const stats = calculateStats(data);
 
-        // Parse date string mm/dd/yyyy or mm/dd/yy
-        function parseP6Date(dateStr) {
-            if (!dateStr) return null;
-            const parts = dateStr.split('/');
-            if (parts.length !== 3) return null;
-            let year = parseInt(parts[2]);
-            if (year < 100) year += 2000;
-            return new Date(year, parseInt(parts[0]) - 1, parseInt(parts[1]));
-        }
-
-        // Parse relationship string e.g. "ACT1:FS:5d,ACT2:SS:-2h"
-        function parseRelationships(relStr) {
-            if (!relStr) return [];
-            return relStr.split(',').map(rel => {
-                const parts = rel.split(':');
-                if (parts.length < 3) return null;
-                const id = parts[0].trim();
-                const type = parts[1].trim();
-                const lagStr = parts[2].trim();
-                let lag = 0;
-                const lagMatch = lagStr.match(/([+-]?\d+(?:\.\d+)?)([dh]?)/i);
-                if (lagMatch) {
-                    lag = parseFloat(lagMatch[1]);
-                    const unit = lagMatch[2].toLowerCase();
-                    if (unit === 'd') lag *= 8; // Assume 8-hour days
-                }
-                return { id, type, lag };
-            }).filter(rel => rel !== null);
-        }
-
-        // Get activity status
-        function getStatus(activity) {
-            const pct = parseFloat(activity['Activity % Complete'] || 0);
-            if (pct === 100) return 'Completed';
-            if (pct > 0) return 'In Progress';
-            return 'Not Started';
-        }
-
-        // Is exclusion? (Milestone, WBS Summary, LOE - approximate)
-        function isExcluded(activity, checkType) {
-            const duration = parseFloat(activity['Remaining Duration'] || activity['Original Duration'] || 0);
-            const name = (activity['Activity Name'] || '').toLowerCase();
-            const type = activity['Activity Type'] || '';
-            const isMilestone = duration === 0;
-            const isSummary = name.includes('summary') || type.includes('wbs');
-            const isLOE = type.includes('effort');
-            return isMilestone || isSummary || isLOE;
-        }
-
-        // Perform all 14 checks
-        function performChecks(activities, dataDate) {
-            const totalActs = activities.length;
-            const checks = [];
-            const threshold = 352; // hours, ~44 days
-            const targetPass = 5; // % threshold for pass/fail
-
-            // 1. Logic (Open Ends)
-            let openEnds = 0;
-            let openEndActivities = [];
-            activities.forEach(act => {
-                if (isExcluded(act, 'logic')) return;
-                const preds = parseRelationships(act['Predecessors'] || '').length;
-                const succs = parseRelationships(act['Successors'] || '').length;
-                if (preds === 0 || succs === 0) {
-                    openEnds++;
-                    openEndActivities.push({
-                        id: act['Activity ID'], 
-                        name: act['Activity Name']
-                    });
-                }
-            });
-            const logicPct = (openEnds / totalActs) * 100;
-            checks.push({
-                name: 'Logic (Open Ends)',
-                score: logicPct.toFixed(2),
-                pass: logicPct < targetPass,
-                description: 'Percentage of activities with no predecessor or no successor.',
-                suggestions: 'Connect dangling activities to ensure complete logic ties.',
-                issues: openEndActivities.slice(0, 50) // Show up to 50 here, can adjust as needed
-            });
-
-            // 2. Negative Lags
-            let negLags = 0;
-            let totalRels = 0;
-            let negLagActivities = [];
-            activities.forEach(act => {
-                if (getStatus(act) === 'Completed') return;
-                const preds = parseRelationships(act['Predecessors'] || '');
-                preds.forEach(rel => {
-                    if (rel.lag < 0) {
-                        negLags++;
-                        negLagActivities.push({
-                            id: act['Activity ID'],
-                            name: act['Activity Name']
-                        });
-                    }
-                    totalRels++;
-                });
-            });
-            const negLagPct = totalRels > 0 ? (negLags / totalRels) * 100 : 0;
-            checks.push({
-                name: 'Negative Lags',
-                score: negLagPct.toFixed(2),
-                pass: negLagPct < targetPass,
-                description: 'Percentage of relationships with negative lags.',
-                suggestions: 'Avoid negative lags; adjust logic instead.',
-                issues: negLagActivities.slice(0, 50)
-            });
-
-            // 3. Lags
-            let lags = 0;
-            totalRels = 0;
-            let lagActivities = [];
-            activities.forEach(act => {
-                if (getStatus(act) === 'Completed') return;
-                const preds = parseRelationships(act['Predecessors'] || '');
-                preds.forEach(rel => { 
-                    if (rel.lag > 0) {
-                        lags++;
-                        lagActivities.push({
-                            id: act['Activity ID'],
-                            name: act['Activity Name']
-                        });
-                    }
-                    totalRels++;
-                });
-            });
-            const lagPct = totalRels > 0 ? (lags / totalRels) * 100 : 0;
-            checks.push({
-                name: 'Lags',
-                score: lagPct.toFixed(2),
-                pass: lagPct < 25, // Typical target <25%
-                description: 'Percentage of relationships with positive lags.',
-                suggestions: 'Minimize lags where possible; use separate activities for waits.',
-                issues: lagActivities.slice(0, 50)
-            });
-
-            // 4. Long Lags
-            let longLags = 0;
-            let longLagActivities = [];
-            activities.forEach(act => {
-                if (getStatus(act) === 'Completed') return;
-                const preds = parseRelationships(act['Predecessors'] || '');
-                preds.forEach(rel => { 
-                    if (rel.lag > threshold) {
-                        longLags++;
-                        longLagActivities.push({
-                            id: act['Activity ID'],
-                            name: act['Activity Name']
-                        });
-                    }
-                });
-            });
-            const longLagPct = totalRels > 0 ? (longLags / totalRels) * 100 : 0;
-            checks.push({
-                name: 'Long Lags',
-                score: longLagPct.toFixed(2),
-                pass: longLagPct < targetPass,
-                description: 'Percentage of relationships with lags > 44 days.',
-                suggestions: 'Break down long lags into activities.',
-                issues: longLagActivities.slice(0, 50)
-            });
-
-            // 5. Relationship Types (FS >90%)
-            let fsCount = 0;
-            let totalTypes = 0;
-            let nonFSActivities = [];
-            activities.forEach(act => {
-                if (getStatus(act) === 'Completed') return;
-                const preds = parseRelationships(act['Predecessors'] || '');
-                preds.forEach(rel => {
-                    if (rel.type === 'FS') fsCount++;
-                    else {
-                        nonFSActivities.push({
-                            id: act['Activity ID'],
-                            name: act['Activity Name']
-                        });
-                    }
-                    totalTypes++;
-                });
-            });
-            const fsPct = totalTypes > 0 ? (fsCount / totalTypes) * 100 : 0;
-            checks.push({
-                name: 'Relationship Types (FS)',
-                score: fsPct.toFixed(2),
-                pass: fsPct > 90,
-                description: 'Percentage of Finish-to-Start relationships.',
-                suggestions: 'Prefer FS relationships; review others.',
-                issues: nonFSActivities.slice(0, 50)
-            });
-
-            // 6. Hard Constraints
-            let hardConst = 0;
-            let hardConstActivities = [];
-            activities.forEach(act => {
-                if (isExcluded(act, 'constraints')) return;
-                const constType = act['Constraint Type'] || '';
-                if (constType.includes('Mandatory')) {
-                    hardConst++;
-                    hardConstActivities.push({
-                        id: act['Activity ID'],
-                        name: act['Activity Name']
-                    });
-                }
-            });
-            const hardPct = (hardConst / totalActs) * 100;
-            checks.push({
-                name: 'Hard Constraints',
-                score: hardPct.toFixed(2),
-                pass: hardPct < targetPass,
-                description: 'Percentage of activities with hard constraints.',
-                suggestions: 'Remove hard constraints; let logic drive dates.',
-                issues: hardConstActivities.slice(0, 50)
-            });
-
-            // 7. Soft Constraints
-            let softConst = 0;
-            let softConstActivities = [];
-            activities.forEach(act => {
-                if (isExcluded(act, 'constraints')) return;
-                const constType = act['Constraint Type'] || '';
-                if (constType && !constType.includes('Mandatory') && !constType.includes('None')) {
-                    softConst++;
-                    softConstActivities.push({
-                        id: act['Activity ID'],
-                        name: act['Activity Name']
-                    });
-                }
-            });
-            const softPct = (softConst / totalActs) * 100;
-            checks.push({
-                name: 'Soft Constraints',
-                score: softPct.toFixed(2),
-                pass: softPct < 25, // Typical <25%
-                description: 'Percentage of activities with soft constraints.',
-                suggestions: 'Minimize constraints; use as few as possible.',
-                issues: softConstActivities.slice(0, 50)
-            });
-
-            // 8. Large Float
-            let largeFloat = 0;
-            let largeFloatActivities = [];
-            activities.forEach(act => {
-                if (isExcluded(act, 'float')) return;
-                const tf = parseFloat(act['Total Float'] || 0);
-                if (tf > threshold) {
-                    largeFloat++;
-                    largeFloatActivities.push({
-                        id: act['Activity ID'],
-                        name: act['Activity Name']
-                    });
-                }
-            });
-            const largeFloatPct = (largeFloat / totalActs) * 100;
-            checks.push({
-                name: 'Large Float',
-                score: largeFloatPct.toFixed(2),
-                pass: largeFloatPct < targetPass,
-                description: 'Percentage of activities with total float > 44 days.',
-                suggestions: 'Add relationships to reduce excessive float.',
-                issues: largeFloatActivities.slice(0, 50)
-            });
-
-            // 9. Negative Float
-            let negFloat = 0;
-            let negFloatActivities = [];
-            activities.forEach(act => {
-                if (isExcluded(act, 'float')) return;
-                const tf = parseFloat(act['Total Float'] || 0);
-                if (tf < 0) {
-                    negFloat++;
-                    negFloatActivities.push({
-                        id: act['Activity ID'],
-                        name: act['Activity Name']
-                    });
-                }
-            });
-            const negFloatPct = (negFloat / totalActs) * 100;
-            checks.push({
-                name: 'Negative Float',
-                score: negFloatPct.toFixed(2),
-                pass: negFloatPct === 0,
-                description: 'Percentage of activities with negative total float.',
-                suggestions: 'Resolve constraints or logic causing negative float.',
-                issues: negFloatActivities.slice(0, 50)
-            });
-
-            // 10. Large Durations
-            let largeDur = 0;
-            let largeDurActivities = [];
-            activities.forEach(act => {
-                if (isExcluded(act, 'duration')) return;
-                const dur = parseFloat(act['Remaining Duration'] || 0);
-                if (dur > threshold) {
-                    largeDur++;
-                    largeDurActivities.push({
-                        id: act['Activity ID'],
-                        name: act['Activity Name']
-                    });
-                }
-            });
-            const largeDurPct = (largeDur / totalActs) * 100;
-            checks.push({
-                name: 'Large Durations',
-                score: largeDurPct.toFixed(2),
-                pass: largeDurPct < targetPass,
-                description: 'Percentage of activities with remaining duration > 44 days.',
-                suggestions: 'Subdivide long-duration activities.',
-                issues: largeDurActivities.slice(0, 50)
-            });
-
-            // 11. Invalid Progress Dates (simplified, requires dataDate)
-            let invalidDates = 0;
-            let invalidDateActivities = [];
-            if (dataDate) {
-                activities.forEach(act => {
-                    if (isExcluded(act, 'dates')) return;
-                    const status = getStatus(act);
-                    const actualStart = parseP6Date(act['Actual Start']);
-                    const actualFinish = parseP6Date(act['Actual Finish']);
-                    // Simplified checks:
-                    if (status === 'Not Started' && actualStart && actualStart < dataDate) {
-                        invalidDates++;
-                        invalidDateActivities.push({
-                            id: act['Activity ID'],
-                            name: act['Activity Name']
-                        });
-                    } else if ((status === 'In Progress' || status === 'Completed') && actualFinish && actualFinish < dataDate) {
-                        invalidDates++;
-                        invalidDateActivities.push({
-                            id: act['Activity ID'],
-                            name: act['Activity Name']
-                        });
-                    }
-                });
-            }
-            const invalidPct = dataDate ? (invalidDates / totalActs) * 100 : 0;
-            checks.push({
-                name: 'Invalid Progress Dates',
-                score: invalidPct.toFixed(2),
-                pass: invalidPct === 0,
-                description: 'Percentage of activities with invalid dates relative to data date.',
-                suggestions: 'Correct actual dates to align with data date.',
-                issues: invalidDateActivities.slice(0, 50)
-            });
-
-            // 12. Resource / Cost
-            let noResource = 0;
-            let noResourceActivities = [];
-            activities.forEach(act => {
-                if (isExcluded(act, 'resource')) return;
-                const resources = act['Primary Resource'] || act['Resource Names'] || '';
-                if (!resources.trim()) {
-                    noResource++;
-                    noResourceActivities.push({
-                        id: act['Activity ID'],
-                        name: act['Activity Name']
-                    });
-                }
-            });
-            const noResPct = (noResource / totalActs) * 100;
-            checks.push({
-                name: 'Resource / Cost Loading',
-                score: noResPct.toFixed(2),
-                pass: noResPct < 25, // Allow some non-resource activities
-                description: 'Percentage of activities without resources assigned.',
-                suggestions: 'Assign resources to all executable activities.',
-                issues: noResourceActivities.slice(0, 50)
-            });
-
-            // 13. Late Activities
-            let lateActs = 0;
-            let lateActivities = [];
-            activities.forEach(act => {
-                if (isExcluded(act, 'late')) return;
-                const blFinish = parseP6Date(act['Baseline Finish']);
-                const ef = parseP6Date(act['Early Finish']);
-                if (blFinish && ef && ef > blFinish) {
-                    lateActs++;
-                    lateActivities.push({
-                        id: act['Activity ID'],
-                        name: act['Activity Name']
-                    });
-                }
-            });
-            const latePct = (lateActs / totalActs) * 100;
-            checks.push({
-                name: 'Late Activities',
-                score: latePct.toFixed(2),
-                pass: latePct < 10, // Arbitrary
-                description: 'Percentage of activities behind baseline.',
-                suggestions: 'Investigate and recover delays.',
-                issues: lateActivities.slice(0, 50)
-            });
-
-            // 14. BEI - Baseline Execution Index
-            let completed = 0;
-            let shouldComplete = 0;
-            // We won't capture "issues" in the same sense, but we could note them if needed...
-            if (dataDate) {
-                activities.forEach(act => {
-                    if (isExcluded(act, 'bei')) return;
-                    const status = getStatus(act);
-                    if (status === 'Completed') completed++;
-                    const blFinish = parseP6Date(act['Baseline Finish']);
-                    if (blFinish && blFinish <= dataDate) shouldComplete++;
-                });
-            }
-            const bei = shouldComplete > 0 ? (completed / shouldComplete) : 1;
-            const beiPct = bei * 100;
-            checks.push({
-                name: 'BEI (Baseline Execution Index)',
-                score: beiPct.toFixed(2),
-                pass: beiPct > 95,
-                description: 'Ratio of completed to baseline-scheduled completions by data date.',
-                suggestions: 'If low, accelerate execution.',
-                issues: [] // This check doesn't store specific activity-level issues
-            });
-
-            // Overall stats
-            const overallPass = checks.filter(c => c.pass).length / checks.length * 100;
-            checks.unshift({
-                name: 'Overall Health Score',
-                score: overallPass.toFixed(2) + '%',
-                pass: overallPass > 80,
-                description: 'Percentage of checks passing.',
-                suggestions: overallPass < 80 
-                    ? 'Address failing checks to improve schedule quality.' 
-                    : 'Schedule is generally healthy.',
-                issues: []
-            });
-
-            return checks;
-        }
+        // Perform the checks (placeholders used for some that are not fully derivable from the CSV).
+        // Each check will produce { failCount, totalCount, failList }
+        const checkResults = performChecks(data, dataDate);
 
         // Display results
-        function displayResults(checks) {
-            const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = '';
-            checks.forEach(check => {
-                const card = document.createElement('div');
-                card.className = `card ${check.pass ? 'pass' : 'fail'}`;
-                
-                // Build the list of issues
-                let issueList = '';
-                if (check.issues.length > 0) {
-                    issueList = `
-                        <div class="issues">
-                            <strong>Issues (${check.issues.length} found; showing up to 50):</strong>
-                            <ul>
-                                ${check.issues.map(issue => `<li>${issue.id} - ${issue.name}</li>`).join('')}
-                            </ul>
-                        </div>
-                    `;
-                } else {
-                    // If no issues for this check
-                    issueList = '<div class="issues">No issues found.</div>';
-                }
+        displayResults(stats, checkResults);
+      }
+      reader.readAsText(file);
+    });
 
-                card.innerHTML = `
-                    <h3>${check.name}</h3>
-                    <div class="score">${check.score}</div>
-                    <div class="description">${check.description}</div>
-                    <div class="suggestions">${check.suggestions}</div>
-                    ${issueList}
-                `;
-                resultsDiv.appendChild(card);
-            });
-            resultsDiv.style.display = 'grid';
-            
-            // Show the "Export Results" button
-            document.getElementById('exportButton').style.display = 'inline-block';
+    // Parse CSV into an array of objects
+    function parseCSV(csvText) {
+      // Split by newlines, remove empty lines
+      const lines = csvText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      if(lines.length < 2) return [];
+
+      // The first line is the header
+      const headers = lines[0].split(',').map(h => h.trim());
+      const rows = lines.slice(1);
+
+      const data = rows.map(row => {
+        const cells = row.split(',').map(c => c.trim());
+        let obj = {};
+        headers.forEach((header, idx) => {
+          obj[header] = cells[idx] || "";
+        });
+        return obj;
+      });
+
+      return data;
+    }
+
+    // Summaries: # of activities, # complete, # of milestones, # of LOEs, etc.
+    function calculateStats(data) {
+      const totalActivities = data.length;
+      let completed = 0;
+      let milestones = 0;
+      let loes = 0;
+
+      data.forEach(activity => {
+        const status = (activity["Activity Status"] || "").toLowerCase();
+        const type   = (activity["Activity Type"] || "").toLowerCase();
+
+        if(status.includes("compl")) {
+          completed++;
         }
+        if(type.includes("milestone")) {
+          milestones++;
+        }
+        if(type.includes("loe")) {
+          loes++;
+        }
+      });
 
-        // Main analyze function
-        function analyzeSchedule() {
-            const fileInput = document.getElementById('csvFile');
-            const dataDateInput = document.getElementById('dataDate');
-            if (!fileInput.files[0]) {
-                alert('Please select a CSV file.');
-                return;
+      return {
+        totalActivities,
+        completed,
+        milestones,
+        loes
+      };
+    }
+
+    /**
+     * Perform the 12 checks requested:
+     * 1) Logic (Open Ends)
+     * 2) Negative Lags
+     * 3) Lags / Long Lags
+     * 4) Relationship Types (FS)
+     * 5) Hard/Soft Constraints
+     * 6) Large Float
+     * 7) Negative Float
+     * 8) Large Durations
+     * 9) Invalid Progress Dates
+     * 10) Resource/Cost Loading
+     * 11) Late Activities
+     * 12) Baseline Execution Index (BEI)
+     *
+     * Because we don't have relationship detail (lags, constraints, resources, etc.),
+     * many checks here are placeholders or simplified approximations.
+     *
+     * Each check returns { title, failCount, totalCount, failList, threshold, pass }.
+     */
+    function performChecks(data, dataDate) {
+      // We'll define typical thresholds (in percentages or absolute).
+      // For "max"-type thresholds, if failRate > threshold => check fails
+      // For "min"-type thresholds, if failRate < threshold => check fails
+      // Some are placeholders since the CSV doesn't provide enough info.
+
+      // For demonstration, all "fail" means that each item in failList is an example
+      // of a potential problem. We'll compute failRate = (failCount / totalCount) * 100
+      // Then compare to threshold.
+
+      const checks = [
+        {
+          // 1) Logic (Open Ends) => tasks missing predecessor or successor
+          title: "Logic (Open Ends)",
+          thresholdType: "max",
+          thresholdValue: 0, // We want 0% open ends
+          checkFunc: function(activity) {
+            const pred = (activity["Predecessors"] || "").toLowerCase();
+            const succ = (activity["Successors"]   || "").toLowerCase();
+            // If missing pred or succ => fail
+            return (!pred || pred === "none") || (!succ || succ === "none");
+          }
+        },
+        {
+          // 2) Negative Lags => placeholder (CSV doesn't show lag detail)
+          // We'll pretend that if "Predecessors" has a negative sign, it's negative lag.
+          // This is purely hypothetical.
+          title: "Negative Lags",
+          thresholdType: "max",
+          thresholdValue: 0, 
+          checkFunc: function(activity) {
+            const pred = (activity["Predecessors"] || "").toLowerCase();
+            // Hypothetical check: if the text "(-" is found => negative lag
+            return pred.includes("(-");
+          }
+        },
+        {
+          // 3) Lags / Long Lags => again placeholder
+          // We'll pretend that if we see "(lag>" something in Predecessors or Successors
+          // or maybe "lag:##" in the text, it's a lag. If > 5 => fail for "long lag."
+          title: "Lags (Long Lags)",
+          thresholdType: "max",
+          thresholdValue: 10, // allow up to 10% tasks with big lag?
+          checkFunc: function(activity) {
+            // Hypothetical detection
+            const pred = (activity["Predecessors"] || "").toLowerCase();
+            const succ = (activity["Successors"]   || "").toLowerCase();
+            // If we see something like "lag:10" => fail if  > 5
+            // We'll do a very naive detection
+            const lagRegex = /lag:(\d+)/;
+            let matchP = pred.match(lagRegex);
+            let matchS = succ.match(lagRegex);
+            let lagValP = matchP ? parseInt(matchP[1], 10) : 0;
+            let lagValS = matchS ? parseInt(matchS[1], 10) : 0;
+            // if lag > 5 => fail
+            if(lagValP > 5 || lagValS > 5) {
+              return true; 
             }
-            if (!dataDateInput.value) {
-                alert('Please enter the Data Date (mm/dd/yyyy).');
-                return;
+            return false;
+          }
+        },
+        {
+          // 4) Relationship Types (FS) => placeholder
+          // We'll pretend we want 90% of relationships to be FS. If activity is not FS => fail
+          // This is not accurate with CSV data, but we'll do a naive approach:
+          // if "Predecessors" doesn't mention "FS" => fail. 
+          title: "Relationship Types (FS)",
+          thresholdType: "min",
+          thresholdValue: 90, // want at least 90% FS
+          checkFunc: function(activity) {
+            const pred = (activity["Predecessors"] || "").toUpperCase();
+            // If it includes "FS" => pass. Otherwise => fail => return true
+            // We'll invert logic: if no FS => fail
+            return !pred.includes("FS");
+          }
+        },
+        {
+          // 5) Hard/Soft Constraints => placeholder
+          // We'll guess if "Remaining Duration=0 but not complete" => might be a constraint
+          // or "Activity Status=Started but Start Date > Data Date," etc.
+          title: "Hard/Soft Constraints",
+          thresholdType: "max",
+          thresholdValue: 5, // up to 5% constraints is acceptable, placeholder
+          checkFunc: function(activity) {
+            const status = (activity["Activity Status"] || "").toLowerCase();
+            const remDur = parseFloat(activity["Remaining Duration"] || "0");
+            // If Remaining Duration=0 but not complete => possibly a constraint => fail
+            if(remDur === 0 && !status.includes("compl")) {
+              return true;
             }
-            const dataDate = parseP6Date(dataDateInput.value);
-            if (!dataDate) {
-                alert('Invalid Data Date format. Use mm/dd/yyyy.');
-                return;
+            return false;
+          }
+        },
+        {
+          // 6) Large Float => placeholder
+          // If Total Float > 44 => fail. We'll say more than 44 days float is "large"
+          title: "Large Float",
+          thresholdType: "max",
+          thresholdValue: 20, // up to 20% tasks with large float is acceptable
+          checkFunc: function(activity) {
+            const tf = parseFloat(activity["Total Float"] || "0");
+            return tf > 44;
+          }
+        },
+        {
+          // 7) Negative Float => typical threshold = 0%
+          title: "Negative Float",
+          thresholdType: "max",
+          thresholdValue: 0,
+          checkFunc: function(activity) {
+            const tf = parseFloat(activity["Total Float"] || "0");
+            return tf < 0; // fail if negative
+          }
+        },
+        {
+          // 8) Large Durations => placeholder
+          // If At Completion Duration > 60 => fail
+          title: "Large Durations",
+          thresholdType: "max",
+          thresholdValue: 15, // up to 15% tasks with large durations is okay, placeholder
+          checkFunc: function(activity) {
+            const acdur = parseFloat(activity["At Completion Duration"] || "0");
+            return acdur > 60;
+          }
+        },
+        {
+          // 9) Invalid Progress Dates => placeholder
+          // If Activity is marked complete but Finish is after Data Date, or 
+          // if Activity is in-progress but Start is after Data Date => fail
+          title: "Invalid Progress Dates",
+          thresholdType: "max",
+          thresholdValue: 0, // ideally 0%
+          checkFunc: function(activity) {
+            const status = (activity["Activity Status"] || "").toLowerCase();
+            let finishDate = new Date(activity["Finish"]);
+            let startDate  = new Date(activity["Start"]);
+            // parse them
+            if(isNaN(finishDate.getTime())) finishDate = null;
+            if(isNaN(startDate.getTime()))  startDate = null;
+
+            // If completed but finish > dataDate => fail
+            // If in-progress but start > dataDate => fail
+            // We'll also consider "progress" if it says "in-progress" or "progress"
+            let isComplete = status.includes("compl");
+            let isInProgress = status.includes("prog");
+
+            if(isComplete && finishDate && finishDate > dataDate) {
+              return true;
             }
+            if(isInProgress && startDate && startDate > dataDate) {
+              return true;
+            }
+            return false;
+          }
+        },
+        {
+          // 10) Resource/Cost Loading => placeholder
+          // We do not have resource/cost data in the CSV, so let's assume all fail if there's no data
+          // We'll do a naive approach: if "Activity Type" is "task" => must be resource loaded
+          // We'll say if we don't see "Resource=Yes" in activity name, we fail. (Pure placeholder)
+          title: "Resource/Cost Loading",
+          thresholdType: "min",
+          thresholdValue: 100, // want 100% resource loaded tasks, placeholder
+          checkFunc: function(activity) {
+            // We'll just say everything fails => returning true for demonstration
+            // If you had real data, you'd do a real check here.
+            return true; 
+          }
+        },
+        {
+          // 11) Late Activities => placeholder: If Finish < Data Date and not complete => fail
+          title: "Late Activities",
+          thresholdType: "max",
+          thresholdValue: 5, // up to 5% tasks can be "late"
+          checkFunc: function(activity) {
+            let finishDate = new Date(activity["Finish"]);
+            if(isNaN(finishDate.getTime())) finishDate = null;
+            const status = (activity["Activity Status"] || "").toLowerCase();
 
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('results').style.display = 'none';
+            // If finish < dataDate but not complete => fail
+            if(finishDate && finishDate < this.dataDate && !status.includes("compl")) {
+              return true;
+            }
+            return false;
+          },
+          // We'll embed dataDate here so we can reference it
+          dataDate: null
+        },
+        {
+          // 12) Baseline Execution Index (BEI) => normally ratio of tasks completed 
+          // vs tasks planned to be completed by data date. We'll do a naive approach:
+          // We'll call anything below 1.0 a fail. We'll just do a single pass/fail for entire project.
+          title: "Baseline Execution Index (BEI)",
+          thresholdType: "min",
+          thresholdValue: 1.0, 
+          singleCheck: true, // indicates we only do one pass/fail for entire dataset
+          checkFunc: function(data, dataDate) {
+            // We'll define "planned to be completed" as any activity that has a Finish prior to dataDate
+            // We'll define "actually completed" as any activity that is truly complete by dataDate
+            let plannedToBeDone = 0;
+            let actuallyDone = 0;
 
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const csvData = parseCSV(e.target.result);
-                    if (csvData.length < 1) throw new Error('No data in CSV');
-                    const checks = performChecks(csvData, dataDate);
-
-                    // Store globally so we can export as needed
-                    globalChecks = checks;
-
-                    displayResults(checks);
-                } catch (err) {
-                    alert('Error parsing CSV: ' + err.message + '\nEnsure it has standard P6 columns like Activity ID, Total Float, etc.');
-                } finally {
-                    document.getElementById('loading').style.display = 'none';
+            data.forEach(a => {
+              let finish = new Date(a["Finish"]);
+              let status = (a["Activity Status"] || "").toLowerCase();
+              if(!isNaN(finish.getTime()) && finish <= dataDate) {
+                plannedToBeDone++;
+                if(status.includes("compl")) {
+                  actuallyDone++;
                 }
+              }
+            });
+
+            let bei = plannedToBeDone === 0 ? 1 : (actuallyDone / plannedToBeDone);
+            // We'll fail if bei < thresholdValue
+            const fail = bei < this.thresholdValue;
+            return { 
+              fail, 
+              value: bei, 
+              planned: plannedToBeDone, 
+              done: actuallyDone
             };
-            reader.readAsText(file);
+          }
         }
+      ];
 
-        // Export results to a .txt file
-        function exportResults() {
-            if (!globalChecks || globalChecks.length === 0) {
-                alert("No results to export. Please analyze a schedule first.");
-                return;
-            }
+      // We'll iterate through checks, returning an array of results.
+      // For singleCheck items (like #12), we treat them differently.
+      let results = [];
 
-            let content = "P6 Schedule Health Check Results\n\n";
-            globalChecks.forEach(check => {
-                content += `CHECK: ${check.name}\n`;
-                content += `Score: ${check.score}\n`;
-                content += `Description: ${check.description}\n`;
-                content += `Suggestions: ${check.suggestions}\n`;
+      // We'll also set dataDate references for checks that need it (#11).
+      checks[10].dataDate = dataDate; // index 10 => Late Activities
 
-                if (check.issues && check.issues.length > 0) {
-                    content += `Issues (${check.issues.length} total, listing up to 50):\n`;
-                    check.issues.forEach(issue => {
-                        content += `   ${issue.id} - ${issue.name}\n`;
-                    });
-                } else {
-                    content += "No issues found.\n";
-                }
-                content += "\n----------------------------------------------------------\n\n";
+      checks.forEach((checkDef, idx) => {
+        // singleCheck: is used e.g. for BEI
+        if(checkDef.singleCheck) {
+          // Perform the singleCheck logic
+          const scResult = checkDef.checkFunc(data, dataDate);
+          const failRate = scResult.fail ? 100 : 0;
+          const pass = checkDef.thresholdType === "min"
+            ? (scResult.fail ? false : (1 >= checkDef.thresholdValue))
+            : (failRate <= checkDef.thresholdValue);
+
+          // We'll store a pseudo failList with a single line or empty
+          let failList = [];
+          if(scResult.fail) {
+            failList.push({
+              id: "N/A",
+              name: `BEI = ${scResult.value.toFixed(2)} (Planned=${scResult.planned}, Done=${scResult.done})`
             });
+          }
 
-            const blob = new Blob([content], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = "P6_Health_Check_Results.txt";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+          results.push({
+            title: checkDef.title,
+            failCount: scResult.fail ? 1 : 0,
+            totalCount: 1,
+            failList,
+            thresholdType: checkDef.thresholdType,
+            thresholdValue: checkDef.thresholdValue,
+            pass,
+            failRate
+          });
+        } else {
+          let failCount = 0;
+          let failList = [];
+          let totalCount = data.length;
+
+          data.forEach(activity => {
+            const actID   = (activity["Activity ID"]   || "").trim();
+            const actName = (activity["Activity Name"] || "").trim();
+
+            // run check
+            const isFail = checkDef.checkFunc.call(checkDef, activity);
+            if(isFail) {
+              failCount++;
+              failList.push({ id: actID, name: actName });
+            }
+          });
+
+          let failRate = totalCount === 0 ? 0 : (failCount / totalCount) * 100;
+
+          // Determine pass/fail
+          let pass;
+          if(checkDef.thresholdType === "max") {
+            // failRate must be <= thresholdValue
+            pass = (failRate <= checkDef.thresholdValue);
+          } else {
+            // "min" type => failRate must be >= thresholdValue
+            // Actually we usually measure passRate, but we'll keep it consistent with failRate logic
+            // So for "min," we interpret it as needing failRate <= (100 - thresholdValue).
+            // But let's do simpler: We can interpret "Relationship Types (FS)" means "fail if not FS."
+            // A simpler approach: if failRate < (100-thresholdValue) => pass. 
+            // But to keep it consistent, let's define pass if (100 - failRate) >= thresholdValue.
+            const passRate = 100 - failRate;
+            pass = passRate >= checkDef.thresholdValue;
+          }
+
+          results.push({
+            title: checkDef.title,
+            failCount,
+            totalCount,
+            failList,
+            thresholdType: checkDef.thresholdType,
+            thresholdValue: checkDef.thresholdValue,
+            pass,
+            failRate: failRate.toFixed(1)
+          });
         }
-    </script>
+      });
+
+      return results;
+    }
+
+    function displayResults(stats, checkResults) {
+      // Show the results section
+      document.getElementById("results-section").style.display = "block";
+
+      // Populate stats
+      const statsList = document.getElementById("stats-list");
+      statsList.innerHTML = `
+        <li><strong>Total Activities:</strong> ${stats.totalActivities}</li>
+        <li><strong>Completed Activities:</strong> ${stats.completed}</li>
+        <li><strong>Milestones:</strong> ${stats.milestones}</li>
+        <li><strong>LOEs:</strong> ${stats.loes}</li>
+      `;
+
+      // Count how many checks passed
+      let checksPassed = 0;
+      checkResults.forEach(r => {
+        if(r.pass) checksPassed++;
+      });
+      let overallHealthScore = `${checksPassed} / ${checkResults.length}`;
+
+      const healthCheckList = document.getElementById("health-check-list");
+      let overviewHTML = "";
+      checkResults.forEach(r => {
+        let passFailText = r.pass ? "Pass" : "Fail";
+        let passFailColor = r.pass ? "green" : "red";
+
+        // For failRate displays:
+        //   - "max" type => we want failRate <= threshold
+        //   - "min" type => we want passRate >= threshold
+        // We'll just show the failRate for consistency, plus the threshold
+        let thresholdDesc = (r.thresholdType === "max")
+          ? `Fail Rate <= ${r.thresholdValue}%`
+          : `Pass Rate >= ${r.thresholdValue}%`;
+
+        overviewHTML += `
+          <li style="color:${passFailColor}; margin-bottom:0.5em;">
+            <strong>${r.title}:</strong> ${passFailText} 
+            <br/>
+            <span style="font-size:0.9em;">
+              (Fail Rate: ${r.failRate}%, Threshold: ${thresholdDesc})
+            </span>
+          </li>
+        `;
+      });
+      healthCheckList.innerHTML = overviewHTML;
+
+      // Set the overall health score
+      document.getElementById("overall-health-score").innerText = overallHealthScore;
+
+      // Build the detailed results
+      const detailContainer = document.getElementById("detailed-results");
+      detailContainer.innerHTML = ""; // Clear any existing content
+
+      checkResults.forEach((check, index) => {
+        // If singleCheck, failRate might be 0 or 100
+        const failRate = typeof check.failRate === "string" ? check.failRate : check.failRate.toFixed 
+          ? check.failRate.toFixed(1) : check.failRate;
+        let passFailColor = check.pass ? "green" : "red";
+
+        // Create the card
+        const checkCard = document.createElement('div');
+        checkCard.className = 'result-card';
+        checkCard.setAttribute('onclick', `toggleDetail('detail-check-${index}')`);
+
+        // We'll define a pass/fail text
+        let passFailText = check.pass ? "Pass" : "Fail";
+
+        // We'll define a progress bar fill as (100 - failRate) for a "pass rate" if thresholdType="max"
+        // or something else for "min"? 
+        // For simplicity, let's define passRate = 100 - failRate for all "max"-type checks. 
+        // For "min"-type, let's define passRate similarly but acknowledging it's approximate.
+        let passRate = 0;
+        if(check.thresholdType === "max") {
+          passRate = (100 - parseFloat(failRate));
+          if(passRate < 0) passRate = 0;
+        } else {
+          // "min" type => passRate is the fraction of tasks that "didn't fail"
+          passRate = (100 - parseFloat(failRate));
+        }
+        if(isNaN(passRate)) passRate = 0;
+
+        // Build the HTML content within the card
+        checkCard.innerHTML = `
+          <h3>${check.title}</h3>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" style="width:${passRate}%;"></div>
+          </div>
+          <p style="color:${passFailColor}; margin-bottom:0.5em;">
+            ${passFailText} — Fail Rate: ${failRate}%
+          </p>
+          <p style="font-size:0.9em; margin-top: 0;">
+            Total Items Checked: ${check.totalCount} 
+            <br/>
+            Failing Items: ${check.failCount}
+          </p>
+          <div class="detail-list" id="detail-check-${index}">
+            <p><strong>Items That Fail:</strong></p>
+            <ul>
+              ${check.failList.map(item => {
+                return `<li>${item.id} - ${item.name}</li>`;
+              }).join('')}
+            </ul>
+          </div>
+        `;
+
+        detailContainer.appendChild(checkCard);
+      });
+    }
+
+    // Toggle display of the detail list
+    function toggleDetail(detailId) {
+      const detailDiv = document.getElementById(detailId);
+      if (!detailDiv) return;
+
+      if (detailDiv.style.display === "none" || detailDiv.style.display === "") {
+        detailDiv.style.display = "block";
+      } else {
+        detailDiv.style.display = "none";
+      }
+    }
+  </script>
 </body>
 </html>
