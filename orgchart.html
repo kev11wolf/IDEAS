@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Org Chart - Improved Version</title>
   <!-- Load Roboto font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
-
-  <!-- Libraries for Export to PDF/PNG: html2canvas + jsPDF -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <!-- Library for JPG Export: html2canvas -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
   <style>
     body, button, input, .org-node, select {
       font-family: 'Roboto', sans-serif;
@@ -21,25 +18,22 @@
     body {
       background-color: #f3f4f6;
       color: #333;
-      /* Hide main scroll, we'll use #orgChartOuter for scroll */
-      overflow: hidden; 
+      overflow: hidden; /* We'll rely on #orgChartOuter for scrolling */
     }
-
-    /* Left side panel with tools */
+    /* Fixed toolbar on the left */
     #sidePanel {
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       width: 250px;
       bottom: 0;
+      z-index: 9999;
       background: #fff;
       overflow-y: auto;
       border-right: 1px solid #ccc;
       box-shadow: 2px 0 4px rgba(0,0,0,0.1);
-      z-index: 9999;
       padding: 8px;
     }
-
     #sidePanel h3 {
       margin-top: 0;
       font-size: 1rem;
@@ -47,7 +41,6 @@
       padding-bottom: 4px;
       margin-bottom: 8px;
     }
-
     .toolbar-column {
       margin-bottom: 16px;
     }
@@ -58,7 +51,6 @@
       margin-bottom: 6px;
       align-items: center;
     }
-
     #sidePanel button,
     #sidePanel input[type="color"],
     #sidePanel input[type="range"],
@@ -85,42 +77,41 @@
     .opacity-range {
       width: 60px;
     }
-
     /* Disabled style */
-    input[disabled], button[disabled], select[disabled] {
+    input[disabled],
+    button[disabled],
+    select[disabled] {
       cursor: not-allowed;
       opacity: 0.6;
     }
-
-    /* Outer container with scrollbars for the chart */
+    /* 50px buffer to the right of the fixed toolbar */
     #orgChartOuter {
-      position: absolute;
-      top: 0; 
-      left: 250px;
+      position: fixed;
+      top: 0;
+      left: 280px; /* 250px for toolbar + 50px buffer */
       right: 0;
       bottom: 0;
-      overflow: auto; 
+      overflow: auto;
       background: #fafafa;
     }
-
-    /* Main container for nodes and connectors (fixed large area) */
+    /* Main container for nodes and connectors */
     #orgChartContainer {
       position: relative;
-      width: 2000px; 
+      width: 2000px;
       height: 2000px;
       transform-origin: top left;
       transform: translate(0px, 0px) scale(1);
+      background: #FFFFFF; /* white background for the chart container */
     }
     #connectorSVG {
       position: absolute;
       top: 0;
       left: 0;
-      width: 2000px;
-      height: 2000px;
+      width: 20000px;
+      height: 20000px;
       overflow: visible;
       z-index: 0;
     }
-
     .org-node {
       position: absolute;
       min-height: 40px;
@@ -137,8 +128,8 @@
       white-space: normal;
       word-wrap: break-word;
       overflow: hidden;
+      background: #ffffff; /* ensure node backgrounds are white too */
     }
-
     .org-node .name {
       font-weight: bold;
       margin-bottom: 4px;
@@ -154,9 +145,8 @@
       font-size: 12px;
       color: #888;
       margin-top: 2px;
-      display: none; 
+      display: none;
     }
-
     .resize-handle {
       position: absolute;
       bottom: 0;
@@ -167,13 +157,11 @@
       cursor: se-resize;
       user-select: none;
     }
-
     /* Selected node highlight */
     .org-node.selected {
       outline: 2px solid blue;
       font-weight: bold;
     }
-
     /* Context menu */
     #contextMenu {
       position: absolute;
@@ -198,11 +186,9 @@
     #contextMenu button:hover {
       background: #eee;
     }
-
     .hidden {
       display: none;
     }
-
     /* Sticky panel for node editing at bottom of sidePanel */
     #nodeEditPanel {
       position: sticky;
@@ -219,205 +205,284 @@
       padding-bottom: 4px;
       font-size: 1rem;
     }
+    /* Print adjustments: remove or override fixed dimensions and transformations */
+    @media print {
+      body {
+        overflow: visible !important;
+      }
+      #orgChartOuter {
+        position: static !important;
+        margin-left: 0 !important;
+        overflow: visible !important;
+      }
+      #sidePanel {
+        display: none; /* or keep if you want the toolbar in print */
+      }
+      #orgChartContainer {
+        width: auto !important;
+        height: auto !important;
+        transform: none !important;
+        margin-left: 0 !important;
+      }
+    }
   </style>
 </head>
 <body>
-  <div id="sidePanel">
-    <div class="toolbar-column">
-      <h3>Nodes</h3>
-      <div class="control-row">
-        <button id="newNodeBtn">New Node</button>
-        <button id="autoOrganizeBtn">Auto-Organize</button>
-      </div>
-      <div class="control-row">
-        <button id="autoSizeBtn">Auto Size All</button>
-        <button id="autoSizeSelectedBtn">Auto Size Sel</button>
-      </div>
-      <div class="control-row">
-        <button id="deleteNodeBtn">Delete Node</button>
-      </div>
-      <div class="control-row" style="font-size:0.85rem;">
-        <label for="nodeChooser">Edit Node:</label>
-        <select id="nodeChooser" style="max-width:100%;"></select>
-      </div>
+<div id="sidePanel">
+  <div class="toolbar-column">
+    <h3>Nodes</h3>
+    <div class="control-row">
+      <button id="newNodeBtn">New Node</button>
+      <button id="autoOrganizeBtn">Auto-Organize</button>
     </div>
-
-    <!-- Reverting the Zoom controls back to the side panel -->
-    <div class="toolbar-column">
-      <h3>Zoom</h3>
-      <div class="control-row">
-        <button id="zoomOutBtn">- Zoom</button>
-        <button id="zoomInBtn">+ Zoom</button>
-      </div>
-      <div class="control-row">
-        <label for="zoomSlider">Zoom Slider:</label>
-        <input type="range" id="zoomSlider" min="10" max="300" value="100" />
-      </div>
+    <div class="control-row">
+      <button id="autoSizeBtn">Auto Size All</button>
+      <button id="autoSizeSelectedBtn">Auto Size Sel</button>
     </div>
-
-    <div class="toolbar-column">
-      <h3>Center</h3>
-      <div class="control-row">
-        <button id="autoCenterBtn">Auto Center</button>
-      </div>
+    <div class="control-row">
+      <button id="deleteNodeBtn" disabled>Delete Node</button>
     </div>
-
-    <div class="toolbar-column">
-      <h3>Connectors & Colors</h3>
-      <div class="control-row">
-        <button id="drawConnectorBtn">Connector</button>
-        <button id="clearConnectorsBtn">Clear</button>
-      </div>
-      <div class="control-row">
-        <label>Color:</label>
-        <input type="color" id="connectorColorInput" value="#333333" />
-        <input type="range" id="connectorAlphaRange" class="opacity-range" min="0" max="100" value="100" />
-      </div>
+    <div class="control-row">
+      <button id="selectAllBtn">Select All Nodes</button>
     </div>
-
-    <div class="toolbar-column">
-      <h3>Load/Save & Exports</h3>
-      <div class="control-row">
-        <button id="saveChartBtn">Save</button>
-        <button id="loadChartBtn">Load</button>
-        <input type="file" id="loadFile" accept="application/json" style="display:none;" />
-      </div>
-      <div class="control-row">
-        <button id="exportPNGBtn">Export PNG</button>
-        <button id="exportPDFBtn">Print/PDF</button>
-        <!-- New Print Preview Button -->
-        <button id="printPreviewBtn">Print Preview</button>
-      </div>
-    </div>
-
-    <div class="toolbar-column">
-      <h3>Z-Index</h3>
-      <div class="control-row">
-        <button id="bringFrontBtn">Front</button>
-        <button id="sendBackBtn">Back</button>
-      </div>
-    </div>
-
-    <div class="toolbar-column">
-      <h3>History & Create</h3>
-      <div class="control-row">
-        <button id="undoBtn">Undo</button>
-        <button id="redoBtn">Redo</button>
-      </div>
-      <div class="control-row">
-        <div id="dndTemplate" draggable="true" 
-          style="width:100px;height:30px;text-align:center;line-height:30px;background:#ddd;cursor:grab;border:1px dashed #333;">
-          Drag Node
-        </div>
-      </div>
-    </div>
-
-    <div class="toolbar-column">
-      <h3>Search & Filter</h3>
-      <div class="control-row">
-        <input type="text" id="searchInput" placeholder="Name/Dept" style="flex:1;" />
-        <button id="clearFilterBtn">Clear</button>
-      </div>
-      <div class="control-row" style="font-size: 0.85rem;">
-        <label for="attributeSelect">Attr:</label>
-        <select id="attributeSelect">
-          <option value="name">Name</option>
-          <option value="department">Department</option>
-          <option value="officeLocation">Office</option>
-          <option value="client">Client</option>
-          <option value="title">Title</option>
-        </select>
-      </div>
-      <div class="control-row">
-        <input type="text" id="attributeInput" placeholder="Filter text" style="flex:1;" />
-        <button id="attributeFilterBtn">Filter</button>
-        <button id="clearAttributeFilterBtn">Clear</button>
-      </div>
-    </div>
-
-    <div class="toolbar-column" style="margin-bottom:50px;">
-      <h3>Stats</h3>
-      <div class="control-row" style="font-size:0.9rem;">
-        <span>Nodes: <span id="nodesCount">0</span></span>
-        <span>Connectors: <span id="connectorsCount">0</span></span>
-      </div>
-    </div>
-
-    <!-- Sticky Edit Panel -->
-    <div id="nodeEditPanel">
-      <h3>Edit Node</h3>
-      <div class="control-row" style="font-size:0.85rem;">
-        <label>Name:</label>
-        <input type="text" id="editNodeName" style="width:130px;" />
-      </div>
-      <div class="control-row" style="font-size:0.85rem;">
-        <label>Title:</label>
-        <input type="text" id="editNodeTitle" style="width:130px;" />
-      </div>
-      <div class="control-row" style="font-size:0.85rem;">
-        <label>Dept:</label>
-        <input type="text" id="editNodeDepartment" style="width:130px;" />
-      </div>
-      <div class="control-row" style="font-size:0.85rem;">
-        <label>Color:</label>
-        <input type="color" id="editNodeColor" value="#ffffff" />
-        <input type="range" id="editNodeAlpha" class="opacity-range" min="0" max="100" value="100" />
-      </div>
-      <div class="control-row" style="font-size:0.85rem;">
-        <label>Office:</label>
-        <input type="text" id="editNodeOffice" style="width:60px;" />
-        <label>Client:</label>
-        <input type="text" id="editNodeClient" style="width:60px;" />
-      </div>
-      <div class="control-row" style="font-size:0.85rem;">
-        <label>Years:</label>
-        <input type="number" id="editNodeYears" min="0" style="width:60px;" />
-      </div>
-      <div class="control-row" style="font-size:0.85rem;">
-        <label>TxtC:</label>
-        <input type="color" id="editTextColor" value="#000000" />
-        <label>Bord:</label>
-        <input type="color" id="editBorderColor" value="#333333" />
-      </div>
-      <div class="control-row" style="font-size:0.85rem;">
-        <label>F.Size:</label>
-        <input type="number" id="editFontSize" min="8" max="30" value="14" style="width:50px;" />
-      </div>
-      <div class="control-row" style="font-size: 0.85rem; margin-top:6px;">
-        <button id="deleteNodeBtn" disabled>Delete Node</button>
-      </div>
+    <div class="control-row" style="font-size:0.85rem;">
+      <label for="nodeChooser">Edit Node:</label>
+      <select id="nodeChooser" style="max-width:100%;">
+        <option value="">Select a node...</option>
+      </select>
     </div>
   </div>
-
-  <!-- Outer container with scrollbars -->
-  <div id="orgChartOuter">
-    <!-- The main chart container -->
-    <div id="orgChartContainer">
-      <!-- SVG for connectors -->
-      <svg id="connectorSVG"></svg>
+  <div class="toolbar-column">
+    <h3>Zoom</h3>
+    <div class="control-row">
+      <button id="zoomOutBtn">- Zoom</button>
+      <button id="zoomInBtn">+ Zoom</button>
+    </div>
+    <div class="control-row">
+      <label for="zoomSlider">Zoom Slider:</label>
+      <input type="range" id="zoomSlider" min="10" max="300" value="100">
     </div>
   </div>
-
-  <!-- Context menu for right-click actions -->
-  <div id="contextMenu">
-    <!-- Existing node items -->
-    <button id="ctxDeleteNode">Delete Node</button>
-    <button id="ctxAutoSizeNode">Auto-Size Node</button>
-    <button id="ctxBringFront">Bring to Front</button>
-    <button id="ctxSendBack">Send to Back</button>
-    <button id="ctxRemoveConnections">Remove Connections</button>
-    <button id="ctxCopyNode">Copy Node</button>
-    <button id="ctxPasteNode">Paste Node</button>
-    <!-- Background items -->
-    <button id="ctxAddNewNode">Add New Node</button>
-    <button id="ctxAutoCenterBG">Auto Center Org Chart</button>
+  <div class="toolbar-column">
+    <h3>Center</h3>
+    <div class="control-row">
+      <button id="autoCenterBtn">Auto Center</button>
+    </div>
   </div>
+  <div class="toolbar-column">
+    <h3>Connectors &amp; Colors</h3>
+    <div class="control-row">
+      <button id="drawConnectorBtn">Connector</button>
+      <button id="clearConnectorsBtn">Clear</button>
+    </div>
+    <div class="control-row">
+      <label>Color:</label>
+      <input type="color" id="connectorColorInput" value="#333333">
+      <input type="range" id="connectorAlphaRange" class="opacity-range" min="0" max="100" value="100">
+    </div>
+  </div>
+  <div class="toolbar-column">
+    <h3>Load/Save &amp; Exports</h3>
+    <div class="control-row">
+      <button id="saveChartBtn">Save</button>
+      <button id="loadChartBtn">Load</button>
+      <input type="file" id="loadFile" accept="application/json" style="display:none;">
+    </div>
+    <!-- Print to JPG button -->
+    <div class="control-row">
+      <button id="printJPGBtn">Print to JPG</button>
+    </div>
+  </div>
+  <div class="toolbar-column">
+    <h3>Z-Index</h3>
+    <div class="control-row">
+      <button id="bringFrontBtn">Front</button>
+      <button id="sendBackBtn">Back</button>
+    </div>
+  </div>
+  <div class="toolbar-column">
+    <h3>History &amp; Create</h3>
+    <div class="control-row">
+      <button id="undoBtn">Undo</button>
+      <button id="redoBtn">Redo</button>
+    </div>
+  </div>
+  <div class="toolbar-column">
+    <h3>Search &amp; Filter</h3>
+    <div class="control-row">
+      <input type="text" id="searchInput" placeholder="Name/Dept" style="flex:1;">
+      <button id="clearFilterBtn">Clear</button>
+    </div>
+    <div class="control-row" style="font-size: 0.85rem;">
+      <label for="attributeSelect">Attr:</label>
+      <select id="attributeSelect">
+        <option value="name">Name</option>
+        <option value="department">Department</option>
+        <option value="officeLocation">Office</option>
+        <option value="client">Client</option>
+        <option value="title">Title</option>
+      </select>
+    </div>
+    <div class="control-row">
+      <input type="text" id="attributeInput" placeholder="Filter text" style="flex:1;">
+      <button id="attributeFilterBtn">Filter</button>
+      <button id="clearAttributeFilterBtn">Clear</button>
+    </div>
+  </div>
+  <div class="toolbar-column" style="margin-bottom:50px;">
+    <h3>Stats</h3>
+    <div class="control-row" style="font-size:0.9rem;">
+      <span>Nodes: <span id="nodesCount">0</span></span>
+      <span>Connectors: <span id="connectorsCount">0</span></span>
+    </div>
+  </div>
+  <div id="nodeEditPanel">
+    <h3>Edit Node</h3>
+    <div class="control-row" style="font-size:0.85rem;">
+      <label>Name:</label>
+      <input type="text" id="editNodeName" style="width:130px;" disabled>
+    </div>
+    <div class="control-row" style="font-size:0.85rem;">
+      <label>Title:</label>
+      <input type="text" id="editNodeTitle" style="width:130px;" disabled>
+    </div>
+    <div class="control-row" style="font-size:0.85rem;">
+      <label>Dept:</label>
+      <input type="text" id="editNodeDepartment" style="width:130px;" disabled>
+    </div>
+    <div class="control-row" style="font-size:0.85rem;">
+      <label>Color:</label>
+      <input type="color" id="editNodeColor" value="#ffffff" disabled>
+      <input type="range" id="editNodeAlpha" class="opacity-range" min="0" max="100" value="100" disabled>
+    </div>
+    <div class="control-row" style="font-size:0.85rem;">
+      <label>Office:</label>
+      <input type="text" id="editNodeOffice" style="width:60px;" disabled>
+      <label>Client:</label>
+      <input type="text" id="editNodeClient" style="width:60px;" disabled>
+    </div>
+    <div class="control-row" style="font-size:0.85rem;">
+      <label>Years:</label>
+      <input type="number" id="editNodeYears" min="0" style="width:60px;" disabled>
+    </div>
+    <div class="control-row" style="font-size:0.85rem;">
+      <label>TxtC:</label>
+      <input type="color" id="editTextColor" value="#000000" disabled>
+      <label>Bord:</label>
+      <input type="color" id="editBorderColor" value="#333333" disabled>
+    </div>
+    <div class="control-row" style="font-size:0.85rem;">
+      <label>F.Size:</label>
+      <input type="number" id="editFontSize" min="8" max="30" value="14" style="width:50px;" disabled>
+    </div>
+    <div class="control-row" style="font-size: 0.85rem; margin-top:6px;">
+      <button id="deleteNodeBtn" disabled>Delete Node</button>
+    </div>
+  </div>
+</div>
+<div id="orgChartOuter">
+  <div id="orgChartContainer">
+    <!-- SVG for connectors; nodes will be created dynamically -->
+    <svg id="connectorSVG"></svg>
+  </div>
+</div>
+<div id="contextMenu" style="display: none;">
+  <button id="ctxDeleteNode">Delete Node</button>
+  <button id="ctxAutoSizeNode">Auto-Size Node</button>
+  <button id="ctxBringFront">Bring to Front</button>
+  <button id="ctxSendBack">Send to Back</button>
+  <button id="ctxRemoveConnections">Remove Connections</button>
+  <button id="ctxCopyNode">Copy Node</button>
+  <button id="ctxPasteNode">Paste Node</button>
+  <button id="ctxAddNewNode">Add New Node</button>
+  <button id="ctxAutoCenterBG">Auto Center Org Chart</button>
+</div>
 
-  <script>
-    /************************************************
-     * Global Data & Settings
-     ************************************************/
-    let orgData = [
+<script>
+/************************************************
+ * Global Data & Settings
+ ************************************************/
+
+// Start with an empty orgData; we'll load default or localStorage below.
+let orgData = [];
+
+// Connectors stored as { from: idNum, to: idNum, line: <svg line> }
+let connectors = [];
+
+// Selection & states
+let selectedNodes = new Set();
+let currentScale = 1.0;
+let translationX = 0;
+let translationY = 0;
+const MIN_ZOOM = 0.3;
+const MAX_ZOOM = 3.0;
+let connectorColorHex = "#333333";
+let connectorAlpha = 100;
+let isDraggingNodes = false;
+let groupOffsets = {};
+let isDrawingConnector = false;
+let startNodeId = null;
+let copiedNodeData = null;
+let contextClickX = 0;
+let contextClickY = 0;
+
+// Snap-to-grid
+let snapGridSize = 10;
+
+// Undo/Redo
+let stateHistory = [];
+let currentHistoryIndex = -1;
+
+// UI references
+const orgChartOuter = document.getElementById('orgChartOuter');
+const orgChartContainer = document.getElementById('orgChartContainer');
+const connectorSVG = document.getElementById('connectorSVG');
+const contextMenu = document.getElementById('contextMenu');
+const nodeChooser = document.getElementById('nodeChooser');
+const nodesCountEl = document.getElementById('nodesCount');
+const connectorsCountEl = document.getElementById('connectorsCount');
+
+// Edit panel references
+const editNameInput = document.getElementById('editNodeName');
+const editTitleInput = document.getElementById('editNodeTitle');
+const editDeptInput = document.getElementById('editNodeDepartment');
+const editColorInput = document.getElementById('editNodeColor');
+const editAlphaInput = document.getElementById('editNodeAlpha');
+const editOfficeInput = document.getElementById('editNodeOffice');
+const editClientInput = document.getElementById('editNodeClient');
+const editYearsInput = document.getElementById('editNodeYears');
+const editTextColorInput = document.getElementById('editTextColor');
+const editBorderColorInput = document.getElementById('editBorderColor');
+const editFontSizeInput = document.getElementById('editFontSize');
+const deleteNodeBtn = document.getElementById('deleteNodeBtn');
+
+// Context menu items
+const ctxDeleteNode = document.getElementById('ctxDeleteNode');
+const ctxAutoSizeNode = document.getElementById('ctxAutoSizeNode');
+const ctxBringFront = document.getElementById('ctxBringFront');
+const ctxSendBack = document.getElementById('ctxSendBack');
+const ctxRemoveConnections = document.getElementById('ctxRemoveConnections');
+const ctxCopyNode = document.getElementById('ctxCopyNode');
+const ctxPasteNode = document.getElementById('ctxPasteNode');
+const ctxAddNewNode = document.getElementById('ctxAddNewNode');
+const ctxAutoCenterBG = document.getElementById('ctxAutoCenterBG');
+
+// "Select All Nodes" button reference
+const selectAllBtn = document.getElementById('selectAllBtn');
+// "Print to JPG" button reference
+const printJPGBtn = document.getElementById('printJPGBtn');
+
+/************************************************
+ * INIT
+ ************************************************/
+
+function init() {
+  // Attempt to load from local storage.
+  // If this fails or has no data, we load default nodes:
+  const loadedOK = loadFromLocalStorage();
+  if (!loadedOK) {
+    // Provide default nodes if no local saved data
+    orgData = [
       {
         id: 1,
         name: "Alice",
@@ -426,7 +491,7 @@
         officeLocation: "New York",
         client: "HQ Client",
         yearsWithCompany: 5,
-        x: 300,
+        x: 400,
         y: 100,
         width: 130,
         height: 60,
@@ -453,1189 +518,1163 @@
         textColor: "#000000",
         borderColor: "#333333",
         fontSize: 14
-      },
+      }
     ];
+  }
+  createOrgNodes();
+  updateAllConnectors();
+  updateEditFields();
+  updateStats();
+  pushState("Initial load");
+}
 
-    // Node references
-    let nodeElements = {};
+/************************************************
+ * CREATE & UPDATE NODES
+ ************************************************/
+function createOrgNodes() {
+  // Remove existing elements
+  Object.values(nodeElements).forEach(el => {
+    if (el.parentNode) el.parentNode.removeChild(el);
+  });
+  nodeElements = {};
 
-    // Connectors stored as { from: idNum, to: idNum, line: <svg line> }
-    let connectors = [];
+  // Create new elements from orgData
+  orgData.forEach(node => {
+    const nodeEl = document.createElement('div');
+    nodeEl.classList.add('org-node');
+    nodeEl.id = `node-${node.id}`;
+    nodeEl.style.left = node.x + 'px';
+    nodeEl.style.top = node.y + 'px';
+    nodeEl.style.width = node.width + 'px';
+    nodeEl.style.height = node.height + 'px';
+    nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
+    nodeEl.style.color = node.textColor;
+    nodeEl.style.borderColor = node.borderColor;
+    nodeEl.style.fontSize = node.fontSize + 'px';
+    nodeEl.innerHTML = `
+      <div class="name"></div>
+      <div class="title"></div>
+      <div class="department"></div>
+      <div class="officeLocation"></div>
+      <div class="client"></div>
+      <div class="years"></div>
+      <div class="resize-handle"></div>
+    `;
+    orgChartContainer.appendChild(nodeEl);
+    nodeElements[node.id] = nodeEl;
+    makeDraggableAndResizable(nodeEl, node);
+    updateNodeElement(node.id);
+  });
 
-    // Selections & states
-    let selectedNodes = new Set();
-    let currentScale = 1.0;
-    let translationX = 0;
-    let translationY = 0;
-    const MIN_ZOOM = 0.3;
-    const MAX_ZOOM = 3.0;
+  updateNodeDropdown();
+  updateStats();
+}
 
-    let connectorColorHex = "#333333";
-    let connectorAlpha = 100;
+function updateNodeElement(nodeId, autoSize=false) {
+  const node = orgData.find(n => n.id === nodeId);
+  if (!node) return;
 
-    let isDraggingNodes = false;
-    let groupOffsets = {}; 
-    let isDrawingConnector = false;
-    let startNodeId = null;
+  const nodeEl = nodeElements[nodeId];
+  if (!nodeEl) return;
 
-    let copiedNodeData = null; 
-    let contextClickX = 0;
-    let contextClickY = 0;
+  nodeEl.querySelector('.name').textContent = node.name;
+  nodeEl.querySelector('.title').textContent = node.title;
 
-    // Basic snap-to-grid (configurable)
-    let snapGridSize = 10;
+  const depEl = nodeEl.querySelector('.department');
+  const offEl = nodeEl.querySelector('.officeLocation');
+  const clientEl = nodeEl.querySelector('.client');
+  const yearsEl = nodeEl.querySelector('.years');
 
-    // Undo/Redo
-    let stateHistory = [];
-    let currentHistoryIndex = -1;
+  if (node.department) {
+    depEl.style.display = 'block';
+    depEl.textContent = node.department;
+  } else {
+    depEl.style.display = 'none';
+  }
+  if (node.officeLocation) {
+    offEl.style.display = 'block';
+    offEl.textContent = "Office: " + node.officeLocation;
+  } else {
+    offEl.style.display = 'none';
+  }
+  if (node.client) {
+    clientEl.style.display = 'block';
+    clientEl.textContent = "Client: " + node.client;
+  } else {
+    clientEl.style.display = 'none';
+  }
+  if (node.yearsWithCompany) {
+    yearsEl.style.display = 'block';
+    yearsEl.textContent = "Years: " + node.yearsWithCompany;
+  } else {
+    yearsEl.style.display = 'none';
+  }
 
-    // UI references
-    const orgChartOuter       = document.getElementById('orgChartOuter');
-    const orgChartContainer   = document.getElementById('orgChartContainer');
-    const connectorSVG        = document.getElementById('connectorSVG');
-    const contextMenu         = document.getElementById('contextMenu');
-    const nodeChooser         = document.getElementById('nodeChooser');
-    const nodesCountEl        = document.getElementById('nodesCount');
-    const connectorsCountEl   = document.getElementById('connectorsCount');
+  nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
+  nodeEl.style.color = node.textColor;
+  nodeEl.style.borderColor = node.borderColor;
+  nodeEl.style.fontSize = node.fontSize + 'px';
 
-    // Edit panel references
-    const editNameInput        = document.getElementById('editNodeName');
-    const editTitleInput       = document.getElementById('editNodeTitle');
-    const editDeptInput        = document.getElementById('editNodeDepartment');
-    const editColorInput       = document.getElementById('editNodeColor');
-    const editAlphaInput       = document.getElementById('editNodeAlpha');
-    const editOfficeInput      = document.getElementById('editNodeOffice');
-    const editClientInput      = document.getElementById('editNodeClient');
-    const editYearsInput       = document.getElementById('editNodeYears');
-    const editTextColorInput   = document.getElementById('editTextColor');
-    const editBorderColorInput = document.getElementById('editBorderColor');
-    const editFontSizeInput    = document.getElementById('editFontSize');
-    const deleteNodeBtn        = document.getElementById('deleteNodeBtn');
+  if (autoSize) {
+    autoSizeSingleNode(nodeId);
+  }
+}
 
-    // Context menu items
-    const ctxDeleteNode        = document.getElementById('ctxDeleteNode');
-    const ctxAutoSizeNode      = document.getElementById('ctxAutoSizeNode');
-    const ctxBringFront        = document.getElementById('ctxBringFront');
-    const ctxSendBack          = document.getElementById('ctxSendBack');
-    const ctxRemoveConnections = document.getElementById('ctxRemoveConnections');
-    const ctxCopyNode          = document.getElementById('ctxCopyNode');
-    const ctxPasteNode         = document.getElementById('ctxPasteNode');
-    const ctxAddNewNode        = document.getElementById('ctxAddNewNode');
-    const ctxAutoCenterBG      = document.getElementById('ctxAutoCenterBG');
+/************************************************
+ * DRAG & RESIZE
+ ************************************************/
+let nodeElements = {};
 
-    /************************************************
-     * INIT FUNCTIONS
-     ************************************************/
-    function init() {
-      createOrgNodes(); 
-      updateEditFields();
-      updateStats();
-      pushState("Initial load");
-      loadFromLocalStorage();
+function makeDraggableAndResizable(nodeEl, nodeData) {
+  const resizeHandle = nodeEl.querySelector('.resize-handle');
+  nodeEl.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('resize-handle')) {
+      e.stopPropagation();
+      startNodeResize(e, nodeEl, nodeData);
+      return;
     }
 
-    /************************************************
-     * CREATE & UPDATE NODES
-     ************************************************/
-    function createOrgNodes() {
-      // Clear old node elements
-      Object.values(nodeElements).forEach(el => {
-        if (el.parentNode) el.parentNode.removeChild(el);
-      });
-      nodeElements = {};
-
-      // Create new DOM elements
-      orgData.forEach(node => {
-        const nodeEl = document.createElement('div');
-        nodeEl.classList.add('org-node');
-        nodeEl.id = `node-${node.id}`;
-        nodeEl.style.left   = node.x + 'px';
-        nodeEl.style.top    = node.y + 'px';
-        nodeEl.style.width  = node.width + 'px';
-        nodeEl.style.height = node.height + 'px';
-        nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
-        nodeEl.style.color          = node.textColor;
-        nodeEl.style.borderColor    = node.borderColor;
-        nodeEl.style.fontSize       = node.fontSize + 'px';
-
-        nodeEl.innerHTML = `
-          <div class="name"></div>
-          <div class="title"></div>
-          <div class="department"></div>
-          <div class="officeLocation"></div>
-          <div class="client"></div>
-          <div class="years"></div>
-          <div class="resize-handle"></div>
-        `;
-        orgChartContainer.appendChild(nodeEl);
-        nodeElements[node.id] = nodeEl;
-
-        // Make draggable/resizable
-        makeDraggableAndResizable(nodeEl, node);
-        updateNodeElement(node.id);
-      });
-
-      updateNodeDropdown();
-      updateStats();
-    }
-
-    function updateNodeElement(nodeId, autoSize=false) {
-      const node = orgData.find(n => n.id === nodeId);
-      if (!node) return;
-      const nodeEl = nodeElements[nodeId];
-      if (!nodeEl) return;
-
-      nodeEl.querySelector('.name').textContent  = node.name;
-      nodeEl.querySelector('.title').textContent = node.title;
-
-      const depEl    = nodeEl.querySelector('.department');
-      const offEl    = nodeEl.querySelector('.officeLocation');
-      const clientEl = nodeEl.querySelector('.client');
-      const yearsEl  = nodeEl.querySelector('.years');
-
-      if (node.department) {
-        depEl.style.display = 'block';
-        depEl.textContent   = node.department;
+    // Multiple selection with CTRL
+    if (e.ctrlKey) {
+      if (selectedNodes.has(nodeData.id)) {
+        selectedNodes.delete(nodeData.id);
       } else {
-        depEl.style.display = 'none';
+        selectedNodes.add(nodeData.id);
       }
-
-      if (node.officeLocation) {
-        offEl.style.display = 'block';
-        offEl.textContent   = "Office: " + node.officeLocation;
-      } else {
-        offEl.style.display = 'none';
+    } else {
+      if (!selectedNodes.has(nodeData.id)) {
+        unselectAllNodes();
+        selectedNodes.add(nodeData.id);
       }
-
-      if (node.client) {
-        clientEl.style.display = 'block';
-        clientEl.textContent   = "Client: " + node.client;
-      } else {
-        clientEl.style.display = 'none';
-      }
-
-      if (node.yearsWithCompany) {
-        yearsEl.style.display = 'block';
-        yearsEl.textContent   = "Years: " + node.yearsWithCompany;
-      } else {
-        yearsEl.style.display  = 'none';
-      }
-
-      // Update styling
-      nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
-      nodeEl.style.color           = node.textColor;
-      nodeEl.style.borderColor     = node.borderColor;
-      nodeEl.style.fontSize        = node.fontSize + 'px';
-
-      if (autoSize) autoSizeSingleNode(nodeId);
     }
+    updateSelectedStyles();
+    updateEditFields();
+    nodeChooser.value = nodeData.id;
+    startNodeDrag(e, nodeData);
+  });
+}
 
-    /************************************************
-     * DRAG & RESIZE
-     ************************************************/
-    function makeDraggableAndResizable(nodeEl, nodeData) {
-      const resizeHandle = nodeEl.querySelector('.resize-handle');
+function startNodeDrag(e, nodeData) {
+  isDraggingNodes = true;
+  const { x: mouseX, y: mouseY } = screenToLocal(e.clientX, e.clientY);
+  groupOffsets = {};
+  selectedNodes.forEach(selId => {
+    const theNode = orgData.find(n => n.id === selId);
+    if (!theNode) return;
+    groupOffsets[selId] = { offsetX: theNode.x - mouseX, offsetY: theNode.y - mouseY };
+  });
+}
 
-      nodeEl.addEventListener('mousedown', e => {
-        if (e.target.classList.contains('resize-handle')) {
-          e.stopPropagation();
-          startNodeResize(e, nodeEl, nodeData);
-          return;
-        }
-        // Handle selection logic (Ctrl = multi-select)
-        if (e.ctrlKey) {
-          if (selectedNodes.has(nodeData.id)) {
-            selectedNodes.delete(nodeData.id);
-          } else {
-            selectedNodes.add(nodeData.id);
-          }
-        } else {
-          if (!selectedNodes.has(nodeData.id)) {
-            unselectAllNodes();
-            selectedNodes.add(nodeData.id);
-          }
-        }
-        updateSelectedStyles();
-        updateEditFields();
-        nodeChooser.value = nodeData.id;
+function startNodeResize(e, nodeEl, nodeData) {
+  let startW = nodeEl.offsetWidth;
+  let startH = nodeEl.offsetHeight;
+  let startX = e.clientX;
+  let startY = e.clientY;
 
-        startNodeDrag(e, nodeData);
-      });
-    }
+  function mouseMoveResize(ev) {
+    ev.preventDefault();
+    let newW = startW + (ev.clientX - startX);
+    let newH = startH + (ev.clientY - startY);
+    if (newW < 60) newW = 60;
+    if (newH < 40) newH = 40;
+    nodeEl.style.width = newW + 'px';
+    nodeEl.style.height = newH + 'px';
+    nodeData.width = newW;
+    nodeData.height = newH;
+    updateAllConnectors();
+  }
 
-    function startNodeDrag(e, nodeData) {
-      isDraggingNodes = true;
-      const { x: mouseX, y: mouseY } = screenToLocal(e.clientX, e.clientY);
-      groupOffsets = {};
-      selectedNodes.forEach(selId => {
-        const theNode = orgData.find(n => n.id === selId);
-        if (!theNode) return;
-        groupOffsets[selId] = {
-          offsetX: theNode.x - mouseX,
-          offsetY: theNode.y - mouseY
-        };
-      });
-    }
+  function mouseUpResize() {
+    document.removeEventListener('mousemove', mouseMoveResize);
+    document.removeEventListener('mouseup', mouseUpResize);
+    pushState("Resize node");
+  }
 
-    function startNodeResize(e, nodeEl, nodeData) {
-      let startW = nodeEl.offsetWidth;
-      let startH = nodeEl.offsetHeight;
-      let startX = e.clientX;
-      let startY = e.clientY;
+  document.addEventListener('mousemove', mouseMoveResize);
+  document.addEventListener('mouseup', mouseUpResize);
+}
 
-      function mouseMoveResize(ev) {
-        ev.preventDefault();
-        let newW = startW + (ev.clientX - startX);
-        let newH = startH + (ev.clientY - startY);
-        if (newW < 60) newW = 60;
-        if (newH < 40) newH = 40;
-        nodeEl.style.width  = newW + 'px';
-        nodeEl.style.height = newH + 'px';
-        nodeData.width  = newW;
-        nodeData.height = newH;
-        updateAllConnectors();
+document.addEventListener('mousemove', e => {
+  if (isDraggingNodes) {
+    e.preventDefault();
+    const { x: mouseX, y: mouseY } = screenToLocal(e.clientX, e.clientY);
+    selectedNodes.forEach(selId => {
+      const theNode = orgData.find(n => n.id === selId);
+      if (!theNode) return;
+
+      let newX = mouseX + groupOffsets[selId].offsetX;
+      let newY = mouseY + groupOffsets[selId].offsetY;
+      // Snap to grid
+      if (snapGridSize > 0) {
+        newX = Math.round(newX / snapGridSize) * snapGridSize;
+        newY = Math.round(newY / snapGridSize) * snapGridSize;
       }
-      function mouseUpResize() {
-        document.removeEventListener('mousemove', mouseMoveResize);
-        document.removeEventListener('mouseup', mouseUpResize);
-        pushState("Resize node");
-      }
-      document.addEventListener('mousemove', mouseMoveResize);
-      document.addEventListener('mouseup', mouseUpResize);
-    }
-
-    document.addEventListener('mousemove', e => {
-      if (isDraggingNodes) {
-        e.preventDefault();
-        const { x: mouseX, y: mouseY } = screenToLocal(e.clientX, e.clientY);
-
-        selectedNodes.forEach(selId => {
-          const theNode = orgData.find(n => n.id === selId);
-          if (!theNode) return;
-          let newX = mouseX + groupOffsets[selId].offsetX;
-          let newY = mouseY + groupOffsets[selId].offsetY;
-
-          // snap
-          if (snapGridSize > 0) {
-            newX = Math.round(newX / snapGridSize) * snapGridSize;
-            newY = Math.round(newY / snapGridSize) * snapGridSize;
-          }
-
-          theNode.x = newX;
-          theNode.y = newY;
-          nodeElements[selId].style.left = newX + 'px';
-          nodeElements[selId].style.top  = newY + 'px';
-        });
-        updateAllConnectors();
-      }
+      // 50px left buffer + 20px top buffer
+      if (newX < 50) newX = 50;
+      if (newY < 20) newY = 20;
+      theNode.x = newX;
+      theNode.y = newY;
+      nodeElements[selId].style.left = newX + 'px';
+      nodeElements[selId].style.top = newY + 'px';
     });
-    document.addEventListener('mouseup', () => {
-      if (isDraggingNodes) {
-        isDraggingNodes = false;
-        pushState("Move nodes");
+    updateAllConnectors();
+  }
+});
+
+document.addEventListener('mouseup', () => {
+  if (isDraggingNodes) {
+    isDraggingNodes = false;
+    pushState("Move nodes");
+  }
+});
+
+/************************************************
+ * ZOOM & TRANSFORM
+ ************************************************/
+function setZoom(newScale, reason = "") {
+  if (newScale < MIN_ZOOM) newScale = MIN_ZOOM;
+  if (newScale > MAX_ZOOM) newScale = MAX_ZOOM;
+  currentScale = newScale;
+  applyTransform();
+  pushState(reason);
+}
+
+function applyTransform() {
+  orgChartContainer.style.transformOrigin = 'top left';
+  orgChartContainer.style.transform = `translate(${translationX}px, ${translationY}px) scale(${currentScale})`;
+}
+
+function screenToLocal(screenX, screenY) {
+  const rect = orgChartContainer.getBoundingClientRect();
+  let localX = (screenX - rect.left - translationX) / currentScale;
+  let localY = (screenY - rect.top - translationY) / currentScale;
+  return { x: localX, y: localY };
+}
+
+/************************************************
+ * CONNECTORS
+ ************************************************/
+function createConnector(a, b) {
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line.setAttribute("stroke-width", 2);
+  line.setAttribute("stroke", connectorColorHex);
+  line.setAttribute("stroke-opacity", connectorAlpha / 100);
+  connectorSVG.appendChild(line);
+  const obj = { from: a, to: b, line };
+  connectors.push(obj);
+  updateConnectorPositions(obj);
+  updateStats();
+}
+
+function updateConnectorPositions(conn) {
+  const { from, to, line } = conn;
+  const nodeA = orgData.find(n => n.id === from);
+  const nodeB = orgData.find(n => n.id === to);
+  if (!nodeA || !nodeB) return;
+
+  const centerA = { x: nodeA.x + nodeA.width / 2, y: nodeA.y + nodeA.height / 2 };
+  const centerB = { x: nodeB.x + nodeB.width / 2, y: nodeB.y + nodeB.height / 2 };
+
+  line.setAttribute("x1", centerA.x);
+  line.setAttribute("y1", centerA.y);
+  line.setAttribute("x2", centerB.x);
+  line.setAttribute("y2", centerB.y);
+  line.setAttribute("stroke", connectorColorHex);
+  line.setAttribute("stroke-opacity", connectorAlpha / 100);
+}
+
+function updateAllConnectors() {
+  connectors.forEach(conn => updateConnectorPositions(conn));
+  updateStats();
+}
+
+function clearAllConnectors() {
+  connectors.forEach(c => {
+    if (c.line && c.line.parentNode) {
+      c.line.parentNode.removeChild(c.line);
+    }
+  });
+  connectors = [];
+  updateStats();
+}
+
+/************************************************
+ * SELECTION
+ ************************************************/
+function unselectAllNodes() {
+  selectedNodes.clear();
+  updateSelectedStyles();
+  updateEditFields();
+  nodeChooser.value = "";
+}
+
+function updateSelectedStyles() {
+  Object.keys(nodeElements).forEach(idStr => {
+    const idNum = parseInt(idStr, 10);
+    if (selectedNodes.has(idNum)) {
+      nodeElements[idNum].classList.add('selected');
+    } else {
+      nodeElements[idNum].classList.remove('selected');
+    }
+  });
+}
+
+/************************************************
+ * EDIT PANEL
+ ************************************************/
+function updateEditFields() {
+  const c = selectedNodes.size;
+  if (!c) {
+    disableEditFields("Select node to edit attributes");
+  } else if (c > 1) {
+    disableEditFields("Cannot batch edit");
+  } else {
+    enableEditFields();
+  }
+}
+
+function disableEditFields(msg) {
+  editNameInput.value = msg;
+  editTitleInput.value = msg;
+  editDeptInput.value = msg;
+  editOfficeInput.value = "";
+  editClientInput.value = "";
+  editYearsInput.value = "";
+  editColorInput.value = "#ffffff";
+  editAlphaInput.value = 100;
+  editTextColorInput.value = "#000000";
+  editBorderColorInput.value = "#333333";
+  editFontSizeInput.value = 14;
+
+  [
+    editNameInput,
+    editTitleInput,
+    editDeptInput,
+    editOfficeInput,
+    editClientInput,
+    editYearsInput,
+    editColorInput,
+    editAlphaInput,
+    editTextColorInput,
+    editBorderColorInput,
+    editFontSizeInput,
+    deleteNodeBtn
+  ].forEach(el => el.disabled = true);
+}
+
+function enableEditFields() {
+  const onlyId = [...selectedNodes][0];
+  const node = orgData.find(n => n.id === onlyId);
+  if (!node) return;
+
+  editNameInput.value = node.name;
+  editTitleInput.value = node.title;
+  editDeptInput.value = node.department || "";
+  editOfficeInput.value = node.officeLocation || "";
+  editClientInput.value = node.client || "";
+  const yrsVal = parseInt(editYearsInput.value, 10);
+  editYearsInput.value = isNaN(yrsVal) ? node.yearsWithCompany : yrsVal;
+  editColorInput.value = node.colorHex || "#ffffff";
+  editAlphaInput.value = node.colorAlpha;
+  editTextColorInput.value = node.textColor;
+  editBorderColorInput.value = node.borderColor;
+  editFontSizeInput.value = node.fontSize;
+
+  [
+    editNameInput,
+    editTitleInput,
+    editDeptInput,
+    editOfficeInput,
+    editClientInput,
+    editYearsInput,
+    editColorInput,
+    editAlphaInput,
+    editTextColorInput,
+    editBorderColorInput,
+    editFontSizeInput,
+    deleteNodeBtn
+  ].forEach(el => el.disabled = false);
+}
+
+function onFieldChange() {
+  if (selectedNodes.size !== 1) return;
+  const onlyId = [...selectedNodes][0];
+  const node = orgData.find(n => n.id === onlyId);
+  if (!node) return;
+
+  node.name = editNameInput.value;
+  node.title = editTitleInput.value;
+  node.department = editDeptInput.value;
+  node.officeLocation = editOfficeInput.value;
+  node.client = editClientInput.value;
+  const yrsVal = parseInt(editYearsInput.value, 10);
+  node.yearsWithCompany = isNaN(yrsVal) ? 0 : yrsVal;
+  node.colorHex = editColorInput.value;
+  node.colorAlpha = parseInt(editAlphaInput.value, 10);
+  node.textColor = editTextColorInput.value;
+  node.borderColor = editBorderColorInput.value;
+  node.fontSize = parseInt(editFontSizeInput.value, 10);
+
+  updateNodeElement(onlyId, true);
+  pushState("Edit node fields");
+}
+
+[
+  editNameInput,
+  editTitleInput,
+  editDeptInput,
+  editOfficeInput,
+  editClientInput,
+  editYearsInput,
+  editColorInput,
+  editAlphaInput,
+  editTextColorInput,
+  editBorderColorInput,
+  editFontSizeInput
+].forEach(inp => inp.addEventListener('input', onFieldChange));
+
+function deleteSelectedNode() {
+  if (selectedNodes.size !== 1) return;
+  const idNum = [...selectedNodes][0];
+  orgData = orgData.filter(n => n.id !== idNum);
+
+  // Remove connectors linked to this node
+  connectors.forEach(conn => {
+    if (conn.from === idNum || conn.to === idNum) {
+      if (conn.line && conn.line.parentNode) {
+        conn.line.parentNode.removeChild(conn.line);
       }
-    });
-
-    /************************************************
-     * ZOOM & TRANSFORM
-     ************************************************/
-    function setZoom(newScale, reason = "") {
-      if (newScale < MIN_ZOOM) newScale = MIN_ZOOM;
-      if (newScale > MAX_ZOOM) newScale = MAX_ZOOM;
-      currentScale = newScale;
-      applyTransform();
-      pushState(reason);
     }
+  });
+  connectors = connectors.filter(c => c.from !== idNum && c.to !== idNum);
 
-    function applyTransform() {
-      orgChartContainer.style.transformOrigin = 'top left';
-      orgChartContainer.style.transform =
-        `translate(${translationX}px, ${translationY}px) scale(${currentScale})`;
-    }
+  // Remove the node element
+  const el = nodeElements[idNum];
+  if (el && el.parentNode) el.parentNode.removeChild(el);
+  delete nodeElements[idNum];
 
-    function screenToLocal(screenX, screenY) {
-      const rect = orgChartContainer.getBoundingClientRect();
-      let localX = (screenX - rect.left - translationX) / currentScale;
-      let localY = (screenY - rect.top  - translationY) / currentScale;
-      return { x: localX, y: localY };
-    }
+  unselectAllNodes();
+  updateAllConnectors();
+  updateNodeDropdown();
+  updateStats();
+  pushState("Delete node");
+}
+deleteNodeBtn.addEventListener('click', deleteSelectedNode);
 
-    /************************************************
-     * CONNECTORS (with SVG)
-     ************************************************/
-    function createConnector(a, b) {
-      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-      line.setAttribute("stroke-width", 2);
-      line.setAttribute("stroke", connectorColorHex);
-      line.setAttribute("stroke-opacity", connectorAlpha/100);
-      connectorSVG.appendChild(line);
+/************************************************
+ * NODE DROPDOWN
+ ************************************************/
+function updateNodeDropdown() {
+  nodeChooser.innerHTML = '';
+  const opt = document.createElement('option');
+  opt.value = "";
+  opt.textContent = "Select a node...";
+  nodeChooser.appendChild(opt);
 
-      const obj = { from:a, to:b, line };
-      connectors.push(obj);
-      updateConnectorPositions(obj);
-      updateStats();
-    }
+  const sorted = [...orgData].sort((a, b) => a.name.localeCompare(b.name));
+  sorted.forEach(n => {
+    const o = document.createElement('option');
+    o.value = n.id;
+    o.textContent = n.name;
+    nodeChooser.appendChild(o);
+  });
 
-    // Uses node data for connector positioning
-    function updateConnectorPositions(conn) {
-      const { from, to, line } = conn;
-      const nodeA = orgData.find(n => n.id === from);
-      const nodeB = orgData.find(n => n.id === to);
-      if (!nodeA || !nodeB) return;
+  if (selectedNodes.size === 1) {
+    nodeChooser.value = [...selectedNodes][0];
+  } else {
+    nodeChooser.value = "";
+  }
+}
 
-      // Midpoint in local coordinate space
-      const centerA = {
-        x: nodeA.x + nodeA.width / 2,
-        y: nodeA.y + nodeA.height / 2
-      };
-      const centerB = {
-        x: nodeB.x + nodeB.width / 2,
-        y: nodeB.y + nodeB.height / 2
-      };
+nodeChooser.addEventListener('change', e => {
+  const idNum = parseInt(e.target.value, 10);
+  if (!isNaN(idNum)) {
+    unselectAllNodes();
+    selectedNodes.add(idNum);
+    updateSelectedStyles();
+    updateEditFields();
+  }
+});
 
-      line.setAttribute("x1", centerA.x);
-      line.setAttribute("y1", centerA.y);
-      line.setAttribute("x2", centerB.x);
-      line.setAttribute("y2", centerB.y);
-      line.setAttribute("stroke", connectorColorHex);
-      line.setAttribute("stroke-opacity", connectorAlpha / 100);
-    }
+/************************************************
+ * CONTEXT MENU
+ ************************************************/
+document.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  contextMenu.style.display = 'none';
+  contextClickX = e.clientX;
+  contextClickY = e.clientY;
 
-    function updateAllConnectors() {
-      connectors.forEach(conn => updateConnectorPositions(conn));
-      updateStats();
-    }
-
-    function clearAllConnectors() {
-      connectors.forEach(c => {
-        if (c.line && c.line.parentNode) {
-          c.line.parentNode.removeChild(c.line);
-        }
-      });
-      connectors = [];
-      updateStats();
-    }
-
-    /************************************************
-     * SELECTION
-     ************************************************/
-    function unselectAllNodes() {
-      selectedNodes.clear();
+  const nodeDiv = e.target.closest('.org-node');
+  if (nodeDiv) {
+    const nodeIdNum = parseInt(nodeDiv.id.replace('node-',''),10);
+    if (!selectedNodes.has(nodeIdNum)) {
+      unselectAllNodes();
+      selectedNodes.add(nodeIdNum);
       updateSelectedStyles();
       updateEditFields();
-      nodeChooser.value = "";
+      nodeChooser.value = nodeIdNum;
     }
+    showContextMenuForNode(e);
+  } else {
+    showContextMenuForBackground(e);
+  }
+});
 
-    function updateSelectedStyles() {
-      Object.keys(nodeElements).forEach(idStr => {
-        const idNum = parseInt(idStr,10);
-        if(selectedNodes.has(idNum)){
-          nodeElements[idNum].classList.add('selected');
-        } else {
-          nodeElements[idNum].classList.remove('selected');
-        }
-      });
-    }
+function showContextMenuForNode(e) {
+  ctxDeleteNode.style.display = "block";
+  ctxAutoSizeNode.style.display = "block";
+  ctxBringFront.style.display = "block";
+  ctxSendBack.style.display = "block";
+  ctxRemoveConnections.style.display = "block";
+  ctxCopyNode.style.display = "block";
+  ctxPasteNode.style.display = "block";
+  ctxAddNewNode.style.display = "none";
+  ctxAutoCenterBG.style.display = "none";
+  ctxPasteNode.disabled = (copiedNodeData === null);
 
-    /************************************************
-     * EDIT PANEL
-     ************************************************/
-    function updateEditFields() {
-      const c = selectedNodes.size;
-      if(!c) {
-        disableEditFields("Select node to edit attributes");
-      } else if(c>1){
-        disableEditFields("Cannot batch edit");
-      } else {
-        enableEditFields();
-      }
-    }
+  contextMenu.style.display = 'block';
+  contextMenu.style.left = e.pageX + 'px';
+  contextMenu.style.top = e.pageY + 'px';
+}
 
-    function disableEditFields(msg){
-      editNameInput.value         = msg;
-      editTitleInput.value        = msg;
-      editDeptInput.value         = msg;
-      editOfficeInput.value       = "";
-      editClientInput.value       = "";
-      editYearsInput.value        = "";
-      editColorInput.value        = "#ffffff";
-      editAlphaInput.value        = 100;
-      editTextColorInput.value    = "#000000";
-      editBorderColorInput.value  = "#333333";
-      editFontSizeInput.value     = 14;
+function showContextMenuForBackground(e) {
+  ctxDeleteNode.style.display = "none";
+  ctxAutoSizeNode.style.display = "none";
+  ctxBringFront.style.display = "none";
+  ctxSendBack.style.display = "none";
+  ctxRemoveConnections.style.display = "none";
+  ctxCopyNode.style.display = "none";
+  ctxAddNewNode.style.display = "block";
+  ctxPasteNode.style.display = "block";
+  ctxAutoCenterBG.style.display = "block";
+  ctxPasteNode.disabled = (copiedNodeData === null);
 
-      [
-        editNameInput, editTitleInput, editDeptInput, editOfficeInput,
-        editClientInput, editYearsInput, editColorInput, editAlphaInput,
-        editTextColorInput, editBorderColorInput, editFontSizeInput, deleteNodeBtn
-      ].forEach(el => el.disabled = true);
-    }
+  contextMenu.style.display = 'block';
+  contextMenu.style.left = e.pageX + 'px';
+  contextMenu.style.top = e.pageY + 'px';
+}
 
-    function enableEditFields(){
-      const onlyId = [...selectedNodes][0];
-      const node = orgData.find(n => n.id === onlyId);
-      if(!node)return;
-      editNameInput.value        = node.name;
-      editTitleInput.value       = node.title;
-      editDeptInput.value        = node.department || "";
-      editOfficeInput.value      = node.officeLocation || "";
-      editClientInput.value      = node.client || "";
-      const yrsVal         = parseInt(editYearsInput.value,10);
-      editYearsInput.value       = isNaN(yrsVal)? node.yearsWithCompany : yrsVal;
-      editColorInput.value       = node.colorHex || "#ffffff";
-      editAlphaInput.value       = node.colorAlpha;
-      editTextColorInput.value   = node.textColor;
-      editBorderColorInput.value = node.borderColor;
-      editFontSizeInput.value    = node.fontSize;
-
-      [
-        editNameInput, editTitleInput, editDeptInput, editOfficeInput,
-        editClientInput, editYearsInput, editColorInput, editAlphaInput,
-        editTextColorInput, editBorderColorInput, editFontSizeInput, deleteNodeBtn
-      ].forEach(el => el.disabled = false);
-    }
-
-    function onFieldChange(){
-      if(selectedNodes.size !== 1)return;
-      const onlyId = [...selectedNodes][0];
-      const node   = orgData.find(n => n.id === onlyId);
-      if(!node)return;
-
-      node.name            = editNameInput.value;
-      node.title           = editTitleInput.value;
-      node.department      = editDeptInput.value;
-      node.officeLocation  = editOfficeInput.value;
-      node.client          = editClientInput.value;
-      const yrsVal         = parseInt(editYearsInput.value,10);
-      node.yearsWithCompany= isNaN(yrsVal)? 0 : yrsVal;
-      node.colorHex        = editColorInput.value;
-      node.colorAlpha      = parseInt(editAlphaInput.value,10);
-      node.textColor       = editTextColorInput.value;
-      node.borderColor     = editBorderColorInput.value;
-      node.fontSize        = parseInt(editFontSizeInput.value,10);
-
-      updateNodeElement(onlyId,true);
-      pushState("Edit node fields");
-    }
-
-    [
-      editNameInput, editTitleInput, editDeptInput, editOfficeInput,
-      editClientInput, editYearsInput, editColorInput, editAlphaInput,
-      editTextColorInput, editBorderColorInput, editFontSizeInput
-    ].forEach(inp => inp.addEventListener('input', onFieldChange));
-
-    function deleteSelectedNode() {
-      if(selectedNodes.size !== 1)return;
-      const idNum = [...selectedNodes][0];
-      // Remove from orgData
-      orgData = orgData.filter(n => n.id !== idNum);
-
-      // Remove any connectors referencing that node
-      connectors.forEach(conn => {
-        if(conn.from === idNum || conn.to === idNum) {
-          if(conn.line && conn.line.parentNode) conn.line.parentNode.removeChild(conn.line);
-        }
-      });
-      connectors = connectors.filter(c => c.from !== idNum && c.to !== idNum);
-
-      // Remove DOM
-      const el = nodeElements[idNum];
-      if(el && el.parentNode) el.parentNode.removeChild(el);
-      delete nodeElements[idNum];
-
+document.addEventListener('click', e => {
+  if (!e.target.closest('#contextMenu')) {
+    contextMenu.style.display = 'none';
+    if (!e.target.closest('.org-node') && !e.target.closest('#sidePanel')) {
       unselectAllNodes();
-      updateAllConnectors();
-      updateNodeDropdown();
-      updateStats();
-      pushState("Delete node");
     }
-    deleteNodeBtn.addEventListener('click', deleteSelectedNode);
+  }
+});
 
-    /************************************************
-     * NODE DROPDOWN
-     ************************************************/
-    function updateNodeDropdown() {
-      nodeChooser.innerHTML = '';
-      const opt = document.createElement('option');
-      opt.value = "";
-      opt.textContent = "Select a node...";
-      nodeChooser.appendChild(opt);
+ctxDeleteNode.addEventListener('click', () => {
+  deleteSelectedNode();
+  contextMenu.style.display = 'none';
+});
+ctxAutoSizeNode.addEventListener('click', () => {
+  autoSizeSelectedNodes();
+  contextMenu.style.display = 'none';
+});
+ctxBringFront.addEventListener('click', () => {
+  bringSelectedNodesToFront();
+  contextMenu.style.display = 'none';
+});
+ctxSendBack.addEventListener('click', () => {
+  sendSelectedNodesToBack();
+  contextMenu.style.display = 'none';
+});
+ctxRemoveConnections.addEventListener('click', () => {
+  removeConnectionsFromSelectedNode();
+  contextMenu.style.display = 'none';
+});
+ctxCopyNode.addEventListener('click', () => {
+  copySelectedNode();
+  contextMenu.style.display = 'none';
+});
+ctxPasteNode.addEventListener('click', () => {
+  const { x, y } = screenToLocal(contextClickX, contextClickY);
+  pasteNodeAt(x, y);
+  contextMenu.style.display = 'none';
+});
+ctxAddNewNode.addEventListener('click', () => {
+  const { x, y } = screenToLocal(contextClickX, contextClickY);
+  addNewNode(x, y);
+  contextMenu.style.display = 'none';
+});
+ctxAutoCenterBG.addEventListener('click', () => {
+  autoCenter();
+  contextMenu.style.display = 'none';
+});
 
-      const sorted = [...orgData].sort((a,b) => a.name.localeCompare(b.name));
-      sorted.forEach(n => {
-        const o = document.createElement('option');
-        o.value = n.id;
-        o.textContent = n.name;
-        nodeChooser.appendChild(o);
-      });
+function handleConnectorClick(nodeId) {
+  if (startNodeId === null) {
+    startNodeId = nodeId;
+  } else {
+    if (startNodeId !== nodeId) {
+      createConnector(startNodeId, nodeId);
+      pushState("Create connector");
+    }
+    startNodeId = null;
+    isDrawingConnector = false;
+  }
+}
 
-      if(selectedNodes.size === 1){
-        nodeChooser.value = [...selectedNodes][0];
-      } else {
-        nodeChooser.value = "";
+/************************************************
+ * Z-INDEX
+ ************************************************/
+function bringSelectedNodesToFront() {
+  selectedNodes.forEach(idNum => {
+    nodeElements[idNum].style.zIndex = 1000;
+  });
+  pushState("Bring front");
+}
+
+function sendSelectedNodesToBack() {
+  selectedNodes.forEach(idNum => {
+    nodeElements[idNum].style.zIndex = 1;
+  });
+  pushState("Send back");
+}
+
+/************************************************
+ * ZOOM
+ ************************************************/
+function zoomIn() {
+  setZoom(currentScale + 0.1, "Zoom in");
+}
+
+function zoomOut() {
+  setZoom(currentScale - 0.1, "Zoom out");
+}
+
+const zoomSlider = document.getElementById('zoomSlider');
+zoomSlider.addEventListener('input', e => {
+  let val = parseInt(e.target.value, 10);
+  let newScale = val / 100;
+  setZoom(newScale, "Slider zoom");
+});
+
+/************************************************
+ * AUTO CENTER
+ ************************************************/
+function autoCenter() {
+  let bounds = getNodesBoundingBox();
+  if (bounds.width <= 0 || bounds.height <= 0) return;
+  let outerWidth = orgChartOuter.clientWidth;
+  let outerHeight = orgChartOuter.clientHeight;
+
+  let scaleX = outerWidth / bounds.width;
+  let scaleY = outerHeight / bounds.height;
+  let newScale = Math.min(scaleX, scaleY);
+  newScale *= 0.95;
+  newScale = Math.min(newScale, MAX_ZOOM);
+  newScale = Math.max(newScale, MIN_ZOOM);
+
+  currentScale = newScale;
+  translationX = (outerWidth - bounds.width * newScale) / 2 - bounds.minX * newScale;
+  translationY = (outerHeight - bounds.height * newScale) / 2 - bounds.minY * newScale;
+  applyTransform();
+  pushState("Auto center");
+}
+
+/************************************************
+ * STATS
+ ************************************************/
+function updateStats() {
+  nodesCountEl.textContent = orgData.length;
+  connectorsCountEl.textContent = connectors.length;
+}
+
+/************************************************
+ * NODE UTILS
+ ************************************************/
+function addNewNode(x=300, y=200) {
+  const maxId = orgData.reduce((acc, n) => Math.max(acc, n.id), 0);
+  const newId = maxId + 1;
+  const nn = {
+    id: newId,
+    name: `Node ${newId}`,
+    title: "",
+    department: "",
+    officeLocation: "",
+    client: "",
+    yearsWithCompany: 0,
+    x, y,
+    width: 130,
+    height: 60,
+    colorHex: "#ffffff",
+    colorAlpha: 100,
+    textColor: "#000000",
+    borderColor: "#333333",
+    fontSize: 14
+  };
+  orgData.push(nn);
+  createOrgNodes();
+  updateAllConnectors();
+  updateStats();
+  pushState("Add node");
+}
+
+function removeConnectionsFromSelectedNode() {
+  if (selectedNodes.size !== 1) return;
+  const idNum = [...selectedNodes][0];
+  connectors.forEach(conn => {
+    if (conn.from === idNum || conn.to === idNum) {
+      if (conn.line && conn.line.parentNode) {
+        conn.line.parentNode.removeChild(conn.line);
       }
     }
-    nodeChooser.addEventListener('change', e => {
-      const idNum = parseInt(e.target.value,10);
-      if(!isNaN(idNum)){
-        unselectAllNodes();
-        selectedNodes.add(idNum);
-        updateSelectedStyles();
-        updateEditFields();
-      }
-    });
+  });
+  connectors = connectors.filter(c => c.from !== idNum && c.to !== idNum);
+  updateAllConnectors();
+  pushState("Remove connections");
+}
 
-    /************************************************
-     * CONTEXT MENU
-     ************************************************/
-    document.addEventListener('contextmenu', e => {
-      e.preventDefault();
-      contextMenu.style.display = 'none';
-      contextClickX = e.clientX;
-      contextClickY = e.clientY;
+function copySelectedNode() {
+  if (selectedNodes.size !== 1) return;
+  const onlyId = [...selectedNodes][0];
+  const srcNode = orgData.find(n => n.id === onlyId);
+  if (!srcNode) return;
 
-      const nodeDiv = e.target.closest('.org-node');
-      if(nodeDiv) {
-        // If right-click on node
-        const nodeIdNum = parseInt(nodeDiv.id.replace('node-',''),10);
-        if(!selectedNodes.has(nodeIdNum)) {
-          unselectAllNodes();
-          selectedNodes.add(nodeIdNum);
-          updateSelectedStyles();
-          updateEditFields();
-          nodeChooser.value = nodeIdNum;
-        }
-        showContextMenuForNode(e);
-      } else {
-        showContextMenuForBackground(e);
-      }
-    });
+  copiedNodeData = {
+    name: srcNode.name,
+    title: srcNode.title,
+    department: srcNode.department,
+    officeLocation: srcNode.officeLocation,
+    client: srcNode.client,
+    yearsWithCompany: srcNode.yearsWithCompany,
+    width: srcNode.width,
+    height: srcNode.height,
+    colorHex: srcNode.colorHex,
+    colorAlpha: srcNode.colorAlpha,
+    textColor: srcNode.textColor,
+    borderColor: srcNode.borderColor,
+    fontSize: srcNode.fontSize
+  };
+  pushState("Copy node data");
+}
 
-    function showContextMenuForNode(e) {
-      // Show node-related items
-      ctxDeleteNode.style.display        = "block";
-      ctxAutoSizeNode.style.display      = "block";
-      ctxBringFront.style.display        = "block";
-      ctxSendBack.style.display          = "block";
-      ctxRemoveConnections.style.display = "block";
-      ctxCopyNode.style.display          = "block";
-      ctxPasteNode.style.display         = "block";
-      // Hide background items
-      ctxAddNewNode.style.display        = "none";
-      ctxAutoCenterBG.style.display      = "none";
+function pasteNodeAt(x, y) {
+  if (!copiedNodeData) return;
+  const maxId = orgData.reduce((acc, n) => Math.max(acc, n.id), 0);
+  const newId = maxId + 1;
+  const nn = {
+    id: newId,
+    name: copiedNodeData.name + " (copy)",
+    title: copiedNodeData.title,
+    department: copiedNodeData.department,
+    officeLocation: copiedNodeData.officeLocation,
+    client: copiedNodeData.client,
+    yearsWithCompany: copiedNodeData.yearsWithCompany,
+    x, y,
+    width: copiedNodeData.width,
+    height: copiedNodeData.height,
+    colorHex: copiedNodeData.colorHex,
+    colorAlpha: copiedNodeData.colorAlpha,
+    textColor: copiedNodeData.textColor,
+    borderColor: copiedNodeData.borderColor,
+    fontSize: copiedNodeData.fontSize
+  };
+  orgData.push(nn);
+  createOrgNodes();
+  updateAllConnectors();
+  updateStats();
+  pushState("Paste node");
+}
 
-      // Enable/disable paste
-      ctxPasteNode.disabled = (copiedNodeData === null);
+function autoOrganize() {
+  let xStart = 400; /* start to the right to maintain buffer + toolbar */
+  let yStart = 100, xGap = 200, yGap = 150;
+  orgData.forEach((n, i) => {
+    n.x = xStart + (i % 3) * xGap;
+    n.y = yStart + Math.floor(i / 3) * yGap;
+  });
+  createOrgNodes();
+  updateAllConnectors();
+  pushState("Auto-organize");
+}
 
-      contextMenu.style.display = 'block';
-      contextMenu.style.left = e.pageX + 'px';
-      contextMenu.style.top  = e.pageY + 'px';
+function autoSizeSingleNode(idNum) {
+  const nodeEl = nodeElements[idNum];
+  const node = orgData.find(n => n.id === idNum);
+  if (!nodeEl || !node) return;
+  nodeEl.style.width = 'auto';
+  nodeEl.style.height = 'auto';
+  nodeEl.style.whiteSpace = 'nowrap';
+  const newW = nodeEl.offsetWidth + 10;
+  const newH = nodeEl.offsetHeight + 10;
+  nodeEl.style.whiteSpace = 'normal';
+  node.width = newW;
+  node.height = newH;
+  nodeEl.style.width = newW + 'px';
+  nodeEl.style.height = newH + 'px';
+
+  updateAllConnectors();
+}
+
+function autoSizeAllNodes() {
+  orgData.forEach(n => autoSizeSingleNode(n.id));
+  pushState("Auto-size all");
+}
+
+function autoSizeSelectedNodes() {
+  selectedNodes.forEach(id => autoSizeSingleNode(id));
+  pushState("Auto-size selected");
+}
+
+/************************************************
+ * PRINT TO JPG
+ ************************************************/
+function printToJPG() {
+  // Temporarily remove any transform from the container
+  const originalTransform = orgChartContainer.style.transform;
+  orgChartContainer.style.transform = 'none';
+
+  // Update connector positions in untransformed state
+  updateAllConnectors();
+
+  // Store connector positions (x1,y1,x2,y2) after updating
+  const linePositions = connectors.map(conn => {
+    return {
+      x1: conn.line.getAttribute("x1"),
+      y1: conn.line.getAttribute("y1"),
+      x2: conn.line.getAttribute("x2"),
+      y2: conn.line.getAttribute("y2")
+    };
+  });
+
+  // Compute bounding box of all nodes (plus margin)
+  const bounds = getNodesBoundingBox();
+  if (bounds.width <= 0 || bounds.height <= 0) {
+    alert("No nodes to export to JPG.");
+    orgChartContainer.style.transform = originalTransform; // restore
+    updateAllConnectors();
+    return;
+  }
+  const margin = 50;
+  const exportWidth = bounds.width + margin * 2;
+  const exportHeight = bounds.height + margin * 2;
+
+  // Create an offscreen container
+  const exportContainer = document.createElement('div');
+  exportContainer.style.position = 'absolute';
+  exportContainer.style.left = '-999999px';
+  exportContainer.style.top = '0';
+  exportContainer.style.width = exportWidth + 'px';
+  exportContainer.style.height = exportHeight + 'px';
+  exportContainer.style.background = '#FFFFFF';
+  document.body.appendChild(exportContainer);
+
+  // Clone the chart
+  const clone = orgChartContainer.cloneNode(true);
+  clone.style.transform = 'none';
+
+  // Offset so bounding area starts at margin
+  const offsetX = margin - bounds.minX;
+  const offsetY = margin - bounds.minY;
+  clone.style.position = 'absolute';
+  clone.style.left = offsetX + 'px';
+  clone.style.top = offsetY + 'px';
+  clone.style.background = '#FFFFFF';
+  clone.style.width = '2000px';
+  clone.style.height = '2000px';
+  exportContainer.appendChild(clone);
+
+  // Adjust the SVG size in the clone
+  const cloneSVG = clone.querySelector('#connectorSVG');
+  if (cloneSVG) {
+    cloneSVG.setAttribute('width', exportWidth);
+    cloneSVG.setAttribute('height', exportHeight);
+  }
+
+  // Offset each connector line in the clone so it matches node positions
+  const cloneLines = (cloneSVG) ? cloneSVG.querySelectorAll('line') : [];
+  linePositions.forEach((pos, i) => {
+    const lineEl = cloneLines[i];
+    if (!lineEl) return;
+    lineEl.setAttribute('x1', parseFloat(pos.x1) + offsetX);
+    lineEl.setAttribute('y1', parseFloat(pos.y1) + offsetY);
+    lineEl.setAttribute('x2', parseFloat(pos.x2) + offsetX);
+    lineEl.setAttribute('y2', parseFloat(pos.y2) + offsetY);
+  });
+
+  // Use a scale factor for higher resolution
+  const scaleFactor = 2;
+  html2canvas(exportContainer, {
+    width: exportWidth,
+    height: exportHeight,
+    scale: scaleFactor,
+    backgroundColor: '#FFFFFF',
+    useCORS: true
+  }).then(canvas => {
+    document.body.removeChild(exportContainer);
+    // Restore original transform & re-update connectors
+    orgChartContainer.style.transform = originalTransform;
+    updateAllConnectors();
+    // Download image
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL("image/jpeg", 0.95);
+    link.download = "orgchart.jpg";
+    link.click();
+  }).catch(e => {
+    document.body.removeChild(exportContainer);
+    // Restore transform on failure
+    orgChartContainer.style.transform = originalTransform;
+    updateAllConnectors();
+    alert("Error creating JPG: " + e);
+  });
+}
+
+/************************************************
+ * IMPORT, SAVE, HISTORY
+ ************************************************/
+function saveChart() {
+  const connectorPairs = connectors.map(c => ({ from: c.from, to: c.to }));
+  const data = { orgData, connectorPairs };
+  const str = JSON.stringify(data, null, 2);
+  const blob = new Blob([str], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = "orgchart.json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function loadChartFromJSON(str) {
+  try {
+    const parsed = JSON.parse(str);
+    if (!parsed.orgData || !parsed.connectorPairs) {
+      alert("Invalid file format.");
+      return;
     }
-    function showContextMenuForBackground(e) {
-      // Hide node items
-      ctxDeleteNode.style.display        = "none";
-      ctxAutoSizeNode.style.display      = "none";
-      ctxBringFront.style.display        = "none";
-      ctxSendBack.style.display          = "none";
-      ctxRemoveConnections.style.display = "none";
-      ctxCopyNode.style.display          = "none";
-      // Show background items
-      ctxAddNewNode.style.display        = "block";
-      ctxPasteNode.style.display         = "block";
-      ctxAutoCenterBG.style.display      = "block";
+    clearAllConnectors();
+    orgData = parsed.orgData;
+    createOrgNodes();
+    parsed.connectorPairs.forEach(cp => createConnector(cp.from, cp.to));
+    updateAllConnectors();
+    pushState("Load from JSON");
+  } catch (e) {
+    alert("Error reading file:\n" + e);
+  }
+}
 
-      // Enable/disable paste
-      ctxPasteNode.disabled = (copiedNodeData === null);
+function pushState(actionDesc="") {
+  const connectorPairs = connectors.map(c => ({ from: c.from, to: c.to }));
+  const snapshot = {
+    orgData: JSON.parse(JSON.stringify(orgData)),
+    connectorPairs
+  };
+  if (currentHistoryIndex < stateHistory.length - 1) {
+    stateHistory.splice(currentHistoryIndex + 1);
+  }
+  stateHistory.push(snapshot);
+  currentHistoryIndex = stateHistory.length - 1;
+  localStorage.setItem('orgChartAutoSave', JSON.stringify(snapshot));
+}
 
-      contextMenu.style.display = 'block';
-      contextMenu.style.left = e.pageX + 'px';
-      contextMenu.style.top  = e.pageY + 'px';
-    }
+function restoreState(index) {
+  if (index < 0 || index >= stateHistory.length) return;
+  const saved = stateHistory[index];
+  orgData = JSON.parse(JSON.stringify(saved.orgData));
+  clearAllConnectors();
+  createOrgNodes();
+  saved.connectorPairs.forEach(cp => createConnector(cp.from, cp.to));
+  updateAllConnectors();
+  updateStats();
+}
 
-    document.addEventListener('click', e => {
-      if(!e.target.closest('#contextMenu')) {
-        contextMenu.style.display = 'none';
-        if(!e.target.closest('.org-node') && !e.target.closest('#sidePanel')) {
-          unselectAllNodes();
-        }
-      }
-    });
+function undoChart() {
+  if (currentHistoryIndex > 0) {
+    currentHistoryIndex--;
+    restoreState(currentHistoryIndex);
+  }
+}
 
-    ctxDeleteNode.addEventListener('click', () => {
-      deleteSelectedNode();
-      contextMenu.style.display = 'none';
-    });
-    ctxAutoSizeNode.addEventListener('click', () => {
-      autoSizeSelectedNodes();
-      contextMenu.style.display = 'none';
-    });
-    ctxBringFront.addEventListener('click', () => {
-      bringSelectedNodesToFront();
-      contextMenu.style.display = 'none';
-    });
-    ctxSendBack.addEventListener('click', () => {
-      sendSelectedNodesToBack();
-      contextMenu.style.display = 'none';
-    });
-    ctxRemoveConnections.addEventListener('click', () => {
-      removeConnectionsFromSelectedNode();
-      contextMenu.style.display = 'none';
-    });
-    ctxCopyNode.addEventListener('click', () => {
-      copySelectedNode();
-      contextMenu.style.display = 'none';
-    });
-    ctxPasteNode.addEventListener('click', () => {
-      const { x, y } = screenToLocal(contextClickX, contextClickY);
-      pasteNodeAt(x, y);
-      contextMenu.style.display = 'none';
-    });
-    ctxAddNewNode.addEventListener('click', () => {
-      const { x, y } = screenToLocal(contextClickX, contextClickY);
-      addNewNode(x, y);
-      contextMenu.style.display = 'none';
-    });
-    ctxAutoCenterBG.addEventListener('click', () => {
-      autoCenter();
-      contextMenu.style.display = 'none';
-    });
+function redoChart() {
+  if (currentHistoryIndex < stateHistory.length - 1) {
+    currentHistoryIndex++;
+    restoreState(currentHistoryIndex);
+  }
+}
 
-    /************************************************
-     * CONNECTOR HELPER
-     ************************************************/
-    function handleConnectorClick(nodeId){
-      if(startNodeId === null){
-        startNodeId = nodeId;
-      } else {
-        if(startNodeId !== nodeId){
-          createConnector(startNodeId, nodeId);
-          pushState("Create connector");
-        }
-        startNodeId = null;
-        isDrawingConnector = false;
-      }
-    }
-
-    /************************************************
-     * Z-INDEX
-     ************************************************/
-    function bringSelectedNodesToFront(){
-      selectedNodes.forEach(idNum => {
-        nodeElements[idNum].style.zIndex = 1000;
-      });
-      pushState("Bring front");
-    }
-    function sendSelectedNodesToBack(){
-      selectedNodes.forEach(idNum => {
-        nodeElements[idNum].style.zIndex = 1;
-      });
-      pushState("Send back");
-    }
-
-    /************************************************
-     * ZOOM (Buttons / Slider)
-     ************************************************/
-    function zoomIn(){
-      setZoom(currentScale + 0.1, "Zoom in");
-    }
-    function zoomOut(){
-      setZoom(currentScale - 0.1, "Zoom out");
-    }
-    const zoomSlider = document.getElementById('zoomSlider');
-    zoomSlider.addEventListener('input', e => {
-      let val = parseInt(e.target.value,10);
-      let newScale = val / 100;
-      setZoom(newScale, "Slider zoom");
-    });
-
-    /************************************************
-     * AUTO CENTER
-     ************************************************/
-    function autoCenter() {
-      let bounds = getNodesBoundingBox();
-      if (bounds.width <= 0 || bounds.height <= 0) return;
-
-      let outerWidth = orgChartOuter.clientWidth;
-      let outerHeight= orgChartOuter.clientHeight;
-
-      let scaleX = outerWidth / bounds.width;
-      let scaleY = outerHeight / bounds.height;
-      let newScale = Math.min(scaleX, scaleY);
-
-      // Add some margin to avoid flush edges
-      newScale *= 0.95;
-
-      newScale = Math.min(newScale, MAX_ZOOM);
-      newScale = Math.max(newScale, MIN_ZOOM);
-
-      currentScale = newScale;
-
-      // Center with some offset
-      translationX = (outerWidth - bounds.width * newScale)/2 - bounds.minX * newScale;
-      translationY = (outerHeight - bounds.height * newScale)/2 - bounds.minY * newScale;
-
-      applyTransform();
-      pushState("Auto center");
-    }
-
-    /************************************************
-     * STATS
-     ************************************************/
-    function updateStats(){
-      nodesCountEl.textContent = orgData.length;
-      connectorsCountEl.textContent = connectors.length;
-    }
-
-    /************************************************
-     * NODE UTILS
-     ************************************************/
-    function addNewNode(x=300, y=200){
-      const maxId = orgData.reduce((acc,n)=>Math.max(acc,n.id),0);
-      const newId = maxId+1;
-      const nn = {
-        id: newId,
-        name:`Node ${newId}`,
-        title:"",
-        department:"",
-        officeLocation:"",
-        client:"",
-        yearsWithCompany:0,
-        x,y,
-        width:130,
-        height:60,
-        colorHex:"#ffffff",
-        colorAlpha:100,
-        textColor:"#000000",
-        borderColor:"#333333",
-        fontSize:14
-      };
-      orgData.push(nn);
-      createOrgNodes();
-      updateAllConnectors();
-      updateStats();
-      pushState("Add node");
-    }
-
-    function removeConnectionsFromSelectedNode() {
-      if(selectedNodes.size !== 1) return;
-      const idNum = [...selectedNodes][0];
-      connectors.forEach(conn => {
-        if(conn.from === idNum || conn.to === idNum) {
-          if(conn.line && conn.line.parentNode) conn.line.parentNode.removeChild(conn.line);
-        }
-      });
-      connectors = connectors.filter(c => c.from !== idNum && c.to !== idNum);
-      updateAllConnectors();
-      pushState("Remove connections");
-    }
-
-    function copySelectedNode() {
-      if(selectedNodes.size !== 1) return;
-      const onlyId = [...selectedNodes][0];
-      const srcNode = orgData.find(n => n.id === onlyId);
-      if(!srcNode) return;
-
-      copiedNodeData = {
-        name: srcNode.name,
-        title: srcNode.title,
-        department: srcNode.department,
-        officeLocation: srcNode.officeLocation,
-        client: srcNode.client,
-        yearsWithCompany: srcNode.yearsWithCompany,
-        width: srcNode.width,
-        height: srcNode.height,
-        colorHex: srcNode.colorHex,
-        colorAlpha: srcNode.colorAlpha,
-        textColor: srcNode.textColor,
-        borderColor: srcNode.borderColor,
-        fontSize: srcNode.fontSize
-      };
-      pushState("Copy node data");
-    }
-
-    function pasteNodeAt(x, y) {
-      if(!copiedNodeData) return;
-      const maxId = orgData.reduce((acc,n)=>Math.max(acc,n.id),0);
-      const newId = maxId+1;
-      const nn = {
-        id: newId,
-        name: copiedNodeData.name + " (copy)",
-        title: copiedNodeData.title,
-        department: copiedNodeData.department,
-        officeLocation: copiedNodeData.officeLocation,
-        client: copiedNodeData.client,
-        yearsWithCompany: copiedNodeData.yearsWithCompany,
-        x, y,
-        width: copiedNodeData.width,
-        height: copiedNodeData.height,
-        colorHex: copiedNodeData.colorHex,
-        colorAlpha: copiedNodeData.colorAlpha,
-        textColor: copiedNodeData.textColor,
-        borderColor: copiedNodeData.borderColor,
-        fontSize: copiedNodeData.fontSize
-      };
-      orgData.push(nn);
-      createOrgNodes();
-      updateAllConnectors();
-      updateStats();
-      pushState("Paste node");
-    }
-
-    function autoOrganize(){
-      let xStart=300, yStart=100, xGap=200, yGap=150;
-      orgData.forEach((n,i)=>{
-        n.x = xStart + (i%3)*xGap;
-        n.y = yStart + Math.floor(i/3)*yGap;
-      });
-      createOrgNodes();
-      updateAllConnectors();
-      pushState("Auto-organize");
-    }
-
-    function autoSizeSingleNode(idNum){
-      const nodeEl = nodeElements[idNum];
-      const node   = orgData.find(n=>n.id===idNum);
-      if(!nodeEl || !node)return;
-      // Temporarily measure with no wrapping
-      nodeEl.style.width='auto';
-      nodeEl.style.height='auto';
-      nodeEl.style.whiteSpace='nowrap';
-
-      // record
-      const newW = nodeEl.offsetWidth + 10;
-      const newH = nodeEl.offsetHeight + 10;
-
-      // revert wrapping
-      nodeEl.style.whiteSpace='normal';
-
-      node.width=newW;
-      node.height=newH;
-      nodeEl.style.width=newW+'px';
-      nodeEl.style.height=newH+'px';
-      updateAllConnectors();
-    }
-
-    function autoSizeAllNodes(){
-      orgData.forEach(n=>autoSizeSingleNode(n.id));
-      pushState("Auto-size all");
-    }
-    function autoSizeSelectedNodes(){
-      selectedNodes.forEach(id=>autoSizeSingleNode(id));
-      pushState("Auto-size selected");
-    }
-
-    /************************************************
-     * EXPORT & IMPORT
-     ************************************************/
-    function exportToPNG(){
-      html2canvas(orgChartContainer).then(canvas=>{
-        const link=document.createElement('a');
-        link.href=canvas.toDataURL('image/png');
-        link.download="orgchart.png";
-        link.click();
-      });
-    }
-
-    function exportToPDF(){
-      const bounds=getNodesBoundingBox();
-      const clone=orgChartContainer.cloneNode(true);
-      clone.style.position='absolute';
-      clone.style.left=-bounds.minX+'px';
-      clone.style.top=-bounds.minY+'px';
-      clone.style.width=(bounds.width+100)+'px';
-      clone.style.height=(bounds.height+100)+'px';
-      clone.style.transform='translate(0,0) scale(1)';
-      document.body.appendChild(clone);
-
-      html2canvas(clone,{
-        width:bounds.width+100,
-        height:bounds.height+100,
-        x:bounds.minX-50,
-        y:bounds.minY-50
-      }).then(canvas=>{
-        document.body.removeChild(clone);
-        const { jsPDF }=window.jspdf;
-        const pdf=new jsPDF({ orientation:'landscape', unit:'px', format:'a4' });
-        const pageW=pdf.internal.pageSize.getWidth();
-        const pageH=pdf.internal.pageSize.getHeight();
-        const ratio=Math.min(pageW/canvas.width, pageH/canvas.height);
-        const imgW=canvas.width*ratio;
-        const imgH=canvas.height*ratio;
-        pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,imgW,imgH);
-        pdf.save('orgchart.pdf');
-      });
-    }
-
-    // NEW: Print Preview in a new window/tab
-    function openPrintPreview() {
-      // Clone just the chart portion:
-      const chartHTML = document.getElementById("orgChartContainer").outerHTML;
-      const w = window.open("", "_blank");
-      w.document.write(`
-        <html>
-          <head>
-            <title>Print Preview</title>
-            <style>
-              @media print {
-                body {
-                  margin: 0;
-                  padding: 0;
-                }
-                #orgChartContainer {
-                  transform: scale(1) !important;
-                  margin: auto !important;
-                }
-              }
-            </style>
-          </head>
-          <body onload="window.print()">
-            ${chartHTML}
-          </body>
-        </html>
-      `);
-      w.document.close();
-    }
-
-    function saveChart(){
-      const connectorPairs = connectors.map(c=>({from:c.from, to:c.to}));
-      const data = { orgData, connectorPairs };
-      const str = JSON.stringify(data,null,2);
-      const blob = new Blob([str], { type:"application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = "orgchart.json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-
-    function loadChartFromJSON(str){
-      try{
-        const parsed = JSON.parse(str);
-        if(!parsed.orgData || !parsed.connectorPairs){
-          alert("Invalid file format.");
-          return;
-        }
-        clearAllConnectors();
+/**
+ * Loads from localStorage if present. Returns true if loaded successfully, else false.
+ */
+function loadFromLocalStorage() {
+  const autoSaved = localStorage.getItem('orgChartAutoSave');
+  if (autoSaved) {
+    try {
+      const parsed = JSON.parse(autoSaved);
+      if (parsed.orgData && parsed.connectorPairs) {
         orgData = parsed.orgData;
         createOrgNodes();
+        connectors = [];
         parsed.connectorPairs.forEach(cp => createConnector(cp.from, cp.to));
         updateAllConnectors();
-        pushState("Load from JSON");
-      } catch(e){
-        alert("Error reading file:\n"+ e);
+        updateStats();
+        pushState("Load from localStorage");
+        return true;
       }
+    } catch (e) {
+      console.warn("Local storage data invalid:", e);
     }
+  }
+  return false;
+}
 
-    /************************************************
-     * HISTORY
-     ************************************************/
-    function pushState(actionDesc=""){
-      const connectorPairs=connectors.map(c=>({from:c.from,to:c.to}));
-      const snapshot={
-        orgData:JSON.parse(JSON.stringify(orgData)),
-        connectorPairs
-      };
-      if(currentHistoryIndex<stateHistory.length-1){
-        stateHistory.splice(currentHistoryIndex+1);
-      }
-      stateHistory.push(snapshot);
-      currentHistoryIndex=stateHistory.length-1;
+/************************************************
+ * MISC UTILS
+ ************************************************/
+function getNodesBoundingBox() {
+  if (orgData.length === 0) {
+    return { minX: 0, minY: 0, width: 0, height: 0 };
+  }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  orgData.forEach(n => {
+    const x2 = n.x + n.width;
+    const y2 = n.y + n.height;
+    if (n.x < minX) minX = n.x;
+    if (n.y < minY) minY = n.y;
+    if (x2 > maxX) maxX = x2;
+    if (y2 > maxY) maxY = y2;
+  });
+  if (minX > maxX || minY > maxY) {
+    return { minX: 0, minY: 0, width: 0, height: 0 };
+  }
+  const width = maxX - minX;
+  const height = maxY - minY;
+  return { minX, minY, width, height };
+}
 
-      localStorage.setItem('orgChartAutoSave', JSON.stringify(snapshot));
+function hexAlphaToRGBA(hex, alphaVal) {
+  if (!hex.startsWith("#")) return "rgba(0,0,0,1)";
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const a = alphaVal / 100;
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+/************************************************
+ * EVENT LISTENERS & CUSTOM ACTIONS
+ ************************************************/
+document.getElementById('newNodeBtn').addEventListener('click', () => addNewNode());
+document.getElementById('autoOrganizeBtn').addEventListener('click', autoOrganize);
+document.getElementById('autoSizeBtn').addEventListener('click', autoSizeAllNodes);
+document.getElementById('autoSizeSelectedBtn').addEventListener('click', autoSizeSelectedNodes);
+
+document.getElementById('drawConnectorBtn').addEventListener('click', () => {
+  isDrawingConnector = !isDrawingConnector;
+  if (isDrawingConnector) startNodeId = null;
+});
+
+document.getElementById('clearConnectorsBtn').addEventListener('click', () => {
+  clearAllConnectors();
+  pushState("Clear connectors");
+});
+
+document.getElementById('connectorColorInput').addEventListener('input', e => {
+  connectorColorHex = e.target.value;
+  updateAllConnectors();
+  pushState("Connector color");
+});
+
+document.getElementById('connectorAlphaRange').addEventListener('input', e => {
+  connectorAlpha = parseInt(e.target.value, 10);
+  updateAllConnectors();
+  pushState("Connector alpha");
+});
+
+document.getElementById('saveChartBtn').addEventListener('click', saveChart);
+document.getElementById('loadChartBtn').addEventListener('click', () => {
+  document.getElementById('loadFile').click();
+});
+document.getElementById('loadFile').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = evt => {
+    loadChartFromJSON(evt.target.result);
+  };
+  r.readAsText(f);
+  e.target.value = "";
+});
+
+// Print to JPG button
+printJPGBtn.addEventListener('click', printToJPG);
+
+document.getElementById('zoomOutBtn').addEventListener('click', zoomOut);
+document.getElementById('zoomInBtn').addEventListener('click', zoomIn);
+document.getElementById('undoBtn').addEventListener('click', undoChart);
+document.getElementById('redoBtn').addEventListener('click', redoChart);
+document.getElementById('bringFrontBtn').addEventListener('click', bringSelectedNodesToFront);
+document.getElementById('sendBackBtn').addEventListener('click', sendSelectedNodesToBack);
+document.getElementById('autoCenterBtn').addEventListener('click', autoCenter);
+
+const searchInputEl = document.getElementById('searchInput');
+const clearFilterBtnEl = document.getElementById('clearFilterBtn');
+searchInputEl.addEventListener('input', filterNodesByNameDept);
+clearFilterBtnEl.addEventListener('click', () => {
+  searchInputEl.value = "";
+  filterNodesByNameDept();
+});
+function filterNodesByNameDept() {
+  const q = searchInputEl.value.toLowerCase().trim();
+  orgData.forEach(n => {
+    const el = nodeElements[n.id];
+    if (!el) return;
+    const c = (n.name + " " + n.department).toLowerCase();
+    if (q && !c.includes(q)) el.classList.add('hidden');
+    else el.classList.remove('hidden');
+  });
+}
+
+const attributeSelectEl = document.getElementById('attributeSelect');
+const attributeInputEl = document.getElementById('attributeInput');
+const attributeFilterBtnEl = document.getElementById('attributeFilterBtn');
+const clearAttributeFilterBtnEl = document.getElementById('clearAttributeFilterBtn');
+
+attributeFilterBtnEl.addEventListener('click', () => {
+  const attr = attributeSelectEl.value;
+  const val = attributeInputEl.value.toLowerCase().trim();
+  orgData.forEach(n => {
+    const el = nodeElements[n.id];
+    if (!el) return;
+    const nodeVal = (n[attr] || "").toString().toLowerCase();
+    if (val && !nodeVal.includes(val)) {
+      el.classList.add('hidden');
+    } else {
+      el.classList.remove('hidden');
     }
+  });
+});
 
-    function restoreState(index){
-      if(index<0 || index>=stateHistory.length)return;
-      const saved=stateHistory[index];
-      orgData=JSON.parse(JSON.stringify(saved.orgData));
-      clearAllConnectors();
-      createOrgNodes();
-      saved.connectorPairs.forEach(cp=>createConnector(cp.from,cp.to));
-      updateAllConnectors();
-      updateStats();
-    }
+clearAttributeFilterBtnEl.addEventListener('click', () => {
+  attributeInputEl.value = "";
+  orgData.forEach(n => {
+    const el = nodeElements[n.id];
+    if (el) el.classList.remove('hidden');
+  });
+});
 
-    function undoChart(){
-      if(currentHistoryIndex>0){
-        currentHistoryIndex--;
-        restoreState(currentHistoryIndex);
-      }
-    }
-    function redoChart(){
-      if(currentHistoryIndex<stateHistory.length-1){
-        currentHistoryIndex++;
-        restoreState(currentHistoryIndex);
-      }
-    }
+// Handle connector creation clicks
+orgChartContainer.addEventListener('click', e => {
+  const nodeDiv = e.target.closest('.org-node');
+  if (nodeDiv && isDrawingConnector) {
+    const nodeIdNum = parseInt(nodeDiv.id.replace('node-',''),10);
+    handleConnectorClick(nodeIdNum);
+  }
+});
 
-    function loadFromLocalStorage(){
-      const autoSaved=localStorage.getItem('orgChartAutoSave');
-      if(autoSaved){
-        try{
-          const parsed=JSON.parse(autoSaved);
-          if(parsed.orgData && parsed.connectorPairs){
-            orgData=parsed.orgData;
-            createOrgNodes();
-            connectors=[];
-            parsed.connectorPairs.forEach(cp=>createConnector(cp.from,cp.to));
-            updateAllConnectors();
-            updateStats();
-            pushState("Load from localStorage");
-          }
-        }catch(e){
-          console.warn("Local storage data invalid:", e);
-        }
-      }
-    }
+// "Select All Nodes" button listener
+selectAllBtn.addEventListener('click', () => {
+  selectedNodes = new Set(orgData.map(n => n.id));
+  updateSelectedStyles();
+  updateEditFields();
+  pushState("Select all nodes");
+});
 
-    /************************************************
-     * MISC UTILS
-     ************************************************/
-    function getNodesBoundingBox(){
-      if(orgData.length === 0) return {minX:0, minY:0, width:0, height:0};
-      let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
-      orgData.forEach(n=>{
-        const x2=n.x+n.width;
-        const y2=n.y+n.height;
-        if(n.x<minX) minX=n.x;
-        if(n.y<minY) minY=n.y;
-        if(x2>maxX) maxX=x2;
-        if(y2>maxY) maxY=y2;
-      });
-      return {
-        minX, 
-        minY, 
-        width: maxX - minX, 
-        height: maxY - minY
-      };
-    }
-
-    function hexAlphaToRGBA(hex, alphaVal){
-      if(!hex.startsWith("#")) return "rgba(0,0,0,1)";
-      const r=parseInt(hex.slice(1,3),16);
-      const g=parseInt(hex.slice(3,5),16);
-      const b=parseInt(hex.slice(5,7),16);
-      const a=alphaVal/100;
-      return `rgba(${r},${g},${b},${a})`;
-    }
-
-    /************************************************
-     * EVENT LISTENERS (Buttons)
-     ************************************************/
-    document.getElementById('newNodeBtn').addEventListener('click', () => addNewNode());
-    document.getElementById('autoOrganizeBtn').addEventListener('click', autoOrganize);
-    document.getElementById('autoSizeBtn').addEventListener('click', autoSizeAllNodes);
-    document.getElementById('autoSizeSelectedBtn').addEventListener('click', autoSizeSelectedNodes);
-
-    document.getElementById('drawConnectorBtn').addEventListener('click',()=>{
-      isDrawingConnector = !isDrawingConnector;
-      if(isDrawingConnector) startNodeId = null;
-    });
-    document.getElementById('clearConnectorsBtn').addEventListener('click',()=>{
-      clearAllConnectors();
-      pushState("Clear connectors");
-    });
-    document.getElementById('connectorColorInput').addEventListener('input', e=>{
-      connectorColorHex=e.target.value;
-      updateAllConnectors();
-      pushState("Connector color");
-    });
-    document.getElementById('connectorAlphaRange').addEventListener('input', e=>{
-      connectorAlpha=parseInt(e.target.value,10);
-      updateAllConnectors();
-      pushState("Connector alpha");
-    });
-
-    document.getElementById('saveChartBtn').addEventListener('click', saveChart);
-    document.getElementById('loadChartBtn').addEventListener('click',()=>{
-      document.getElementById('loadFile').click();
-    });
-    document.getElementById('loadFile').addEventListener('change',e=>{
-      const f=e.target.files[0];
-      if(!f)return;
-      const r=new FileReader();
-      r.onload=evt=>{
-        loadChartFromJSON(evt.target.result);
-      };
-      r.readAsText(f);
-      e.target.value="";
-    });
-
-    document.getElementById('exportPNGBtn').addEventListener('click', exportToPNG);
-    document.getElementById('exportPDFBtn').addEventListener('click', exportToPDF);
-
-    // Listen for our new Print Preview button
-    document.getElementById('printPreviewBtn').addEventListener('click', openPrintPreview);
-
-    document.getElementById('zoomOutBtn').addEventListener('click', zoomOut);
-    document.getElementById('zoomInBtn').addEventListener('click', zoomIn);
-
-    document.getElementById('undoBtn').addEventListener('click', undoChart);
-    document.getElementById('redoBtn').addEventListener('click', redoChart);
-
-    document.getElementById('bringFrontBtn').addEventListener('click', bringSelectedNodesToFront);
-    document.getElementById('sendBackBtn').addEventListener('click', sendSelectedNodesToBack);
-
-    document.getElementById('autoCenterBtn').addEventListener('click', autoCenter);
-
-    // Node searching & filtering
-    const searchInputEl=document.getElementById('searchInput');
-    const clearFilterBtnEl=document.getElementById('clearFilterBtn');
-    searchInputEl.addEventListener('input', filterNodesByNameDept);
-    clearFilterBtnEl.addEventListener('click', ()=>{
-      searchInputEl.value="";
-      filterNodesByNameDept();
-    });
-    function filterNodesByNameDept(){
-      const q=searchInputEl.value.toLowerCase().trim();
-      orgData.forEach(n=>{
-        const el=nodeElements[n.id];
-        if(!el) return;
-        const c=(n.name+" "+n.department).toLowerCase();
-        if(q && !c.includes(q)) el.classList.add('hidden');
-        else el.classList.remove('hidden');
-      });
-    }
-
-    const attributeSelectEl  =document.getElementById('attributeSelect');
-    const attributeInputEl   =document.getElementById('attributeInput');
-    const attributeFilterBtnEl=document.getElementById('attributeFilterBtn');
-    const clearAttributeFilterBtnEl=document.getElementById('clearAttributeFilterBtn');
-
-    attributeFilterBtnEl.addEventListener('click',()=>{
-      const attr=attributeSelectEl.value;
-      const val=attributeInputEl.value.toLowerCase().trim();
-      orgData.forEach(n=>{
-        const el=nodeElements[n.id];
-        if(!el)return;
-        const nodeVal=(n[attr]||"").toString().toLowerCase();
-        if(val && !nodeVal.includes(val)) el.classList.add('hidden');
-        else el.classList.remove('hidden');
-      });
-    });
-    clearAttributeFilterBtnEl.addEventListener('click',()=>{
-      attributeInputEl.value="";
-      orgData.forEach(n=>{
-        const el=nodeElements[n.id];
-        if(el) el.classList.remove('hidden');
-      });
-    });
-
-    // If user clicks a node while drawing connectors
-    orgChartContainer.addEventListener('click', e=>{
-      const nodeDiv=e.target.closest('.org-node');
-      if(nodeDiv && isDrawingConnector){
-        const nodeIdNum=parseInt(nodeDiv.id.replace('node-',''),10);
-        handleConnectorClick(nodeIdNum);
-      }
-    });
-
-    /************************************************
-     * START
-     ************************************************/
-    init();
-  </script>
+// Finally, initialize
+init();
+</script>
 </body>
 </html>
