@@ -112,6 +112,9 @@
             margin: 0 20px;
             font-weight: bold;
         }
+        #exportButton {
+            display: none; /* Hidden until results are displayed */
+        }
     </style>
 </head>
 <body>
@@ -156,12 +159,16 @@
             <input type="text" id="dataDate" placeholder="Data Date (mm/dd/yyyy)" style="width: 200px;">
             <br>
             <button onclick="analyzeSchedule()">Analyze Schedule</button>
+            <button id="exportButton" onclick="exportResults()">Export Results</button>
         </div>
         <div id="loading" class="loading" style="display: none;">Analyzing schedule...</div>
         <div id="results" class="results" style="display: none;"></div>
     </div>
 
     <script>
+        /* A global reference so we can export after analysis. */
+        let globalChecks = [];
+
         // Simple CSV Parser (handles basic quoted fields)
         function parseCSV(csvText) {
             const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
@@ -254,11 +261,18 @@
 
             // 1. Logic (Open Ends)
             let openEnds = 0;
+            let openEndActivities = [];
             activities.forEach(act => {
                 if (isExcluded(act, 'logic')) return;
                 const preds = parseRelationships(act['Predecessors'] || '').length;
                 const succs = parseRelationships(act['Successors'] || '').length;
-                if (preds === 0 || succs === 0) openEnds++;
+                if (preds === 0 || succs === 0) {
+                    openEnds++;
+                    openEndActivities.push({
+                        id: act['Activity ID'], 
+                        name: act['Activity Name']
+                    });
+                }
             });
             const logicPct = (openEnds / totalActs) * 100;
             checks.push({
@@ -267,21 +281,26 @@
                 pass: logicPct < targetPass,
                 description: 'Percentage of activities with no predecessor or no successor.',
                 suggestions: 'Connect dangling activities to ensure complete logic ties.',
-                issues: openEnds > 0 ? activities.filter(act => {
-                    if (isExcluded(act, 'logic')) return false;
-                    const preds = parseRelationships(act['Predecessors'] || '').length;
-                    const succs = parseRelationships(act['Successors'] || '').length;
-                    return preds === 0 || succs === 0;
-                }).map(act => act['Activity ID']).slice(0, 10) : [] // Limit to 10
+                issues: openEndActivities.slice(0, 50) // Show up to 50 here, can adjust as needed
             });
 
             // 2. Negative Lags
             let negLags = 0;
             let totalRels = 0;
+            let negLagActivities = [];
             activities.forEach(act => {
                 if (getStatus(act) === 'Completed') return;
                 const preds = parseRelationships(act['Predecessors'] || '');
-                preds.forEach(rel => { if (rel.lag < 0) negLags++; totalRels++; });
+                preds.forEach(rel => {
+                    if (rel.lag < 0) {
+                        negLags++;
+                        negLagActivities.push({
+                            id: act['Activity ID'],
+                            name: act['Activity Name']
+                        });
+                    }
+                    totalRels++;
+                });
             });
             const negLagPct = totalRels > 0 ? (negLags / totalRels) * 100 : 0;
             checks.push({
@@ -290,16 +309,26 @@
                 pass: negLagPct < targetPass,
                 description: 'Percentage of relationships with negative lags.',
                 suggestions: 'Avoid negative lags; adjust logic instead.',
-                issues: negLags > 0 ? ['Check all predecessor/successor fields'] : []
+                issues: negLagActivities.slice(0, 50)
             });
 
             // 3. Lags
             let lags = 0;
             totalRels = 0;
+            let lagActivities = [];
             activities.forEach(act => {
                 if (getStatus(act) === 'Completed') return;
                 const preds = parseRelationships(act['Predecessors'] || '');
-                preds.forEach(rel => { if (rel.lag > 0) lags++; totalRels++; });
+                preds.forEach(rel => { 
+                    if (rel.lag > 0) {
+                        lags++;
+                        lagActivities.push({
+                            id: act['Activity ID'],
+                            name: act['Activity Name']
+                        });
+                    }
+                    totalRels++;
+                });
             });
             const lagPct = totalRels > 0 ? (lags / totalRels) * 100 : 0;
             checks.push({
@@ -308,15 +337,24 @@
                 pass: lagPct < 25, // Typical target <25%
                 description: 'Percentage of relationships with positive lags.',
                 suggestions: 'Minimize lags where possible; use separate activities for waits.',
-                issues: lags > 0 ? ['Review relationships with lags'] : []
+                issues: lagActivities.slice(0, 50)
             });
 
             // 4. Long Lags
             let longLags = 0;
+            let longLagActivities = [];
             activities.forEach(act => {
                 if (getStatus(act) === 'Completed') return;
                 const preds = parseRelationships(act['Predecessors'] || '');
-                preds.forEach(rel => { if (rel.lag > threshold) longLags++; });
+                preds.forEach(rel => { 
+                    if (rel.lag > threshold) {
+                        longLags++;
+                        longLagActivities.push({
+                            id: act['Activity ID'],
+                            name: act['Activity Name']
+                        });
+                    }
+                });
             });
             const longLagPct = totalRels > 0 ? (longLags / totalRels) * 100 : 0;
             checks.push({
@@ -325,17 +363,24 @@
                 pass: longLagPct < targetPass,
                 description: 'Percentage of relationships with lags > 44 days.',
                 suggestions: 'Break down long lags into activities.',
-                issues: longLags > 0 ? ['Inspect long lag relationships'] : []
+                issues: longLagActivities.slice(0, 50)
             });
 
             // 5. Relationship Types (FS >90%)
             let fsCount = 0;
             let totalTypes = 0;
+            let nonFSActivities = [];
             activities.forEach(act => {
                 if (getStatus(act) === 'Completed') return;
                 const preds = parseRelationships(act['Predecessors'] || '');
                 preds.forEach(rel => {
                     if (rel.type === 'FS') fsCount++;
+                    else {
+                        nonFSActivities.push({
+                            id: act['Activity ID'],
+                            name: act['Activity Name']
+                        });
+                    }
                     totalTypes++;
                 });
             });
@@ -346,15 +391,22 @@
                 pass: fsPct > 90,
                 description: 'Percentage of Finish-to-Start relationships.',
                 suggestions: 'Prefer FS relationships; review others.',
-                issues: fsPct < 90 ? ['Too many non-FS relationships'] : []
+                issues: nonFSActivities.slice(0, 50)
             });
 
             // 6. Hard Constraints
             let hardConst = 0;
+            let hardConstActivities = [];
             activities.forEach(act => {
                 if (isExcluded(act, 'constraints')) return;
                 const constType = act['Constraint Type'] || '';
-                if (constType.includes('Mandatory')) hardConst++;
+                if (constType.includes('Mandatory')) {
+                    hardConst++;
+                    hardConstActivities.push({
+                        id: act['Activity ID'],
+                        name: act['Activity Name']
+                    });
+                }
             });
             const hardPct = (hardConst / totalActs) * 100;
             checks.push({
@@ -363,18 +415,22 @@
                 pass: hardPct < targetPass,
                 description: 'Percentage of activities with hard constraints.',
                 suggestions: 'Remove hard constraints; let logic drive dates.',
-                issues: hardConst > 0 ? activities.filter(act => {
-                    if (isExcluded(act, 'constraints')) return false;
-                    return (act['Constraint Type'] || '').includes('Mandatory');
-                }).map(act => act['Activity ID']).slice(0, 10) : []
+                issues: hardConstActivities.slice(0, 50)
             });
 
             // 7. Soft Constraints
             let softConst = 0;
+            let softConstActivities = [];
             activities.forEach(act => {
                 if (isExcluded(act, 'constraints')) return;
                 const constType = act['Constraint Type'] || '';
-                if (constType && !constType.includes('Mandatory') && !constType.includes('None')) softConst++;
+                if (constType && !constType.includes('Mandatory') && !constType.includes('None')) {
+                    softConst++;
+                    softConstActivities.push({
+                        id: act['Activity ID'],
+                        name: act['Activity Name']
+                    });
+                }
             });
             const softPct = (softConst / totalActs) * 100;
             checks.push({
@@ -383,19 +439,22 @@
                 pass: softPct < 25, // Typical <25%
                 description: 'Percentage of activities with soft constraints.',
                 suggestions: 'Minimize constraints; use as few as possible.',
-                issues: softConst > 0 ? activities.filter(act => {
-                    if (isExcluded(act, 'constraints')) return false;
-                    const ct = act['Constraint Type'] || '';
-                    return ct && !ct.includes('Mandatory') && !ct.includes('None');
-                }).map(act => act['Activity ID']).slice(0, 10) : []
+                issues: softConstActivities.slice(0, 50)
             });
 
             // 8. Large Float
             let largeFloat = 0;
+            let largeFloatActivities = [];
             activities.forEach(act => {
                 if (isExcluded(act, 'float')) return;
                 const tf = parseFloat(act['Total Float'] || 0);
-                if (tf > threshold) largeFloat++;
+                if (tf > threshold) {
+                    largeFloat++;
+                    largeFloatActivities.push({
+                        id: act['Activity ID'],
+                        name: act['Activity Name']
+                    });
+                }
             });
             const largeFloatPct = (largeFloat / totalActs) * 100;
             checks.push({
@@ -404,18 +463,22 @@
                 pass: largeFloatPct < targetPass,
                 description: 'Percentage of activities with total float > 44 days.',
                 suggestions: 'Add relationships to reduce excessive float.',
-                issues: largeFloat > 0 ? activities.filter(act => {
-                    if (isExcluded(act, 'float')) return false;
-                    return parseFloat(act['Total Float'] || 0) > threshold;
-                }).map(act => act['Activity ID']).slice(0, 10) : []
+                issues: largeFloatActivities.slice(0, 50)
             });
 
             // 9. Negative Float
             let negFloat = 0;
+            let negFloatActivities = [];
             activities.forEach(act => {
                 if (isExcluded(act, 'float')) return;
                 const tf = parseFloat(act['Total Float'] || 0);
-                if (tf < 0) negFloat++;
+                if (tf < 0) {
+                    negFloat++;
+                    negFloatActivities.push({
+                        id: act['Activity ID'],
+                        name: act['Activity Name']
+                    });
+                }
             });
             const negFloatPct = (negFloat / totalActs) * 100;
             checks.push({
@@ -424,18 +487,22 @@
                 pass: negFloatPct === 0,
                 description: 'Percentage of activities with negative total float.',
                 suggestions: 'Resolve constraints or logic causing negative float.',
-                issues: negFloat > 0 ? activities.filter(act => {
-                    if (isExcluded(act, 'float')) return false;
-                    return parseFloat(act['Total Float'] || 0) < 0;
-                }).map(act => act['Activity ID']).slice(0, 10) : []
+                issues: negFloatActivities.slice(0, 50)
             });
 
             // 10. Large Durations
             let largeDur = 0;
+            let largeDurActivities = [];
             activities.forEach(act => {
                 if (isExcluded(act, 'duration')) return;
                 const dur = parseFloat(act['Remaining Duration'] || 0);
-                if (dur > threshold) largeDur++;
+                if (dur > threshold) {
+                    largeDur++;
+                    largeDurActivities.push({
+                        id: act['Activity ID'],
+                        name: act['Activity Name']
+                    });
+                }
             });
             const largeDurPct = (largeDur / totalActs) * 100;
             checks.push({
@@ -444,22 +511,32 @@
                 pass: largeDurPct < targetPass,
                 description: 'Percentage of activities with remaining duration > 44 days.',
                 suggestions: 'Subdivide long-duration activities.',
-                issues: largeDur > 0 ? activities.filter(act => {
-                    if (isExcluded(act, 'duration')) return false;
-                    return parseFloat(act['Remaining Duration'] || 0) > threshold;
-                }).map(act => act['Activity ID']).slice(0, 10) : []
+                issues: largeDurActivities.slice(0, 50)
             });
 
             // 11. Invalid Progress Dates (simplified, requires dataDate)
             let invalidDates = 0;
+            let invalidDateActivities = [];
             if (dataDate) {
                 activities.forEach(act => {
                     if (isExcluded(act, 'dates')) return;
                     const status = getStatus(act);
                     const actualStart = parseP6Date(act['Actual Start']);
                     const actualFinish = parseP6Date(act['Actual Finish']);
-                    if (status === 'Not Started' && actualStart && actualStart < dataDate) invalidDates++;
-                    else if ((status === 'In Progress' || status === 'Completed') && actualFinish && actualFinish < dataDate) invalidDates++; // Simplified
+                    // Simplified checks:
+                    if (status === 'Not Started' && actualStart && actualStart < dataDate) {
+                        invalidDates++;
+                        invalidDateActivities.push({
+                            id: act['Activity ID'],
+                            name: act['Activity Name']
+                        });
+                    } else if ((status === 'In Progress' || status === 'Completed') && actualFinish && actualFinish < dataDate) {
+                        invalidDates++;
+                        invalidDateActivities.push({
+                            id: act['Activity ID'],
+                            name: act['Activity Name']
+                        });
+                    }
                 });
             }
             const invalidPct = dataDate ? (invalidDates / totalActs) * 100 : 0;
@@ -469,23 +546,22 @@
                 pass: invalidPct === 0,
                 description: 'Percentage of activities with invalid dates relative to data date.',
                 suggestions: 'Correct actual dates to align with data date.',
-                issues: invalidDates > 0 ? activities.filter(act => {
-                    if (isExcluded(act, 'dates') || !dataDate) return false;
-                    const status = getStatus(act);
-                    const actualStart = parseP6Date(act['Actual Start']);
-                    const actualFinish = parseP6Date(act['Actual Finish']);
-                    if (status === 'Not Started' && actualStart && actualStart < dataDate) return true;
-                    if ((status === 'In Progress' || status === 'Completed') && actualFinish && actualFinish < dataDate) return true;
-                    return false;
-                }).map(act => act['Activity ID']).slice(0, 10) : []
+                issues: invalidDateActivities.slice(0, 50)
             });
 
             // 12. Resource / Cost
             let noResource = 0;
+            let noResourceActivities = [];
             activities.forEach(act => {
                 if (isExcluded(act, 'resource')) return;
                 const resources = act['Primary Resource'] || act['Resource Names'] || '';
-                if (!resources.trim()) noResource++;
+                if (!resources.trim()) {
+                    noResource++;
+                    noResourceActivities.push({
+                        id: act['Activity ID'],
+                        name: act['Activity Name']
+                    });
+                }
             });
             const noResPct = (noResource / totalActs) * 100;
             checks.push({
@@ -494,20 +570,23 @@
                 pass: noResPct < 25, // Allow some non-resource activities
                 description: 'Percentage of activities without resources assigned.',
                 suggestions: 'Assign resources to all executable activities.',
-                issues: noResource > 0 ? activities.filter(act => {
-                    if (isExcluded(act, 'resource')) return false;
-                    const res = act['Primary Resource'] || act['Resource Names'] || '';
-                    return !res.trim();
-                }).map(act => act['Activity ID']).slice(0, 10) : []
+                issues: noResourceActivities.slice(0, 50)
             });
 
             // 13. Late Activities
             let lateActs = 0;
+            let lateActivities = [];
             activities.forEach(act => {
                 if (isExcluded(act, 'late')) return;
                 const blFinish = parseP6Date(act['Baseline Finish']);
                 const ef = parseP6Date(act['Early Finish']);
-                if (blFinish && ef && ef > blFinish) lateActs++;
+                if (blFinish && ef && ef > blFinish) {
+                    lateActs++;
+                    lateActivities.push({
+                        id: act['Activity ID'],
+                        name: act['Activity Name']
+                    });
+                }
             });
             const latePct = (lateActs / totalActs) * 100;
             checks.push({
@@ -516,17 +595,13 @@
                 pass: latePct < 10, // Arbitrary
                 description: 'Percentage of activities behind baseline.',
                 suggestions: 'Investigate and recover delays.',
-                issues: lateActs > 0 ? activities.filter(act => {
-                    if (isExcluded(act, 'late')) return false;
-                    const blFinish = parseP6Date(act['Baseline Finish']);
-                    const ef = parseP6Date(act['Early Finish']);
-                    return blFinish && ef && ef > blFinish;
-                }).map(act => act['Activity ID']).slice(0, 10) : []
+                issues: lateActivities.slice(0, 50)
             });
 
             // 14. BEI - Baseline Execution Index
             let completed = 0;
             let shouldComplete = 0;
+            // We won't capture "issues" in the same sense, but we could note them if needed...
             if (dataDate) {
                 activities.forEach(act => {
                     if (isExcluded(act, 'bei')) return;
@@ -544,7 +619,7 @@
                 pass: beiPct > 95,
                 description: 'Ratio of completed to baseline-scheduled completions by data date.',
                 suggestions: 'If low, accelerate execution.',
-                issues: beiPct < 95 ? ['Overall BEI low; review progress'] : []
+                issues: [] // This check doesn't store specific activity-level issues
             });
 
             // Overall stats
@@ -554,7 +629,9 @@
                 score: overallPass.toFixed(2) + '%',
                 pass: overallPass > 80,
                 description: 'Percentage of checks passing.',
-                suggestions: overallPass < 80 ? 'Address failing checks to improve schedule quality.' : 'Schedule is generally healthy.',
+                suggestions: overallPass < 80 
+                    ? 'Address failing checks to improve schedule quality.' 
+                    : 'Schedule is generally healthy.',
                 issues: []
             });
 
@@ -568,16 +645,36 @@
             checks.forEach(check => {
                 const card = document.createElement('div');
                 card.className = `card ${check.pass ? 'pass' : 'fail'}`;
+                
+                // Build the list of issues
+                let issueList = '';
+                if (check.issues.length > 0) {
+                    issueList = `
+                        <div class="issues">
+                            <strong>Issues (${check.issues.length} found; showing up to 50):</strong>
+                            <ul>
+                                ${check.issues.map(issue => `<li>${issue.id} - ${issue.name}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    // If no issues for this check
+                    issueList = '<div class="issues">No issues found.</div>';
+                }
+
                 card.innerHTML = `
                     <h3>${check.name}</h3>
                     <div class="score">${check.score}</div>
                     <div class="description">${check.description}</div>
                     <div class="suggestions">${check.suggestions}</div>
-                    ${check.issues.length > 0 ? `<div class="issues"><strong>Sample Issues (${check.issues.length} total):</strong><ul>${check.issues.map(id => `<li>${id}</li>`).join('')}</ul><p>(Showing first 10; check full data for more)</p></div>` : ''}
+                    ${issueList}
                 `;
                 resultsDiv.appendChild(card);
             });
             resultsDiv.style.display = 'grid';
+            
+            // Show the "Export Results" button
+            document.getElementById('exportButton').style.display = 'inline-block';
         }
 
         // Main analyze function
@@ -608,6 +705,10 @@
                     const csvData = parseCSV(e.target.result);
                     if (csvData.length < 1) throw new Error('No data in CSV');
                     const checks = performChecks(csvData, dataDate);
+
+                    // Store globally so we can export as needed
+                    globalChecks = checks;
+
                     displayResults(checks);
                 } catch (err) {
                     alert('Error parsing CSV: ' + err.message + '\nEnsure it has standard P6 columns like Activity ID, Total Float, etc.');
@@ -616,6 +717,42 @@
                 }
             };
             reader.readAsText(file);
+        }
+
+        // Export results to a .txt file
+        function exportResults() {
+            if (!globalChecks || globalChecks.length === 0) {
+                alert("No results to export. Please analyze a schedule first.");
+                return;
+            }
+
+            let content = "P6 Schedule Health Check Results\n\n";
+            globalChecks.forEach(check => {
+                content += `CHECK: ${check.name}\n`;
+                content += `Score: ${check.score}\n`;
+                content += `Description: ${check.description}\n`;
+                content += `Suggestions: ${check.suggestions}\n`;
+
+                if (check.issues && check.issues.length > 0) {
+                    content += `Issues (${check.issues.length} total, listing up to 50):\n`;
+                    check.issues.forEach(issue => {
+                        content += `   ${issue.id} - ${issue.name}\n`;
+                    });
+                } else {
+                    content += "No issues found.\n";
+                }
+                content += "\n----------------------------------------------------------\n\n";
+            });
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "P6_Health_Check_Results.txt";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
