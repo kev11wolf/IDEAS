@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cushman &amp; Wakefield | Project Controls – The Three Pillars</title>
+  <meta name="description" content="C&amp;W Project Controls guides for Scheduling & Planning, Cost & Risk Management, and Project Management." />
+  <style>
+    /* =========================================================
+       Cushman & Wakefield Theme (Update to official brand hex)
+       ========================================================= */
+    :root{
+      /* TODO: Confirm these with the latest C&W brand standards */
+      --cw-red:        #ED1C24; /* Primary red */
+      --cw-gray-900:   #4D4F53; /* Charcoal */
+      --cw-gray-700:   #6D6E71; /* Mid gray */
+      --cw-gray-200:   #E6E7E8; /* Light border */
+      --cw-gray-100:   #F5F5F5; /* Card background */
+      --cw-white:      #FFFFFF;
+      --cw-black:      #1B1B1B;
+
+      --bg:            #FAFAFA;
+      --link:          var(--cw-red);
+      --text:          var(--cw-black);
+      --muted:         var(--cw-gray-700);
+      --shadow:        0 6px 18px rgba(0,0,0,.08);
+
+      --radius-sm:     8px;
+      --radius-md:     12px;
+      --radius-lg:     16px;
+
+      --maxw:          1200px;
+      --gutter:        1.2rem;
+      --card-gap:      1.2rem;
+    }
+
+    /* Reset-ish */
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    body{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+      color:var(--text);
+      background:var(--bg);
+      line-height:1.45;
+    }
+    a{color:var(--link);text-decoration:none}
+    a:hover{text-decoration:underline}
+    img{max-width:100%;height:auto}
+
+    /* Header/Nav */
+    header{
+      background:var(--cw-white);
+      border-bottom:1px solid var(--cw-gray-200);
+      position:sticky;top:0;z-index:10;
+    }
+    .nav{
+      margin:0 auto;max-width:var(--maxw);padding:.8rem var(--gutter);
+      display:flex;align-items:center;justify-content:space-between;gap:1rem;
+    }
+    .brand{
+      display:flex;align-items:center;gap:.8rem;
+    }
+    .brand img{
+      width:42px;height:auto;display:block;
+    }
+    .brand h1{
+      font-size:1.05rem;margin:0;line-height:1.1;font-weight:700;color:var(--cw-gray-900);
+    }
+    .brand small{
+      display:block;color:var(--muted);font-weight:500;margin-top:.1rem;
+    }
+    .nav-controls{
+      display:flex;align-items:center;gap:.75rem;
+    }
+    label.select-label{
+      font-size:.85rem;color:var(--muted);
+    }
+    select#pillarSelect{
+      padding:.5rem .8rem;border:1px solid var(--cw-gray-200);border-radius:8px;
+      background:var(--cw-white);color:var(--text);font-weight:600;cursor:pointer;
+    }
+    select#pillarSelect:focus{outline:3px solid rgba(237,28,36,.25)}
+
+    /* Main Layout */
+    main{padding:1.2rem 0}
+    .wrap{margin:0 auto;max-width:var(--maxw);padding:0 var(--gutter)}
+    .intro{
+      background:linear-gradient(120deg, var(--cw-white), var(--cw-gray-100));
+      border:1px solid var(--cw-gray-200);
+      border-radius:var(--radius-lg);
+      padding:1rem 1.2rem;margin:1rem 0;box-shadow:var(--shadow);
+    }
+    .intro h2{margin:.3rem 0 .5rem 0}
+    .intro p{margin:.25rem 0;color:var(--muted)}
+
+    .pillars{
+      display:none;
+    }
+    .pillars.active{display:block}
+
+    .cards{
+      display:grid;gap:var(--card-gap);
+      grid-template-columns:repeat(12, 1fr);
+    }
+    /* Responsive columns */
+    @media (max-width:599px){
+      .cards > article{grid-column: span 12}
+    }
+    @media (min-width:600px) and (max-width:899px){
+      .cards > article{grid-column: span 6}
+    }
+    @media (min-width:900px){
+      .cards > article{grid-column: span 4}
+    }
+
+    article.card{
+      background:var(--cw-white);
+      border:1px solid var(--cw-gray-200);
+      border-radius:var(--radius-md);
+      box-shadow:var(--shadow);
+      padding:1rem;
+    }
+    .card h3{
+      margin:.2rem 0 .6rem 0;
+      font-size:1.05rem;color:var(--cw-gray-900)
+    }
+    .card p{margin:.4rem 0}
+    .badge{
+      display:inline-block;border-radius:999px;padding:.18rem .55rem;font-size:.72rem;font-weight:700;
+      background:var(--cw-red);color:var(--cw-white);letter-spacing:.01em
+    }
+    .muted{color:var(--muted)}
+
+    .list{margin:.4rem 0 .6rem 1.1rem}
+    .list li{margin:.25rem 0}
+
+    /* Accordion for deep detail */
+    details{
+      margin:.35rem 0 .15rem 0;border-top:1px dashed var(--cw-gray-200);padding-top:.35rem
+    }
+    details summary{
+      cursor:pointer;font-weight:700;color:var(--cw-red);
+    }
+    details[open] summary{color:var(--cw-gray-900)}
+    .kbd{
+      background:var(--cw-gray-100);border:1px solid var(--cw-gray-200);border-radius:6px;padding:.05rem .35rem;font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;font-size:.85em
+    }
+
+    footer{
+      margin:2rem 0;padding:1rem 0;border-top:1px solid var(--cw-gray-200);color:var(--muted);font-size:.9rem
+    }
+  </style>
+</head>
+<body>
+  <header role="banner">
+    <div class="nav">
+      <div class="brand">
+        <!-- Replace this with your approved C&W logo asset -->
+        assets/cw-logo.svg
+        <div>
+          <h1>Project Controls — The Three Pillars</h1>
+          <small>Cushman &amp; Wakefield | Corporate Real Estate Programs</small>
+        </div>
+      </div>
+      <nav class="nav-controls" aria-label="Pillar navigation">
+        <label class="select-label" for="pillarSelect">Go to:</label>
+        <select id="pillarSelect" aria-controls="content">
+          <option value="#scheduling">Scheduling &amp; Planning</option>
+          <option value="#cost-risk">Cost &amp; Risk Management</option>
+          <option value="#project-management">Project Management</option>
+        </select>
+      </nav>
+    </div>
+  </header>
+
+  <main id="content" role="main">
+    <div class="wrap">
+      <section class="intro" aria-label="Introduction">
+        <h2>Purpose &amp; Audience</h2>
+        <p>
+          This guide standardizes Cushman &amp; Wakefield (C&amp;W) Project Controls across three pillars:
+          <strong>Scheduling &amp; Planning</strong>, <strong>Cost &amp; Risk Management</strong>, and <strong>Project Management</strong> for
+          corporate real estate (CRE) — tenant improvements, capital renewals, ground‑up projects, and portfolio rollouts.
+          Use in conjunction with client contracts, account playbooks, and C&amp;W PMO/PCO procedures.
+        </p>
+        <p class="muted">
+          Tip: Establish governance early. Confirm scope/WBS, baselines, risk appetite, and reporting cadence with the client and GC/CM.
+        </p>
+      </section>
+
+      <!-- ================================
+           Pillar 1 — Scheduling & Planning
+           ================================ -->
+      <section id="scheduling" class="pillars">
+        <div class="cards">
+
+          <article class="card">
+            <span class="badge">Pillar 1</span>
+            <h3>Objectives</h3>
+            <p>Build a credible, achievable, and controllable plan integrating scope, sequence, resources, and risk.</p>
+            <ul class="list">
+              <li>Schedule basis is documented and traceable to the WBS.</li>
+              <li>Logic is defensible; constraints are minimal and justified.</li>
+              <li>Baselines and changes are governed; forecasting is reliable.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Core Artifacts</h3>
+            <ul class="list">
+              <li><strong>WBS</strong> aligned to deliverables; coding for Area/Phase/Discipline/Vendor/Cost.</li>
+              <li><strong>OBS</strong> and responsibility assignments.</li>
+              <li><strong>Schedule Basis &amp; Assumptions</strong> (see template below).</li>
+              <li>Level 1–4 schedules (Portfolio/Master → Control → Lookahead).</li>
+            </ul>
+            <details><summary>Basis &amp; Assumptions – Minimum Contents</summary>
+              <ul class="list">
+                <li>Project identifiers, baseline version, data date.</li>
+                <li>Scope inclusions/exclusions; landlord/third‑party interfaces.</li>
+                <li>Calendars (site hours, holidays, shifts), productivity assumptions &amp; weather allowances.</li>
+                <li>Logistics/access (laydown, hoisting, delivery windows, building rules).</li>
+                <li>Procurement (lead times, submittals, long‑lead strategy, offsite prefab).</li>
+                <li>Regulatory (permits, AHJ reviews, inspections, commissioning).</li>
+                <li>Constraints/dependencies (turnovers, IT/AV readiness, client blackouts).</li>
+                <li>Top schedule risks &amp; mitigations; buffer strategy.</li>
+                <li>Baseline change control method and approvals.</li>
+              </ul>
+            </details>
+          </article>
+
+          <article class="card">
+            <h3>CPM Best Practices</h3>
+            <ul class="list">
+              <li><strong>Activities</strong>: scope‑based, measurable start/finish criteria; typical L3 durations 5–20 days.</li>
+              <li><strong>Logic</strong>: prefer FS; use SS/FF sparingly; avoid SF.</li>
+              <li><strong>Lags/Leads</strong>: minimize; model as explicit tasks where practical; document rationale.</li>
+              <li><strong>Constraints</strong>: only if mandated (permits, landlord turnovers); avoid hard constraints masking float.</li>
+              <li><strong>Calendars</strong>: per trade/site (e.g., TI night/weekend shifts).</li>
+              <li><strong>Milestones</strong>: zero‑duration; flag contract &amp; pay milestones clearly.</li>
+              <li><strong>Resources</strong>: load &amp; level to remove unrealistic peaks while protecting the critical path.</li>
+              <li><strong>Baselines</strong>: set pre‑execution; govern changes formally.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Critical Path, Float, Near‑Critical</h3>
+            <ul class="list">
+              <li><strong>Critical Path</strong>: longest path driving completion; report every update.</li>
+              <li><strong>Total Float</strong>: near‑critical threshold typically ≤ 10d (tune per project length).</li>
+              <li><strong>Path Convergence</strong>: merge points = risk hot spots; plan mitigations there.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Schedule Quality (DCMA-inspired Checks)</h3>
+            <ul class="list">
+              <li>Missing logic &lt; 5% (target 0%).</li>
+              <li>Leads 0%; Lags ≤ 5% with justification.</li>
+              <li>FS dominates (&gt; 90%); SS/FF justified; SF extremely rare.</li>
+              <li>Hard constraints ≤ 1%; prefer soft constraints minimally.</li>
+              <li>High float ≤ 5% (TF &gt; ~44d for 1‑yr jobs; scale up/down).</li>
+              <li>Negative float: none in baseline; investigate in status.</li>
+              <li>Invalid dates: no actuals after data date; no incomplete work before it.</li>
+              <li>Long durations: ≤ 5% &gt; 44d; decompose where possible.</li>
+              <li>BEI ≥ 0.95; Critical Path test behaves as expected.</li>
+              <li>Schedule stability: changes between cycles are explained.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Progressing &amp; Cadence</h3>
+            <ul class="list">
+              <li>Data date tied to weekly/bi‑weekly OAC meetings; freeze by cutoff.</li>
+              <li>3‑ &amp; 6‑week lookaheads for field coordination &amp; procurement.</li>
+              <li>Variance narrative: ΔStart/Finish/Float &amp; path changes with recovery plans.</li>
+              <li>KPIs: SPI, milestone hit‑rate, % tasks started/finished as planned.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Schedule Risk (Monte Carlo)</h3>
+            <p>Quantify uncertainty to produce confidence dates (P50/P80) and top drivers.</p>
+            <ul class="list">
+              <li>Inputs: clean logic, duration ranges (O/M/P), risk register.</li>
+              <li>Outputs: P‑dates, on‑time probability, criticality indices.</li>
+              <li>Actions: mitigate top drivers (tornado), resequence, add buffers, adjust crew strategy.</li>
+            </ul>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- ==================================
+           Pillar 2 — Cost & Risk Management
+           ================================== -->
+      <section id="cost-risk" class="pillars">
+        <div class="cards">
+
+          <article class="card">
+            <span class="badge">Pillar 2</span>
+            <h3>Objectives</h3>
+            <p>Control total cost through integrated budgeting, change, forecasting, and risk that align with scope and schedule.</p>
+            <ul class="list">
+              <li>Transparent CBS aligned to WBS; clean mapping across systems.</li>
+              <li>Formal change/trend governance and contingency management.</li>
+              <li>Risk-adjusted forecasts with clear confidence levels.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Cost Structure &amp; Baselines</h3>
+            <ul class="list">
+              <li><strong>CBS</strong> aligned to WBS; roll‑ups by phase, discipline, vendor, location.</li>
+              <li><strong>Budget types</strong>: Base, Escalation, Contingency, Management Reserve, Allowances, Owner Costs.</li>
+              <li><strong>BAC</strong>: Approved baseline stored with version control; trend snapshots retained.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Actuals, Commitments, Accruals</h3>
+            <ul class="list">
+              <li><strong>Commitments</strong>: contracts/POs &amp; executed COs tracked to CBS line items.</li>
+              <li><strong>Actuals</strong>: invoice-based costs; maintain coding discipline.</li>
+              <li><strong>Accruals</strong>: recognize received-not-invoiced to avoid period distortion.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Earned Value (EVM)</h3>
+            <p>PV (planned), EV (earned), AC (actual). Indices and forecasts:</p>
+            <ul class="list">
+              <li><strong>CPI</strong>=EV/AC, <strong>SPI</strong>=EV/PV.</li>
+              <li><strong>EAC</strong> methods: BAC/CPI; AC+(BAC−EV); AC+(BAC−EV)/(CPI×SPI).</li>
+              <li><strong>ETC</strong>: re‑estimate (bottom‑up) or formula-driven (top‑down).</li>
+              <li><strong>TCPI</strong>: (BAC−EV)/(BAC−AC) or (EAC−EV)/(EAC−AC).</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Forecasting &amp; Cash Flow</h3>
+            <ul class="list">
+              <li>Bottom‑up package forecasts during execution (post‑buyout).</li>
+              <li>Range forecasts (P50/P80) when risk-adjusted; state confidence clearly.</li>
+              <li>Cash flow derived from schedule &amp; commitment phasing; reconcile to funding cycles.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Change &amp; Trend Management</h3>
+            <ul class="list">
+              <li>Change log: Intake → Impact analysis → CCB decision → Baseline/Forecast update.</li>
+              <li>Trend (exposure) log: track pressures before formal CO; min/ML/max where feasible.</li>
+              <li>Contingency drawdown with cause codes; report remaining contingency index.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Common Cost Reports &amp; Metrics</h3>
+            <ul class="list">
+              <li><strong>CTC</strong> (Cost to Complete) and <strong>EAC/FAC</strong> with <strong>VAC</strong> (BAC−EAC).</li>
+              <li>Commitment summary: original, COs, revised, % committed vs. budget.</li>
+              <li>Exposure (Trends): pending potential changes; narrative basis.</li>
+              <li>Accruals vs. actuals reconciliation each period.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Risk Framework</h3>
+            <ul class="list">
+              <li><strong>Identify</strong>: by WBS/CBS; include external (market/supply) and internal (design/interfaces).</li>
+              <li><strong>Qualitative</strong>: Probability × Impact across cost, schedule, quality, safety.</li>
+              <li><strong>Quantitative</strong>: Cost Monte Carlo with appropriate distributions (Triangular/PERT/Lognormal) and correlation.</li>
+              <li><strong>Responses</strong>: Avoid/Reduce/Transfer/Accept with owners, due dates, residual risk.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Quantitative Risk (Monte Carlo) — Steps</h3>
+            <ol class="list">
+              <li>Model CBS by major packages; assign uncertainty distributions.</li>
+              <li>Correlate linked drivers (e.g., labor rates &amp; productivity).</li>
+              <li>Simulate 1,000–10,000 iterations.</li>
+              <li>Outputs: P‑curves, tornado (sensitivity), mean vs. median, JCL (cost+schedule).</li>
+              <li>Decide: choose contingency (e.g., P70) and define drawdown rules.</li>
+            </ol>
+          </article>
+
+          <article class="card">
+            <h3>Risk Reporting</h3>
+            <ul class="list">
+              <li><strong>Risk register</strong>: ID, title, cause, effect, owner, probability, impacts, response, status.</li>
+              <li><strong>Heat maps</strong> for severity; highlight red/orange for leadership.</li>
+              <li><strong>Tornado charts</strong> to rank drivers and inform mitigations.</li>
+              <li><strong>JCL</strong> to express joint confidence of meeting cost &amp; date targets.</li>
+            </ul>
+            <details><summary>Example Scales</summary>
+              <ul class="list">
+                <li>Probability: &lt;10%, 10–30%, 30–50%, 50–70%, &gt;70%.</li>
+                <li>Cost impact: &lt;0.5%, 0.5–1%, 1–3%, 3–7%, &gt;7%.</li>
+                <li>Schedule impact: &lt;5d, 5–10d, 10–20d, 20–40d, &gt;40d (tune to cadence).</li>
+              </ul>
+            </details>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- ===========================
+           Pillar 3 — Project Management
+           =========================== -->
+      <section id="project-management" class="pillars">
+        <div class="cards">
+
+          <article class="card">
+            <span class="badge">Pillar 3</span>
+            <h3>Objectives</h3>
+            <p>Deliver scope safely, on time, and to budget with clear governance, stakeholder engagement, and disciplined execution.</p>
+            <ul class="list">
+              <li>Define lifecycle gates and decision rights early.</li>
+              <li>Calibrate cadence (OAC, risk workshops, executive steering).</li>
+              <li>Close the loop: controls ↔ decision‑making ↔ field execution.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Phases &amp; Governance</h3>
+            <ul class="list">
+              <li><strong>Initiation</strong>: charter, business case, success criteria.</li>
+              <li><strong>Planning</strong>: execution plan, WBS/CBS, schedule baseline, risk &amp; procurement plans, QA/QC.</li>
+              <li><strong>Execution</strong>: mobilization, permits, procurement, build/fit‑out, commissioning.</li>
+              <li><strong>M&amp;C</strong>: cost/schedule/risk controls cadence; change board; inspections.</li>
+              <li><strong>Closeout</strong>: substantial completion, punchlist, O&amp;M, as‑builts, warranty starts, lessons learned.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Delivery Approaches</h3>
+            <ul class="list">
+              <li><strong>Design–Bid–Build (Waterfall)</strong>: strong gates; late changes costly.</li>
+              <li><strong>Design–Build / CM‑at‑Risk</strong>: single responsibility; overlaps reduce time but require robust design mgmt.</li>
+              <li><strong>Integrated Project Delivery (IPD)</strong>: shared incentives; best for complex programs.</li>
+              <li><strong>Agile/Hybrid for CRE</strong>: use sprints for design packages, rolling wave planning, early enables/fast‑track.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Roles &amp; Responsibilities (Sample)</h3>
+            <ul class="list">
+              <li><strong>PM</strong> (A/R): governance, decisions, stakeholder alignment.</li>
+              <li><strong>Project Controls</strong> (R): cost/schedule/risk integration, reporting, forecasting.</li>
+              <li><strong>Planner/Scheduler</strong> (R): logic, status, quality checks, SRA prep.</li>
+              <li><strong>Cost &amp; Risk</strong> (R): EVM, trends/changes, QRAs, contingency control.</li>
+              <li><strong>Client</strong> (A/C/I): approvals, scope decisions, funding cadence.</li>
+            </ul>
+            <details><summary>Cadence</summary>
+              <ul class="list">
+                <li>Daily: trade huddles; constraints.</li>
+                <li>Weekly: OAC (status schedule, lookaheads, top 5 risks, changes).</li>
+                <li>Bi‑weekly: risk workshop; QRA refresh if material change.</li>
+                <li>Monthly: steering; portfolio KPIs; contingency &amp; reserve review.</li>
+                <li>Stage gates: Concept → SD → DD → CD → GMP → SC → Closeout.</li>
+              </ul>
+            </details>
+          </article>
+
+          <article class="card">
+            <h3>Scope, Quality &amp; Change</h3>
+            <ul class="list">
+              <li><strong>Scope control</strong>: baseline statement; CCB for deviations with quantified impacts.</li>
+              <li><strong>Quality</strong>: QA/QC plan, ITPs, inspections, commissioning scripts; track defects/rework.</li>
+              <li><strong>Change</strong>: formal CRs with options analysis; maintain trend/exposure log.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Procurement &amp; Contracts</h3>
+            <ul class="list">
+              <li>Prequal by safety/financials/capacity; maintain vendor matrix.</li>
+              <li>Contract types: Lump Sum (defined scope), GMP (shared savings), T&amp;M (enablement/uncertainty).</li>
+              <li>Bid leveling: normalize exclusions/clarifications, alternates, schedule commitments.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Safety, Compliance &amp; Information</h3>
+            <ul class="list">
+              <li>Enforce site safety plans and leading indicators.</li>
+              <li>Permit matrix and inspection timeline; authority coordination.</li>
+              <li>Use a CDE (e.g., Procore/PMWeb); naming conventions and version control.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Closeout &amp; Lessons Learned</h3>
+            <ul class="list">
+              <li>SC certificates, punchlist closure, O&amp;M, as‑builts, warranty starts.</li>
+              <li>Financial close: final pay apps, lien waivers, retainage release, contingency reconciliation.</li>
+              <li>Lessons learned across design, procurement, execution, and controls.</li>
+            </ul>
+          </article>
+
+        </div>
+      </section>
+
+      <footer role="contentinfo" class="wrap">
+        <p><strong>Brand note:</strong> Replace the logo and confirm color hexes with the latest Cushman &amp; Wakefield brand guidelines. Maintain adequate contrast and accessibility.</p>
+        <p>© Cushman &amp; Wakefield. Internal reference guide for C&amp;W employees and authorized partners.</p>
+      </footer>
+    </div>
+  </main>
+
+  <script>
+    // Simple hash-based router to switch pillar "pages"
+    (function(){
+      const select = document.getElementById('pillarSelect');
+      const pages = Array.from(document.querySelectorAll('.pillars'));
+      const routes = ['#scheduling','#cost-risk','#project-management'];
+
+      function show(hash){
+        // default route if missing/unknown
+        if(!routes.includes(hash)){ hash = '#scheduling'; }
+        // set select to reflect current
+        select.value = hash;
+        // toggle sections
+        pages.forEach(sec => sec.classList.remove('active'));
+        const active = document.querySelector(hash);
+        if(active){ active.classList.add('active'); }
+        // focus the section for accessibility
+        if(active){ active.setAttribute('tabindex','-1'); active.focus({preventScroll:true}); }
+      }
+
+      // init on load (and hash changes)
+      window.addEventListener('hashchange', () => show(location.hash));
+      window.addEventListener('DOMContentLoaded', () => show(location.hash || '#scheduling'));
+
+      // select change navigates via hash
+      select.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if(location.hash !== val){ location.hash = val; }
+      });
+    })();
+  </script>
+</body>
+</html>
