@@ -245,12 +245,19 @@
         9. constraints
         10. criticalPath
         11. conclusion
+
+      Expanded to include greater detail about project phases:
+      - Cradle-to-grave new projects
+      - Retrofits / expansions
+      - CAPEX projects
+      - Construction through commissioning & start-up
+      - Operational scheduling considerations
     */
 
     const themesData = {
       general: {
         vocab: `
-          <p>Below is a quick reference to acronyms, terms, and definitions commonly used in project scheduling and Primavera P6.</p>
+          <p>Below is a quick reference to acronyms, terms, and definitions commonly used in project scheduling and Primavera P6. This applies to a broad range of project types, whether new builds, retrofits, or operational expansions:</p>
           <ul class="sub-list">
             <li><strong>WBS (Work Breakdown Structure):</strong> A hierarchical decomposition of the total scope of work.</li>
             <li><strong>EPS (Enterprise Project Structure):</strong> The top-level hierarchical structure in P6 that organizes multiple projects.</li>
@@ -279,6 +286,19 @@
           <p class="section-title">Digital Transformation</p>
           <p>
             With the arrival of computers, scheduling advanced into software solutions—making it easier to handle large, complex projects. Microsoft Project, OpenPlan, and Primavera were among the pioneers of computerized scheduling tools, each offering unique features but similar underlying principles for defining tasks, connecting dependencies, and calculating schedules.
+          </p>
+          <p class="section-title">Common Project Types & Phases</p>
+          <p>
+            In “general” or cross-industry contexts, projects may include:
+          </p>
+          <ul class="sub-list">
+            <li><strong>Cradle-to-Grave New Builds:</strong> From initial design through commissioning and operational handover.</li>
+            <li><strong>Retrofits/Renovations:</strong> Upgrading or modifying existing facilities.</li>
+            <li><strong>CAPEX Projects:</strong> Capital investments for new equipment or technology integrations.</li>
+            <li><strong>Operational Schedules:</strong> Planning ongoing maintenance and optimization activities.</li>
+          </ul>
+          <p>
+            Scheduling methods like CPM, resource leveling, and baseline tracking apply to each of these project types. P6 helps ensure that from initial concept to final handover, all phases proceed on time and budget.
           </p>
         `,
         p6History: `
@@ -344,7 +364,7 @@
             <li><strong>Schedule (Calculate):</strong> Use the “Schedule” function to calculate dates and float.</li>
             <li><strong>Add Baseline (Optional):</strong> Create a baseline once the plan is finalized.</li>
           </ol>
-          <p>Once complete, your project plan will display start/finish dates for all tasks and highlight the critical path.</p>
+          <p>Once complete, your project plan will display start/finish dates for all tasks and highlight the critical path. This methodology applies to a broad range of projects, from new builds to retrofits and expansions.</p>
         `,
         maintainingSchedule: `
           <p class="section-title">Progress Updates</p>
@@ -357,7 +377,7 @@
           </p>
           <p class="section-title">Managing Changes & Re-baselining</p>
           <p>
-            If the project scope changes, apply the modifications to the schedule. Consider updating or creating a new baseline to maintain a clear record of planned vs. actual.
+            If the project scope changes, apply the modifications to the schedule. Consider updating or creating a new baseline to maintain a clear record of planned vs. actual. This is especially important for retrofits and refurbishments where unexpected conditions are often discovered.
           </p>
         `,
         constraints: `
@@ -409,6 +429,17 @@
         `,
         historyOfScheduling: `
           <p>Like other industries, life sciences leverages the same scheduling principles—Gantt charts, CPM, etc. The main difference is the stringent regulatory environment and the complex approval process, which can drastically affect timelines.</p>
+          <p class="section-title">Common Project Types & Phases</p>
+          <p>
+            In life sciences, projects can range from small laboratory upgrades to full cradle-to-grave facility builds. Key categories include:
+          </p>
+          <ul class="sub-list">
+            <li><strong>Greenfield Facilities:</strong> New manufacturing or R&D labs from concept to operational start-up.</li>
+            <li><strong>Retrofits and Expansions:</strong> Upgrading older facilities to meet new regulatory or capacity requirements.</li>
+            <li><strong>CAPEX Projects:</strong> Significant investments in new processing lines, cleanrooms, or technology upgrades.</li>
+            <li><strong>Commissioning & Validation:</strong> IQ/OQ/PQ activities critical for regulatory compliance.</li>
+            <li><strong>Ongoing Operational Scheduling:</strong> Multi-year maintenance and upgrade cycles for existing plants.</li>
+          </ul>
         `,
         p6History: `
           <p>In life sciences, P6 found popularity due to its ability to manage multi-phase projects with strict validation requirements, especially in pharmaceutical manufacturing and research facility constructions.</p>
@@ -431,19 +462,20 @@
             <li>Include validation tasks early in the WBS to account for potential delays.</li>
             <li>Communicate regulatory constraints clearly as date constraints in P6.</li>
             <li>Maintain multiple baselines for phases like R&D, clinical trials, and manufacturing scale-up.</li>
+            <li>Plan for potential reruns of IQ/OQ/PQ if new equipment or process lines are introduced mid-project.</li>
           </ul>
         `,
         creatingSchedule: `
-          <p>Set up your WBS to reflect major phases: R&D, Equip Installation, IQ/OQ/PQ, Regulatory Approval, Production. Under each, list tasks with durations based on prior project data. Factor compliance constraints, such as mandatory inspection windows.</p>
+          <p>Set up your WBS to reflect major phases: R&D, Equip Installation, IQ/OQ/PQ, Regulatory Approval, Production. Under each, list tasks with durations based on prior project data. Factor compliance constraints, such as mandatory inspection windows. For expansions or retrofits, ensure you schedule potential downtime or partial facility operational statuses during construction.</p>
         `,
         maintainingSchedule: `
-          <p>Regularly update core tasks for validation steps, conduct progress reviews with QA and compliance teams, and re-schedule to reflect changes in regulatory approvals or delays in equipment delivery.</p>
+          <p>Regularly update core tasks for validation steps, conduct progress reviews with QA and compliance teams, and re-schedule to reflect changes in regulatory approvals or delays in equipment delivery. For long-term operations, consider separate schedules or roll-out phases that integrate with facility-wide maintenance calendars.</p>
         `,
         constraints: `
-          <p>Often, constraints revolve around mandatory finish dates to align with FDA (or other authority) submission deadlines. “Mandatory Finish” constraints are common to ensure no slippage past an official inspection date.</p>
+          <p>Often, constraints revolve around mandatory finish dates to align with FDA (or other authority) submission deadlines. “Mandatory Finish” constraints are common to ensure no slippage past an official inspection date. Include final qualification constraints for each set of newly installed or updated equipment.</p>
         `,
         criticalPath: `
-          <p>Validation and regulatory tasks frequently appear on the critical path, as delays here can halt broader progress. Monitor qualification tasks closely with zero-float filters to stay on schedule.</p>
+          <p>Validation and regulatory tasks frequently appear on the critical path, as delays here can halt broader progress. Monitor qualification tasks closely with zero-float filters to stay on schedule. In expansions, bridging tasks (e.g., hooking new lines into existing utilities) can also become critical.</p>
         `,
         conclusion: `
           <p>In life sciences, the precision and compliance demands make scheduling paramount. Primavera P6’s advanced tracking and baseline features help keep each stage of facility qualification and product approval in check, saving time and avoiding costly delays.</p>
@@ -459,6 +491,17 @@
         `,
         historyOfScheduling: `
           <p>Oil and gas megaprojects have historically driven the evolution of scheduling tools due to massive budgets, complex logistics, stringent safety standards, and multi-year timelines. P6 is used extensively for offshore platforms, refineries, and large pipeline projects.</p>
+          <p class="section-title">Common Project Types & Phases</p>
+          <p>
+            In oil and gas, projects fall under:
+          </p>
+          <ul class="sub-list">
+            <li><strong>Exploration & Drilling:</strong> Seismic studies, exploration wells, and well completion scheduling.</li>
+            <li><strong>Greenfield Developments:</strong> New refineries, offshore platforms, or onshore production facilities.</li>
+            <li><strong>Retrofits & Upgrades:</strong> Improving or expanding existing operations for capacity or environmental compliance.</li>
+            <li><strong>CAPEX Projects:</strong> Major investments in new pipelines, LNG terminals, or processing units.</li>
+            <li><strong>Operations & Maintenance:</strong> Regular turnarounds, shutdown schedules, and SIMOPS for ongoing production.</li>
+          </ul>
         `,
         p6History: `
           <p>P6’s resource management and multi-project EPS are especially valuable in oil and gas, as high-level stakeholders often manage multiple concurrent mega-projects across global locations.</p>
@@ -482,16 +525,16 @@
           </ul>
         `,
         creatingSchedule: `
-          <p>Begin with FEED phase outlines, break them into design, procurement, and construction steps. Include drilling, platform installation, subsea tie-ins, and commissioning activities in a multi-level WBS. Link them logically with correct lag times and concurrency.</p>
+          <p>Begin with FEED phase outlines, break them into design, procurement, and construction steps. Include drilling, platform installation, subsea tie-ins, and commissioning activities in a multi-level WBS. Link them logically with correct lag times and concurrency. For operational fields, incorporate shutdown/turnaround schedules and any retrofit tasks that must align with production windows.</p>
         `,
         maintainingSchedule: `
-          <p>Weekly or monthly updates are standard. Update well drilling completions, shipping/ logistical constraints. Monitor top-level progress through summary-level WBS for quick stakeholder reporting.</p>
+          <p>Weekly or monthly updates are standard. Update well drilling completions, shipping/logistical constraints. Monitor top-level progress through summary-level WBS for quick stakeholder reporting. For ongoing facilities, integrate routine maintenance tasks with major CAPEX expansions.</p>
         `,
         constraints: `
-          <p>Use constraints for major milestone handovers—e.g., mandatory start for pipeline tie-in after a certain sea weather window. Overconstraint can mask real critical paths, so apply carefully.</p>
+          <p>Use constraints for major milestone handovers—e.g., mandatory start for pipeline tie-in after a certain sea weather window. Overconstraint can mask real critical paths, so apply carefully. Also, factor in environmental permitting deadlines that can influence the entire schedule.</p>
         `,
         criticalPath: `
-          <p>Often, the critical path runs through major offshore milestones or critical shipments (long-lead items like subsea equipment). Monitor float on these items and watch for weather or political/regulatory delays.</p>
+          <p>Often, the critical path runs through major offshore milestones or critical shipments (long-lead items like subsea equipment). Monitor float on these items and watch for weather or political/regulatory delays, especially for multi-year expansions or retrofits where operational continuity is paramount.</p>
         `,
         conclusion: `
           <p>In oil and gas, the complexity of geography, regulations, and integrated megaprojects makes P6 indispensable. Its scalability and resource management tools offer a robust framework for staying on track in a high-stakes industry.</p>
@@ -507,6 +550,17 @@
         `,
         historyOfScheduling: `
           <p>Hospital construction and renovations need tight phasing to avoid disruption to patient care. Scheduling solutions emphasize meticulous planning, infection control logistics, and life safety measures.</p>
+          <p class="section-title">Common Project Types & Phases</p>
+          <p>
+            In health care and hospital settings, projects typically include:
+          </p>
+          <ul class="sub-list">
+            <li><strong>New Facility Builds (Cradle-to-Grave):</strong> Entire new hospital wings or stand-alone clinics from concept to operational readiness.</li>
+            <li><strong>Retrofits/Upgrades:</strong> Improving or replacing older patient wards, operating rooms, or HVAC systems.</li>
+            <li><strong>CAPEX Equipment Projects:</strong> Installation of major diagnostic or therapeutic equipment (MRI, CT, linear accelerators).</li>
+            <li><strong>Phased Construction:</strong> Renovating parts of a building while remaining areas stay operational.</li>
+            <li><strong>Operational Scheduling:</strong> Coordinating maintenance, expansions, and ongoing upgrades in a working hospital.</li>
+          </ul>
         `,
         p6History: `
           <p>Primavera P6 is widely used for multi-wing expansions, complex MEP installations, and compliance with healthcare regulations, providing a single platform to manage each specialized trade.</p>
@@ -525,21 +579,22 @@
         bestPractices: `
           <ul class="sub-list">
             <li>Incorporate infection control tasks and approvals into the schedule.</li>
-            <li>Use constraints for critical handovers (e.g., new ICU or OR expansions).</li>
+            <li>Use constraints for critical handovers (e.g., ICU or OR expansions).</li>
             <li>Collaborate closely with facility managers to keep real-time updates during construction.</li>
+            <li>Account for off-hour or weekend work to avoid clinical interruptions.</li>
           </ul>
         `,
         creatingSchedule: `
-          <p>Create a phased WBS (e.g., Wing A, Wing B, etc.), listing tasks by floor or department. Integrate major equipment installation tasks (MRI, CT scanners) with appropriate lead times and compliance tasks.</p>
+          <p>Create a phased WBS (e.g., Wing A, Wing B, etc.), listing tasks by floor or department. Integrate major equipment installation tasks (MRI, CT scanners) with appropriate lead times and compliance tasks. For retrofits, add isolation or shift-based planning to avoid disrupting active patient areas.</p>
         `,
         maintainingSchedule: `
-          <p>Regularly coordinate with hospital operations. Record any unexpected delays (e.g., emergency expansions) and re-baseline if major changes occur.</p>
+          <p>Regularly coordinate with hospital operations. Record any unexpected delays (e.g., emergency expansions) and re-baseline if major changes occur. Track operational schedules to plan maintenance or expansions during lower census periods, if possible.</p>
         `,
         constraints: `
-          <p>Often revolve around occupancy changes, emergency egress routes, or infection control approvals. “Must Finish By” constraints ensure timely transitions of care areas.</p>
+          <p>Constraints often revolve around occupancy changes, emergency egress routes, or infection control approvals. “Must Finish By” constraints ensure timely transitions of care areas. Overuse can mask true slippage, so use them judiciously.</p>
         `,
         criticalPath: `
-          <p>Typically runs through structural, MEP, and final certifications. Keep close watch on inspection and licensing tasks, as they can critically impact the go-live date.</p>
+          <p>Typically runs through structural, MEP, and final certifications. Keep close watch on inspection and licensing tasks, as they can critically impact the go-live date. In expansions, critical path often weaves through multiple trades and approval checkpoints.</p>
         `,
         conclusion: `
           <p>Healthcare and hospital projects require delicate balancing of construction with patient care needs. Primavera P6 brings the structure needed to coordinate complex systems with minimal disruption and strict regulatory compliance.</p>
@@ -555,9 +610,18 @@
         `,
         historyOfScheduling: `
           <p>With explosive growth in cloud and collocation facilities, data center construction soared over the last decade. Scheduling ensures rapid deployment of critical infrastructure in a highly technical environment.</p>
+          <p class="section-title">Common Project Types & Phases</p>
+          <p>Data center projects often include:</p>
+          <ul class="sub-list">
+            <li><strong>Greenfield Construction:</strong> Building entirely new facilities to meet large-scale hosting needs.</li>
+            <li><strong>Retrofits & Upgrades:</strong> Expanding existing rooms or upgrading mechanical/electrical systems.</li>
+            <li><strong>CAPEX Investments:</strong> Major expansions to existing sites, adding capacity or redundancy.</li>
+            <li><strong>Commissioning & Startup:</strong> Ensuring power, cooling, and IT systems meet performance criteria under load.</li>
+            <li><strong>Operational Schedules:</strong> Planning regular upgrades or expansions without service downtime.</li>
+          </ul>
         `,
         p6History: `
-          <p>Data centers often require multiple parallel projects (shell construction, power/data lines, IT racks, security). P6 excels at integrating these complex, overlapping tasks, plus baseline comparisons for fast track builds.</p>
+          <p>Data centers often require multiple parallel projects (shell construction, power/data lines, IT racks, security). P6 excels at integrating these complex, overlapping tasks, plus baseline comparisons for fast-track builds.</p>
         `,
         compareP6: `
           <p class="section-title">Why P6 for Data Centers?</p>
@@ -575,22 +639,23 @@
             <li>Keep mechanical and electrical tasks clearly outlined with dependencies.</li>
             <li>Factor in lead times for critical equipment like generators, UPS, and chillers.</li>
             <li>Coordinate with IT commissioning teams for final connectivity tests.</li>
+            <li>Set up fallback timelines for expansions that must go live under strict market demands.</li>
           </ul>
         `,
         creatingSchedule: `
-          <p>Break out major phases: civil/structural, power distribution, mechanical HVAC, IT racks. Align them with equipment procurement schedules. Clearly define subsections for commissioning and integration tests.</p>
+          <p>Break out major phases: civil/structural, power distribution, mechanical HVAC, IT racks. Align them with equipment procurement schedules. Clearly define subsections for commissioning and integration tests. For large retrofits, schedule work during low-load periods and plan system handovers carefully to avoid downtime.</p>
         `,
         maintainingSchedule: `
-          <p>Weekly updates on equipment deliveries, rack installation progress, and final system tests are crucial. Re-baseline if expansions are accelerated or a new phase is approved by the client.</p>
+          <p>Weekly updates on equipment deliveries, rack installation progress, and final system tests are crucial. Re-baseline if expansions are accelerated or a new phase is approved by the client. Operational data centers often require meticulous planning for partial shutdowns or rolling upgrades.</p>
         `,
         constraints: `
-          <p>“Must Start” constraints are common around receiving critical power gear or chiller units. Keep a close eye on vendor delivery timelines that can slip.</p>
+          <p>“Must Start” constraints are common around receiving critical power gear or chiller units. Keep a close eye on vendor delivery timelines. Limit constraints to major go-live deadlines or hardware arrivals to keep critical path analysis transparent.</p>
         `,
         criticalPath: `
-          <p>Often includes generator installation, chiller commissioning, and final integrated testing. Delays here can block data center go-live and result in large financial impacts for clients.</p>
+          <p>Often includes generator installation, chiller commissioning, and final integrated testing. Delays here can block data center go-live and result in large financial impacts for clients. For phased expansions, each module’s final testing can become a critical path within its micro-schedule.</p>
         `,
         conclusion: `
-          <p>Data centers are fast-paced, capital-intensive projects with intricate coordination of trades. Using Primavera P6 helps ensure timely delivery, meets stringent uptime and redundancy requirements, and aligns with client expansions.</p>
+          <p>Data centers are fast-paced, capital-intensive projects with intricate coordination of trades. Using Primavera P6 helps ensure timely delivery, meets stringent uptime and redundancy requirements, and aligns with client expansion strategies.</p>
         `
       },
       generalConstruction: {
@@ -598,14 +663,23 @@
           <p>In typical building projects, standard construction terms apply: RFI (Request for Information), Submittals, Punch List, Substantial Completion. Key scheduling acronyms remain the same (WBS, CPM, etc.).</p>
         `,
         historyOfScheduling: `
-          <p>Construction has been a driving force behind the advancement of scheduling tools. From Gantt charts in early building projects to the modern platforms like P6, the industry continually refines planning and execution methods.</p>
+          <p>Construction has been a driving force behind the advancement of scheduling tools. From Gantt charts in early building projects to modern platforms like P6, the industry continually refines planning and execution methods.</p>
+          <p class="section-title">Common Project Types & Phases</p>
+          <p>General construction projects include:</p>
+          <ul class="sub-list">
+            <li><strong>New Builds (Cradle-to-Grave):</strong> Residential, commercial, or industrial structures from site prep to handover.</li>
+            <li><strong>Retrofits/Renovations:</strong> Structural upgrades, tenant improvements, or code compliance efforts in existing buildings.</li>
+            <li><strong>CAPEX Projects:</strong> Major expansions or additions—extra floors, wings, or mechanical systems.</li>
+            <li><strong>Phased Construction:</strong> Complex sequencing for large-scale developments or master-planned communities.</li>
+            <li><strong>Ongoing Maintenance & Operations:</strong> Scheduling recurrent maintenance, system updates, and expansions.</li>
+          </ul>
         `,
         p6History: `
           <p>P6 is a cornerstone in commercial and residential building development for its robust scheduling, cost tracking, and resource management. Contractors, subcontractors, and owners rely on frequent updates to track progress.</p>
         `,
         compareP6: `
           <p class="section-title">Why P6 in General Construction?</p>
-          <p>Projects can range from small-scale to high-rise towers, each with thousands of tasks—foundation, structure, façade, MEP. Smaller tools may be insufficient to track frequent changes, while P6 manages all trades under one umbrella.</p>
+          <p>Projects can range from small-scale upfits to high-rise towers, each with thousands of tasks—foundation, structure, façade, MEP. Smaller tools may be insufficient to track frequent changes, while P6 manages all trades under one umbrella.</p>
         `,
         keyFeatures: `
           <ul class="sub-list">
@@ -619,19 +693,20 @@
             <li>Create a clear WBS for site prep, structural, enclosure, MEP, finishes, and closeout.</li>
             <li>Use constraints for mandated inspection or permit deadlines.</li>
             <li>Publish frequent schedule updates to keep all subcontractors coordinated.</li>
+            <li>Plan phased expansions carefully if building occupancy is partial.</li>
           </ul>
         `,
         creatingSchedule: `
-          <p>Establish the major building phases, then drill down: excavation, foundation, structural framing, cladding, interior works, MEP, finishing, commissioning, closeout. Link tasks logically and set realistic durations based on previous benchmarks.</p>
+          <p>Establish the major building phases, then drill down: excavation, foundation, structural framing, cladding, interior works, MEP, finishing, commissioning, closeout. Link tasks logically and set realistic durations based on previous benchmarks. For additions or retrofits, integrate existing building constraints and partial occupancy requirements.</p>
         `,
         maintainingSchedule: `
-          <p>Hold weekly or bi-weekly updates. Capture actual starts, finishes, and any delays. Re-baseline if scope changes (e.g., additional floors, design changes).</p>
+          <p>Hold weekly or bi-weekly updates. Capture actual starts, finishes, and any delays. Re-baseline if scope changes (e.g., additional floors, design changes). For CAPEX expansions during ongoing operations, detail how expansions will tie into existing structures/MEP systems.</p>
         `,
         constraints: `
-          <p>Frequent constraints exist around inspections, materials lead times, or municipality approvals. Use “Finish On or Before” constraints for phased turnovers or partial occupancy requirements.</p>
+          <p>Frequent constraints exist around inspections, materials lead times, or municipality approvals. Use “Finish On or Before” constraints for phased turnovers or partial occupancy requirements. Overuse constraints cautiously—retain the power of float analysis.</p>
         `,
         criticalPath: `
-          <p>Often found within the structural, façade, or MEP sequences. Monitor finishing activities for slip near the end of the project, as these often become critical as well.</p>
+          <p>Often found within the structural, façade, or MEP sequences. Monitor finishing activities for slip near the end of the project, as these often become critical as well. In phased expansions, the path may shift to system tie-ins or occupant move-in deadlines.</p>
         `,
         conclusion: `
           <p>General construction benefits from Primavera P6’s robust approach to scheduling multiple trades, managing scope changes, and coordinating extensive subcontractor networks. A well-maintained schedule is key to timely, cost-effective builds.</p>
@@ -643,6 +718,15 @@
         `,
         historyOfScheduling: `
           <p>Commercial real estate scheduling gained traction alongside modern property development booms. Office towers, shopping malls, and mixed-use developments often require multi-phase scheduling with tenant coordination.</p>
+          <p class="section-title">Common Project Types & Phases</p>
+          <p>Typical commercial real estate projects:</p>
+          <ul class="sub-list">
+            <li><strong>New Developments:</strong> Greenfield multi-story buildings or mall complexes from design through grand opening.</li>
+            <li><strong>CAPEX Build-outs:</strong> Major expansions or reconfigurations (adding new wings or parking structures).</li>
+            <li><strong>Tenant Improvements (TI):</strong> Customizing spaces for new tenants, often on accelerated timelines.</li>
+            <li><strong>Ongoing Renovations:</strong> Refreshing common areas or updating systems while the property remains open.</li>
+            <li><strong>Operational Schedules:</strong> Coordinating property maintenance, marketing events, and expansions over the building’s lifecycle.</li>
+          </ul>
         `,
         p6History: `
           <p>P6 is frequently used to manage large commercial developments and track tenant fit-out phases. Developers can juggle multiple complex build-outs in parallel, updating project timelines to accommodate lease negotiations.</p>
@@ -663,19 +747,20 @@
             <li>Separate base build schedule from tenant fit-out schedule in the WBS.</li>
             <li>Use constraints for agreed-upon tenant occupancy dates / handover deadlines.</li>
             <li>Include marketing and leasing tasks to track progress toward financial targets.</li>
+            <li>Revisit schedule frequently if new tenants sign leases mid-development, affecting scope.</li>
           </ul>
         `,
         creatingSchedule: `
-          <p>Set up the shell and core schedule, then detail each tenant improvement in sub-WBS. Account for design submittals, city approvals, and final inspections before tenant occupancy.</p>
+          <p>Set up the shell and core schedule, then detail each tenant improvement in sub-WBS. Account for design submittals, city approvals, and final inspections before tenant occupancy. For CAPEX expansions, ensure phased integration doesn’t disrupt existing tenants’ spaces or common areas.</p>
         `,
         maintainingSchedule: `
-          <p>Monitor changes in tenant requirements, re-baseline if new tenants join or existing ones alter floorplans. Keep an eye on financial milestones tied to occupancy or rent commencements.</p>
+          <p>Monitor changes in tenant requirements, re-baseline if new tenants join or existing ones alter floorplans. Keep an eye on financial milestones tied to occupancy or rent commencements. Future expansions or large TIs may require dedicated sub-schedules within the same P6 environment.</p>
         `,
         constraints: `
           <p>“Must Finish By” constraints for lease handovers are critical. Overuse them carefully—keep the schedule realistic while guaranteeing key handover commitments.</p>
         `,
         criticalPath: `
-          <p>Often runs through the base building’s completion or critical tenant improvements that must finish before lease commencement. Any delay has financial implications.</p>
+          <p>Often runs through the base building’s completion or critical tenant improvements that must finish before lease commencement. Any delay has financial implications. Watch for concurrency in multi-tenant phases where multiple TIs overlap.</p>
         `,
         conclusion: `
           <p>Commercial real estate hinges on timely occupancy and effective coordination across multiple tenants. Primavera P6 synchronizes base building and tenant improvements, helping developers and investors control costs and meet lease deadlines.</p>
@@ -687,13 +772,22 @@
         `,
         historyOfScheduling: `
           <p>High-tech manufacturing demands extremely precise environments and heavily phased installations of specialized equipment. Scheduling integrated design-build packages is key to meeting time-to-market demands in semiconductor or biotech manufacturing.</p>
+          <p class="section-title">Common Project Types & Phases</p>
+          <p>Typical advanced manufacturing projects include:</p>
+          <ul class="sub-list">
+            <li><strong>Greenfield Fabs or Plants:</strong> End-to-end construction of new semiconductor or high-tech facilities.</li>
+            <li><strong>Tool Retrofit & Upgrades:</strong> Adding new production lines, replacing or enhancing existing toolsets.</li>
+            <li><strong>CAPEX Expansions:</strong> Large-scale expansions of manufacturing capacity to meet demand.</li>
+            <li><strong>Commissioning & Qualification:</strong> Stringent testing phases including FAC, SAT (Site Acceptance Tests), and cleanroom certifications.</li>
+            <li><strong>Operational Scheduling:</strong> Coordinating expansions or new product lines without halting current manufacturing.</li>
+          </ul>
         `,
         p6History: `
           <p>Oracle’s P6 is a staple in large-scale facility builds for chip production (fabs), enabling real-time resource interplay across construction, tool install, process validation, and commercial production ramp-up.</p>
         `,
         compareP6: `
           <p class="section-title">Why P6 in Advanced Manufacturing?</p>
-          <p>Tool move-in sequences, specialized vendor tasks, and parallel expansions push standard scheduling tools to the limit. P6’s robust logic efforts and multi-resource leveling handle thousands of specialized equipment tasks concurrently.</p>
+          <p>Tool move-in sequences, specialized vendor tasks, and parallel expansions push standard scheduling tools to the limit. P6’s robust logic and multi-resource leveling handle thousands of specialized equipment tasks concurrently.</p>
         `,
         keyFeatures: `
           <ul class="sub-list">
@@ -707,19 +801,20 @@
             <li>Plan separate schedules for facility construction vs. tool installation, then integrate them for oversight.</li>
             <li>Track precise start/finish of equipment move-in tasks to avoid collisions in limited cleanroom space.</li>
             <li>Include test/commissioning steps and synergy with vendor schedules (some specialized equipment is produced on a tight timeline).</li>
+            <li>Establish re-baseline protocols for expansions, as product demand changes often accelerate new line installations.</li>
           </ul>
         `,
         creatingSchedule: `
-          <p>Define the WBS by major functional areas: structural envelope, cleanroom fit-out, mechanical/electrical & process utilities, tool installation, qualification. Split each area by specialized tasks (e.g., sub-fab piping, wafer tool installation) with logical relationships.</p>
+          <p>Define the WBS by major functional areas: structural envelope, cleanroom fit-out, mechanical/electrical & process utilities, tool installation, qualification. Split each area by specialized tasks (e.g., sub-fab piping, wafer tool installation) with logical relationships. For retrofits, plan detailed tie-ins to existing systems or production lines to avoid contamination or downtime.</p>
         `,
         maintainingSchedule: `
-          <p>Continuous daily or weekly updates are common. Monitor any slips in critical tool shipments or utility connections. Re-baseline if scope changes (e.g., product mix changes requiring different tool footprints).</p>
+          <p>Continuous daily or weekly updates are common. Monitor any slips in critical tool shipments or utility connections. Re-baseline if scope changes (e.g., product mix changes requiring different tool footprints). Include parallel operational production schedules if expansions happen in a running facility, coordinating carefully to avoid line stoppage.</p>
         `,
         constraints: `
-          <p>Mandatory finish constraints often relate to bringing specific tool sets online to meet product launch deadlines. Over-constraint can hide real float; use with caution and clarity.</p>
+          <p>Mandatory finish constraints often relate to bringing specific tool sets online to meet product launch deadlines. Over-constraint can hide real float; use with caution and clarity. Cleanroom readiness checks often come with strict milestone deadlines.</p>
         `,
         criticalPath: `
-          <p>Typically includes final facility readiness and tool qualification tasks that feed the main production ramp. Any delay here impacts time-to-market goals significantly.</p>
+          <p>Typically includes final facility readiness and tool qualification tasks that feed the main production ramp. Any delay here impacts time-to-market goals significantly. Commissioning tasks often converge from multiple system completions, forming a multi-threaded critical path.</p>
         `,
         conclusion: `
           <p>Advanced manufacturing facilities rely on precise, phased schedules to manage complex infrastructure and specialized tool installs. Primavera P6’s powerful scheduling engine keeps such projects aligned, meeting high-stakes production deadlines.</p>
