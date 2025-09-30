@@ -40,13 +40,30 @@
       color: var(--cw-light);
       padding: 2rem 1rem;
       text-align: center;
+      position: relative;
     }
 
     header h1 {
       margin: 0;
       font-weight: 700;
       font-size: 2rem;
-      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    /* Dropdown in Header */
+    .dropdown-container {
+      margin-top: 1rem;
+    }
+
+    .theme-select {
+      font-family: var(--font-primary);
+      font-size: 1rem;
+      background-color: var(--cw-light);
+      color: var(--cw-dark);
+      padding: 0.5rem;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
     }
 
     .container {
@@ -81,19 +98,13 @@
       outline: none;
       user-select: none;
       list-style: none;
+      text-align: center;
       font-size: 1.2rem;
       color: var(--cw-red);
       font-weight: 700;
       display: block;
       border-radius: var(--card-radius) var(--card-radius) 0 0;
-      text-align: center;
     }
-
-    /* Remove default disclosure triangle if desired; uncomment if you want a custom arrow or no arrow
-    summary::-webkit-details-marker {
-      display: none;
-    }
-    */
 
     .card h2 {
       margin-top: 0;
@@ -134,194 +145,611 @@
 
   <header>
     <h1>Primavera P6 Comprehensive Guide</h1>
+    <div class="dropdown-container">
+      <label for="theme-select" style="margin-right: 0.5rem;">Select Industry: </label>
+      <select id="theme-select" class="theme-select" onchange="updateTheme(this.value)">
+        <option value="general" selected>General</option>
+        <option value="lifeSciences">Life Sciences</option>
+        <option value="oilAndGas">Oil and Gas</option>
+        <option value="healthCare">Health Care / Hospitals</option>
+        <option value="dataCenters">Data Centers</option>
+        <option value="generalConstruction">General Construction</option>
+        <option value="commercialRealEstate">Commercial Real Estate</option>
+        <option value="advancedManufacturing">Advanced Manufacturing</option>
+      </select>
+    </div>
   </header>
 
   <div class="container">
 
-    <!-- KEY VOCABULARY SECTION -->
+    <!-- 1. KEY VOCAB -->
     <details class="card">
       <summary><h2>Key Vocabulary & Acronyms</h2></summary>
-      <p>Below is a quick reference to acronyms, terms, and definitions commonly used in project scheduling and Primavera P6.</p>
-      <ul class="sub-list">
-        <li><strong>WBS (Work Breakdown Structure):</strong> A hierarchical decomposition of the total scope of work.</li>
-        <li><strong>EPS (Enterprise Project Structure):</strong> The top-level hierarchical structure in P6 that organizes multiple projects.</li>
-        <li><strong>OBS (Organizational Breakdown Structure):</strong> Defines the company’s management structure for resource responsibilities.</li>
-        <li><strong>Activity:</strong> A specific task or set of tasks carried out within a project.</li>
-        <li><strong>Critical Path:</strong> The sequence of activities that determines the earliest completion date of a project.</li>
-        <li><strong>Baseline:</strong> A snapshot of the project’s original plan used to measure progress.</li>
-        <li><strong>Constraint:</strong> A date restriction or limitation placed on an activity’s start or finish.</li>
-        <li><strong>Resource:</strong> Labor, material, equipment, or cost assigned to activities.</li>
-        <li><strong>Duration:</strong> The total span of working time required to complete an activity.</li>
-        <li><strong>Float:</strong> The amount of time an activity can be delayed without impacting the project’s finish date.</li>
-        <li><strong>Predecessor/Successor:</strong> Activities that come before (predecessor) or after (successor) a given activity in a schedule.</li>
-        <li><strong>Gantt Chart:</strong> A bar chart that illustrates a project schedule.</li>
-      </ul>
-      <p>Keep this list handy as you read through the guide!</p>
+      <div id="vocab-content"></div>
     </details>
 
-    <!-- HISTORY OF SCHEDULING -->
+    <!-- 2. HISTORY OF SCHEDULING -->
     <details class="card">
       <summary><h2>History of Scheduling</h2></summary>
-      <p class="section-title">Early Beginnings</p>
-      <p>
-        Project scheduling traces back to the early 20th century with the development of the Gantt Chart. Named after Henry Gantt, this chart revolutionized how tasks and timeframes were visualized, enabling managers to plan, schedule, and control work more efficiently.
-      </p>
-      <p class="section-title">PERT and CPM</p>
-      <p>
-        In the 1950s, the Program Evaluation and Review Technique (PERT) and the Critical Path Method (CPM) emerged. These methods introduced the concept of dependencies and the idea that certain tasks "drive" the project completion date—creating a “critical path.”
-      </p>
-      <p class="section-title">Digital Transformation</p>
-      <p>
-        With the arrival of computers, scheduling advanced into software solutions—making it easier to handle large, complex projects. Microsoft Project, OpenPlan, and Primavera were among the pioneers of computerized scheduling tools, each offering unique features but similar underlying principles for defining tasks, connecting dependencies, and calculating schedules.
-      </p>
+      <div id="historyOfScheduling-content"></div>
     </details>
 
-    <!-- P6 HISTORY -->
+    <!-- 3. P6 HISTORY -->
     <details class="card">
       <summary><h2>Primavera P6 History</h2></summary>
-      <p>
-        Primavera Systems, Inc. was founded in 1983. Their Primavera P3 software quickly became a standard in the construction and engineering industries. Over time, the tool evolved into Primavera P6 (originally introduced as “Primavera Project Planner for the Enterprise”). Oracle acquired Primavera in 2008, and since then, P6 has continued to grow in power and functionality, becoming one of the most widely used project portfolio management solutions worldwide.
-      </p>
+      <div id="p6History-content"></div>
     </details>
 
-    <!-- COMPARISON TO OTHER SOFTWARE -->
+    <!-- 4. COMPARING P6 TO OTHER PLANNING SOFTWARE -->
     <details class="card">
       <summary><h2>Comparing P6 to Other Planning Software</h2></summary>
-      <p class="section-title">Pros</p>
-      <ul class="sub-list">
-        <li><strong>Scalability:</strong> P6 handles large, complex projects with thousands of activities without major performance issues.</li>
-        <li><strong>Resource Management:</strong> Detailed resource assignments and leveling features.</li>
-        <li><strong>Enterprise-Level Integration:</strong> Supports multi-project environments through EPS and OBS structures.</li>
-        <li><strong>Robust Reporting:</strong> Advanced reporting, baseline comparison, and tracking features.</li>
-        <li><strong>Global Change:</strong> Automates bulk modifications across multiple activities.</li>
-      </ul>
-
-      <p class="section-title">Cons</p>
-      <ul class="sub-list">
-        <li><strong>Learning Curve:</strong> The interface and wide range of features can be overwhelming to newcomers.</li>
-        <li><strong>Cost:</strong> Licensing and implementation can be expensive compared to smaller-scale tools.</li>
-        <li><strong>User Experience:</strong> Some find the UI less intuitive compared to simpler software like Microsoft Project.</li>
-        <li><strong>Integration Complexity:</strong> Incorporating P6 with other systems may require specialized IT support.</li>
-      </ul>
-
-      <p class="section-title">Ideal Use Cases</p>
-      <p>
-        Primavera P6 is best suited for large-scale, complex projects or when multiple projects are managed under the same organization with shared resources. It’s particularly popular in construction, oil and gas, engineering, and infrastructure development.
-      </p>
+      <div id="compareP6-content"></div>
     </details>
 
-    <!-- KEY FEATURES -->
+    <!-- 5. KEY FEATURES -->
     <details class="card">
       <summary><h2>Key Features of Primavera P6</h2></summary>
-      <ul class="sub-list">
-        <li><strong>EPS (Enterprise Project Structure):</strong> Organize projects hierarchically.</li>
-        <li><strong>OBS (Organizational Breakdown Structure):</strong> Manage responsibilities and roles.</li>
-        <li><strong>WBS (Work Breakdown Structure):</strong> Break down projects into managed segments.</li>
-        <li><strong>Baselines:</strong> Compare actual progress against original plans.</li>
-        <li><strong>Resource and Cost Management:</strong> Assign, analyze, and optimize resources and costs.</li>
-        <li><strong>Critical Path Method:</strong> Auto-calculate project finish dates and critical paths.</li>
-        <li><strong>Global Change:</strong> Perform bulk edits across multiple activities.</li>
-        <li><strong>Risk Analysis (when integrated with tools like Primavera Risk Analysis):</strong> Assess potential project risks and create mitigation plans.</li>
-        <li><strong>Progress Tracking and Reporting:</strong> Built-in reports, dashboards, and custom reporting capabilities.</li>
-      </ul>
+      <div id="keyFeatures-content"></div>
     </details>
 
-    <!-- BEST PRACTICES -->
+    <!-- 6. BEST PRACTICES -->
     <details class="card">
       <summary><h2>Best Scheduling Practices</h2></summary>
-      <ul class="sub-list">
-        <li><strong>Establish a Clear WBS:</strong> Ensure that all tasks and sub-tasks are logically categorized.</li>
-        <li><strong>Set Realistic Durations:</strong> Use historical data and expert judgment to assign durations.</li>
-        <li><strong>Identify Critical Path Early:</strong> Monitor critical activities closely to avoid delays.</li>
-        <li><strong>Maintain Baselines:</strong> Use baselines to compare planned vs. actual progress.</li>
-        <li><strong>Update Frequently:</strong> Regular updates keep the schedule accurate and reliable.</li>
-        <li><strong>Communicate Changes:</strong> Inform stakeholders of schedule changes to manage expectations.</li>
-        <li><strong>Record Actuals:</strong> Properly record actual start/finish dates and resources spent for future reference.</li>
-      </ul>
+      <div id="bestPractices-content"></div>
     </details>
 
-    <!-- HOW TO MAKE A SCHEDULE -->
+    <!-- 7. CREATING A SCHEDULE -->
     <details class="card">
       <summary><h2>Creating a Schedule in P6</h2></summary>
-      <p class="section-title">Step-by-Step Overview</p>
-      <ol class="sub-list">
-        <li><strong>Create EPS Node:</strong> Configure an EPS node under which you’ll create the new project.</li>
-        <li><strong>Set Project Properties:</strong> Enter the project start date, default calendar, and other settings.</li>
-        <li><strong>Build Your WBS:</strong> Define the high-level structure of project deliverables.</li>
-        <li><strong>Add Activities:</strong> Within each WBS element, add activities (tasks), durations, and descriptions.</li>
-        <li><strong>Assign Relationships:</strong> Link activities with predecessors and successors to form the logical sequence.</li>
-        <li><strong>Assign Resources:</strong> Specify the labor, material, and equipment needed for each activity.</li>
-        <li><strong>Define Calendars:</strong> Use global or project calendars to set working and non-working days.</li>
-        <li><strong>Schedule (Calculate):</strong> Use the “Schedule” function to calculate dates and float.</li>
-        <li><strong>Add Baseline (Optional):</strong> Create a baseline once the plan is finalized.</li>
-      </ol>
-      <p>Once complete, your project plan will display start/finish dates for all tasks and highlight the critical path.</p>
+      <div id="creatingSchedule-content"></div>
     </details>
 
-    <!-- MAINTAINING A SCHEDULE -->
+    <!-- 8. MAINTAINING A SCHEDULE -->
     <details class="card">
       <summary><h2>Maintaining a Schedule in P6</h2></summary>
-      <p class="section-title">Progress Updates</p>
-      <p>
-        Collect actual start dates, updating completed percentages and resource usage. Regularly “schedule” again to produce revised dates, float margins, and to pinpoint any at-risk activities.
-      </p>
-      <p class="section-title">Tracking & Reporting</p>
-      <p>
-        Run or customize in-built reports using the P6 Reporting tools. Compare progress to the baseline. Identify any variances to help with corrective actions.
-      </p>
-      <p class="section-title">Managing Changes & Re-baselining</p>
-      <p>
-        If the project scope changes, apply the modifications to the schedule. Consider updating or creating a new baseline to maintain a clear record of planned vs. actual.
-      </p>
+      <div id="maintainingSchedule-content"></div>
     </details>
 
-    <!-- TYPES OF CONSTRAINTS -->
+    <!-- 9. TYPES OF CONSTRAINTS -->
     <details class="card">
       <summary><h2>Types of Constraints</h2></summary>
-      <ul class="sub-list">
-        <li><strong>Start On/After/Before:</strong> Imposes a restriction on the earliest/latest start.</li>
-        <li><strong>Finish On/After/Before:</strong> Imposes a restriction on the earliest/latest finish.</li>
-        <li><strong>Mandatory Start/Finish:</strong> Locks the activity to a specific date, overriding calculations.</li>
-        <li><strong>As Late As Possible (ALAP):</strong> Places the activity so it ends right before its successor begins.</li>
-      </ul>
-      <p>
-        Constraints can ensure certain deadlines are met or that tasks align with real-world events, but overuse can hide true critical paths. Use constraints with caution.
-      </p>
+      <div id="constraints-content"></div>
     </details>
 
-    <!-- CRITICAL PATH TRACING -->
+    <!-- 10. TRACING THE CRITICAL PATH -->
     <details class="card">
       <summary><h2>Tracing the Critical Path</h2></summary>
-      <p class="section-title">Methodology</p>
-      <p>
-        The critical path is the chain of activities with zero float, meaning any delay directly affects project completion. P6 automatically calculates the critical path once you schedule the project.
-      </p>
-      <p class="section-title">How To Identify Critical Activities</p>
-      <ol class="sub-list">
-        <li><strong>Open the Project:</strong> Go to your project’s Gantt chart.</li>
-        <li><strong>Press F9 or Click “Schedule”:</strong> Recalculate the schedule (or “Schedule”).</li>
-        <li><strong>Filter or Highlight:</strong> Apply the “Critical” filter or highlight the critical path in the Gantt chart to see all zero-float activities.</li>
-      </ol>
-      <p class="section-title">Managing the Critical Path</p>
-      <p>
-        Focus on these activities to ensure the project stays on track. If they slip, the overall completion date slips. Evaluate if any can be fast-tracked (done in parallel) or crashed (resources increased to reduce duration).
-      </p>
+      <div id="criticalPath-content"></div>
     </details>
 
     <!-- CONCLUSION -->
     <details class="card">
       <summary><h2>Conclusion & Next Steps</h2></summary>
-      <p>
-        Primavera P6 is a powerful, enterprise-grade scheduling and project management tool designed for complex projects where intricate tracking, resource management, and detailed reporting are essential. Mastery of P6 involves understanding both the fundamentals of project scheduling and the software’s rich feature set.
-      </p>
-      <p>
-        As you become more comfortable with P6, consider exploring advanced modules like risk analysis, portfolio management, and integrating with progress measurement systems. Regular practice, consistent updates, and adherence to scheduling best practices will make your P6 schedules both accurate and invaluable to your project teams.
-      </p>
-      <p>
-        Explore <a href="https://www.oracle.com/industries/construction-engineering/primavera-p6-professional-project-management/">official Oracle documentation</a> and consider certification paths to deepen your expertise.
-      </p>
+      <div id="conclusion-content"></div>
     </details>
 
   </div>
+
+  <script>
+    /*
+      We store the content for all themes in a JavaScript object.
+      Each theme has 11 sections:
+        1. vocab
+        2. historyOfScheduling
+        3. p6History
+        4. compareP6
+        5. keyFeatures
+        6. bestPractices
+        7. creatingSchedule
+        8. maintainingSchedule
+        9. constraints
+        10. criticalPath
+        11. conclusion
+    */
+
+    const themesData = {
+      general: {
+        vocab: `
+          <p>Below is a quick reference to acronyms, terms, and definitions commonly used in project scheduling and Primavera P6.</p>
+          <ul class="sub-list">
+            <li><strong>WBS (Work Breakdown Structure):</strong> A hierarchical decomposition of the total scope of work.</li>
+            <li><strong>EPS (Enterprise Project Structure):</strong> The top-level hierarchical structure in P6 that organizes multiple projects.</li>
+            <li><strong>OBS (Organizational Breakdown Structure):</strong> Defines the company’s management structure for resource responsibilities.</li>
+            <li><strong>Activity:</strong> A specific task or set of tasks carried out within a project.</li>
+            <li><strong>Critical Path:</strong> The sequence of activities that determines the earliest completion date of a project.</li>
+            <li><strong>Baseline:</strong> A snapshot of the project’s original plan used to measure progress.</li>
+            <li><strong>Constraint:</strong> A date restriction or limitation placed on an activity’s start or finish.</li>
+            <li><strong>Resource:</strong> Labor, material, equipment, or cost assigned to activities.</li>
+            <li><strong>Duration:</strong> The total span of working time required to complete an activity.</li>
+            <li><strong>Float:</strong> The amount of time an activity can be delayed without impacting the project’s finish date.</li>
+            <li><strong>Predecessor/Successor:</strong> Activities that come before (predecessor) or after (successor) a given activity in a schedule.</li>
+            <li><strong>Gantt Chart:</strong> A bar chart that illustrates a project schedule.</li>
+          </ul>
+          <p>Keep this list handy as you read through the guide!</p>
+        `,
+        historyOfScheduling: `
+          <p class="section-title">Early Beginnings</p>
+          <p>
+            Project scheduling traces back to the early 20th century with the development of the Gantt Chart. Named after Henry Gantt, this chart revolutionized how tasks and timeframes were visualized, enabling managers to plan, schedule, and control work more efficiently.
+          </p>
+          <p class="section-title">PERT and CPM</p>
+          <p>
+            In the 1950s, the Program Evaluation and Review Technique (PERT) and the Critical Path Method (CPM) emerged. These methods introduced the concept of dependencies and the idea that certain tasks "drive" the project completion date—creating a “critical path.”
+          </p>
+          <p class="section-title">Digital Transformation</p>
+          <p>
+            With the arrival of computers, scheduling advanced into software solutions—making it easier to handle large, complex projects. Microsoft Project, OpenPlan, and Primavera were among the pioneers of computerized scheduling tools, each offering unique features but similar underlying principles for defining tasks, connecting dependencies, and calculating schedules.
+          </p>
+        `,
+        p6History: `
+          <p>
+            Primavera Systems, Inc. was founded in 1983. Their Primavera P3 software quickly became a standard in the construction and engineering industries. Over time, the tool evolved into Primavera P6 (originally introduced as “Primavera Project Planner for the Enterprise”). Oracle acquired Primavera in 2008, and since then, P6 has continued to grow in power and functionality, becoming one of the most widely used project portfolio management solutions worldwide.
+          </p>
+        `,
+        compareP6: `
+          <p class="section-title">Pros</p>
+          <ul class="sub-list">
+            <li><strong>Scalability:</strong> P6 handles large, complex projects with thousands of activities without major performance issues.</li>
+            <li><strong>Resource Management:</strong> Detailed resource assignments and leveling features.</li>
+            <li><strong>Enterprise-Level Integration:</strong> Supports multi-project environments through EPS and OBS structures.</li>
+            <li><strong>Robust Reporting:</strong> Advanced reporting, baseline comparison, and tracking features.</li>
+            <li><strong>Global Change:</strong> Automates bulk modifications across multiple activities.</li>
+          </ul>
+          <p class="section-title">Cons</p>
+          <ul class="sub-list">
+            <li><strong>Learning Curve:</strong> The interface and wide range of features can be overwhelming to newcomers.</li>
+            <li><strong>Cost:</strong> Licensing and implementation can be expensive compared to smaller-scale tools.</li>
+            <li><strong>User Experience:</strong> Some find the UI less intuitive compared to simpler software like Microsoft Project.</li>
+            <li><strong>Integration Complexity:</strong> Incorporating P6 with other systems may require specialized IT support.</li>
+          </ul>
+          <p class="section-title">Ideal Use Cases</p>
+          <p>
+            Primavera P6 is best suited for large-scale, complex projects or when multiple projects are managed under the same organization with shared resources. It’s particularly popular in construction, oil and gas, engineering, and infrastructure development.
+          </p>
+        `,
+        keyFeatures: `
+          <ul class="sub-list">
+            <li><strong>EPS (Enterprise Project Structure):</strong> Organize projects hierarchically.</li>
+            <li><strong>OBS (Organizational Breakdown Structure):</strong> Manage responsibilities and roles.</li>
+            <li><strong>WBS (Work Breakdown Structure):</strong> Break down projects into managed segments.</li>
+            <li><strong>Baselines:</strong> Compare actual progress against original plans.</li>
+            <li><strong>Resource and Cost Management:</strong> Assign, analyze, and optimize resources and costs.</li>
+            <li><strong>Critical Path Method:</strong> Auto-calculate project finish dates and critical paths.</li>
+            <li><strong>Global Change:</strong> Perform bulk edits across multiple activities.</li>
+            <li><strong>Risk Analysis (when integrated with tools like Primavera Risk Analysis):</strong> Assess potential project risks and create mitigation plans.</li>
+            <li><strong>Progress Tracking and Reporting:</strong> Built-in reports, dashboards, and custom reporting capabilities.</li>
+          </ul>
+        `,
+        bestPractices: `
+          <ul class="sub-list">
+            <li><strong>Establish a Clear WBS:</strong> Ensure that all tasks and sub-tasks are logically categorized.</li>
+            <li><strong>Set Realistic Durations:</strong> Use historical data and expert judgment to assign durations.</li>
+            <li><strong>Identify Critical Path Early:</strong> Monitor critical activities closely to avoid delays.</li>
+            <li><strong>Maintain Baselines:</strong> Use baselines to compare planned vs. actual progress.</li>
+            <li><strong>Update Frequently:</strong> Regular updates keep the schedule accurate and reliable.</li>
+            <li><strong>Communicate Changes:</strong> Inform stakeholders of schedule changes to manage expectations.</li>
+            <li><strong>Record Actuals:</strong> Properly record actual start/finish dates and resources spent for future reference.</li>
+          </ul>
+        `,
+        creatingSchedule: `
+          <p class="section-title">Step-by-Step Overview</p>
+          <ol class="sub-list">
+            <li><strong>Create EPS Node:</strong> Configure an EPS node under which you’ll create the new project.</li>
+            <li><strong>Set Project Properties:</strong> Enter the project start date, default calendar, and other settings.</li>
+            <li><strong>Build Your WBS:</strong> Define the high-level structure of project deliverables.</li>
+            <li><strong>Add Activities:</strong> Within each WBS element, add activities (tasks), durations, and descriptions.</li>
+            <li><strong>Assign Relationships:</strong> Link activities with predecessors and successors to form the logical sequence.</li>
+            <li><strong>Assign Resources:</strong> Specify the labor, material, and equipment needed for each activity.</li>
+            <li><strong>Define Calendars:</strong> Use global or project calendars to set working and non-working days.</li>
+            <li><strong>Schedule (Calculate):</strong> Use the “Schedule” function to calculate dates and float.</li>
+            <li><strong>Add Baseline (Optional):</strong> Create a baseline once the plan is finalized.</li>
+          </ol>
+          <p>Once complete, your project plan will display start/finish dates for all tasks and highlight the critical path.</p>
+        `,
+        maintainingSchedule: `
+          <p class="section-title">Progress Updates</p>
+          <p>
+            Collect actual start dates, updating completed percentages and resource usage. Regularly “schedule” again to produce revised dates, float margins, and to pinpoint any at-risk activities.
+          </p>
+          <p class="section-title">Tracking & Reporting</p>
+          <p>
+            Run or customize in-built reports using the P6 Reporting tools. Compare progress to the baseline. Identify any variances to help with corrective actions.
+          </p>
+          <p class="section-title">Managing Changes & Re-baselining</p>
+          <p>
+            If the project scope changes, apply the modifications to the schedule. Consider updating or creating a new baseline to maintain a clear record of planned vs. actual.
+          </p>
+        `,
+        constraints: `
+          <ul class="sub-list">
+            <li><strong>Start On/After/Before:</strong> Imposes a restriction on the earliest/latest start.</li>
+            <li><strong>Finish On/After/Before:</strong> Imposes a restriction on the earliest/latest finish.</li>
+            <li><strong>Mandatory Start/Finish:</strong> Locks the activity to a specific date, overriding calculations.</li>
+            <li><strong>As Late As Possible (ALAP):</strong> Places the activity so it ends right before its successor begins.</li>
+          </ul>
+          <p>
+            Constraints can ensure certain deadlines are met or that tasks align with real-world events, but overuse can hide true critical paths. Use constraints with caution.
+          </p>
+        `,
+        criticalPath: `
+          <p class="section-title">Methodology</p>
+          <p>
+            The critical path is the chain of activities with zero float, meaning any delay directly affects project completion. P6 automatically calculates the critical path once you schedule the project.
+          </p>
+          <p class="section-title">How To Identify Critical Activities</p>
+          <ol class="sub-list">
+            <li><strong>Open the Project:</strong> Go to your project’s Gantt chart.</li>
+            <li><strong>Press F9 or Click “Schedule”:</strong> Recalculate the schedule (or “Schedule”).</li>
+            <li><strong>Filter or Highlight:</strong> Apply the “Critical” filter or highlight the critical path in the Gantt chart to see all zero-float activities.</li>
+          </ol>
+          <p class="section-title">Managing the Critical Path</p>
+          <p>
+            Focus on these activities to ensure the project stays on track. If they slip, the overall completion date slips. Evaluate if any can be fast-tracked (done in parallel) or crashed (resources increased to reduce duration).
+          </p>
+        `,
+        conclusion: `
+          <p>
+            Primavera P6 is a powerful, enterprise-grade scheduling and project management tool designed for complex projects where intricate tracking, resource management, and detailed reporting are essential. Mastery of P6 involves understanding both the fundamentals of project scheduling and the software’s rich feature set.
+          </p>
+          <p>
+            As you become more comfortable with P6, consider exploring advanced modules like risk analysis, portfolio management, and integrating with progress measurement systems. Regular practice, consistent updates, and adherence to scheduling best practices will make your P6 schedules both accurate and invaluable to your project teams.
+          </p>
+          <p>
+            Explore <a href="https://www.oracle.com/industries/construction-engineering/primavera-p6-professional-project-management/">official Oracle documentation</a> and consider certification paths to deepen your expertise.
+          </p>
+        `
+      },
+      lifeSciences: {
+        vocab: `
+          <p>Life sciences projects often involve specialized terms around clinical trials, regulatory approvals, and GMP (Good Manufacturing Practices). Beyond the standard definitions, be aware of:</p>
+          <ul class="sub-list">
+            <li><strong>IQ/OQ/PQ:</strong> Installation, Operational, and Performance Qualifications—common in biopharma facility commissioning.</li>
+            <li><strong>Validation:</strong> Activities ensuring processes and systems comply with strict health regulations.</li>
+          </ul>
+        `,
+        historyOfScheduling: `
+          <p>Like other industries, life sciences leverages the same scheduling principles—Gantt charts, CPM, etc. The main difference is the stringent regulatory environment and the complex approval process, which can drastically affect timelines.</p>
+        `,
+        p6History: `
+          <p>In life sciences, P6 found popularity due to its ability to manage multi-phase projects with strict validation requirements, especially in pharmaceutical manufacturing and research facility constructions.</p>
+        `,
+        compareP6: `
+          <p class="section-title">Why P6 in Life Sciences?</p>
+          <p>
+            The ability to handle multiple levels of WBS—dealing with labs, equipment, compliance tasks—and track each validation milestone sets P6 apart from simpler tools. Beyond standard pros/cons, life sciences benefit from P6’s robust resource and constraint management (for often time-critical regulatory deadlines).
+          </p>
+        `,
+        keyFeatures: `
+          <ul class="sub-list">
+            <li>Integration of qualification tasks (IQ/OQ/PQ) into the WBS</li>
+            <li>Detailed resource tracking to manage specialized lab equipment usage</li>
+            <li>Baseline comparisons to ensure regulatory milestones meet stringent deadlines</li>
+          </ul>
+        `,
+        bestPractices: `
+          <ul class="sub-list">
+            <li>Include validation tasks early in the WBS to account for potential delays.</li>
+            <li>Communicate regulatory constraints clearly as date constraints in P6.</li>
+            <li>Maintain multiple baselines for phases like R&D, clinical trials, and manufacturing scale-up.</li>
+          </ul>
+        `,
+        creatingSchedule: `
+          <p>Set up your WBS to reflect major phases: R&D, Equip Installation, IQ/OQ/PQ, Regulatory Approval, Production. Under each, list tasks with durations based on prior project data. Factor compliance constraints, such as mandatory inspection windows.</p>
+        `,
+        maintainingSchedule: `
+          <p>Regularly update core tasks for validation steps, conduct progress reviews with QA and compliance teams, and re-schedule to reflect changes in regulatory approvals or delays in equipment delivery.</p>
+        `,
+        constraints: `
+          <p>Often, constraints revolve around mandatory finish dates to align with FDA (or other authority) submission deadlines. “Mandatory Finish” constraints are common to ensure no slippage past an official inspection date.</p>
+        `,
+        criticalPath: `
+          <p>Validation and regulatory tasks frequently appear on the critical path, as delays here can halt broader progress. Monitor qualification tasks closely with zero-float filters to stay on schedule.</p>
+        `,
+        conclusion: `
+          <p>In life sciences, the precision and compliance demands make scheduling paramount. Primavera P6’s advanced tracking and baseline features help keep each stage of facility qualification and product approval in check, saving time and avoiding costly delays.</p>
+        `
+      },
+      oilAndGas: {
+        vocab: `
+          <p>Oil and Gas scheduling includes specialized acronyms like FEED (Front-End Engineering Design), EPC (Engineering, Procurement, Construction), and SIMOPS (Simultaneous Operations). Keep in mind:</p>
+          <ul class="sub-list">
+            <li><strong>Drilling Schedules, Well Completions</strong></li>
+            <li><strong>Pipeline Tie-Ins</strong></li>
+          </ul>
+        `,
+        historyOfScheduling: `
+          <p>Oil and gas megaprojects have historically driven the evolution of scheduling tools due to massive budgets, complex logistics, stringent safety standards, and multi-year timelines. P6 is used extensively for offshore platforms, refineries, and large pipeline projects.</p>
+        `,
+        p6History: `
+          <p>P6’s resource management and multi-project EPS are especially valuable in oil and gas, as high-level stakeholders often manage multiple concurrent mega-projects across global locations.</p>
+        `,
+        compareP6: `
+          <p class="section-title">Why P6 in Oil & Gas?</p>
+          <p>Distributed teams, massive budgets, and strict HSE (Health, Safety, Environment) considerations demand robust scheduling. Compared with smaller tools, P6 can handle tens of thousands of activities and integrate with cost-control systems.</p>
+        `,
+        keyFeatures: `
+          <ul class="sub-list">
+            <li>Complex inter-project relationships in the EPS (e.g., supply chain dependencies)</li>
+            <li>Strong resource loading and leveling features, vital for rotating crew schedules</li>
+            <li>Detailed cost management for multi-year phases—FEED, EPC, commissioning</li>
+          </ul>
+        `,
+        bestPractices: `
+          <ul class="sub-list">
+            <li>Develop a well-structured WBS that separates phases: exploration, drilling, production, decommissioning.</li>
+            <li>Use robust resource calendars to account for on/offshore rotations and weather windows.</li>
+            <li>Implement thorough baselining for each project phase to monitor scope changes.</li>
+          </ul>
+        `,
+        creatingSchedule: `
+          <p>Begin with FEED phase outlines, break them into design, procurement, and construction steps. Include drilling, platform installation, subsea tie-ins, and commissioning activities in a multi-level WBS. Link them logically with correct lag times and concurrency.</p>
+        `,
+        maintainingSchedule: `
+          <p>Weekly or monthly updates are standard. Update well drilling completions, shipping/ logistical constraints. Monitor top-level progress through summary-level WBS for quick stakeholder reporting.</p>
+        `,
+        constraints: `
+          <p>Use constraints for major milestone handovers—e.g., mandatory start for pipeline tie-in after a certain sea weather window. Overconstraint can mask real critical paths, so apply carefully.</p>
+        `,
+        criticalPath: `
+          <p>Often, the critical path runs through major offshore milestones or critical shipments (long-lead items like subsea equipment). Monitor float on these items and watch for weather or political/regulatory delays.</p>
+        `,
+        conclusion: `
+          <p>In oil and gas, the complexity of geography, regulations, and integrated megaprojects makes P6 indispensable. Its scalability and resource management tools offer a robust framework for staying on track in a high-stakes industry.</p>
+        `
+      },
+      healthCare: {
+        vocab: `
+          <p>Healthcare projects can involve expansions, new hospital construction, and medical equipment integrations. The vocabulary often includes:</p>
+          <ul class="sub-list">
+            <li><strong>AHCA:</strong> Agency for Health Care Administration (varies by region for certifications)</li>
+            <li><strong>Infection Control Measures:</strong> Potential scheduling constraints for active hospital sites</li>
+          </ul>
+        `,
+        historyOfScheduling: `
+          <p>Hospital construction and renovations need tight phasing to avoid disruption to patient care. Scheduling solutions emphasize meticulous planning, infection control logistics, and life safety measures.</p>
+        `,
+        p6History: `
+          <p>Primavera P6 is widely used for multi-wing expansions, complex MEP installations, and compliance with healthcare regulations, providing a single platform to manage each specialized trade.</p>
+        `,
+        compareP6: `
+          <p class="section-title">Why P6 in Health Care?</p>
+          <p>Large facilities have multiple trades (plumbing, HVAC, med-gas, electrical) and phased work near active patient areas. P6’s ability to handle multi-phased WBS and constraints ensures minimal downtime and safe transitions of service.</p>
+        `,
+        keyFeatures: `
+          <ul class="sub-list">
+            <li>Careful resource and shift planning to minimize disruptions</li>
+            <li>Complex phasing to maintain operation of existing hospital sections</li>
+            <li>Regulatory milestone tracking for code compliance and inspections</li>
+          </ul>
+        `,
+        bestPractices: `
+          <ul class="sub-list">
+            <li>Incorporate infection control tasks and approvals into the schedule.</li>
+            <li>Use constraints for critical handovers (e.g., new ICU or OR expansions).</li>
+            <li>Collaborate closely with facility managers to keep real-time updates during construction.</li>
+          </ul>
+        `,
+        creatingSchedule: `
+          <p>Create a phased WBS (e.g., Wing A, Wing B, etc.), listing tasks by floor or department. Integrate major equipment installation tasks (MRI, CT scanners) with appropriate lead times and compliance tasks.</p>
+        `,
+        maintainingSchedule: `
+          <p>Regularly coordinate with hospital operations. Record any unexpected delays (e.g., emergency expansions) and re-baseline if major changes occur.</p>
+        `,
+        constraints: `
+          <p>Often revolve around occupancy changes, emergency egress routes, or infection control approvals. “Must Finish By” constraints ensure timely transitions of care areas.</p>
+        `,
+        criticalPath: `
+          <p>Typically runs through structural, MEP, and final certifications. Keep close watch on inspection and licensing tasks, as they can critically impact the go-live date.</p>
+        `,
+        conclusion: `
+          <p>Healthcare and hospital projects require delicate balancing of construction with patient care needs. Primavera P6 brings the structure needed to coordinate complex systems with minimal disruption and strict regulatory compliance.</p>
+        `
+      },
+      dataCenters: {
+        vocab: `
+          <p>Data center schedules often focus on MEP (Mechanical, Electrical, Plumbing) trades plus IT Infrastructure. Key terms include:</p>
+          <ul class="sub-list">
+            <li><strong>MEP:</strong> High-capacity cooling, specialized CRAC (Computer Room Air Conditioning) units</li>
+            <li><strong>N+1 Redundancy:</strong> Overcapacity design for servers, power, cooling loops</li>
+          </ul>
+        `,
+        historyOfScheduling: `
+          <p>With explosive growth in cloud and collocation facilities, data center construction soared over the last decade. Scheduling ensures rapid deployment of critical infrastructure in a highly technical environment.</p>
+        `,
+        p6History: `
+          <p>Data centers often require multiple parallel projects (shell construction, power/data lines, IT racks, security). P6 excels at integrating these complex, overlapping tasks, plus baseline comparisons for fast track builds.</p>
+        `,
+        compareP6: `
+          <p class="section-title">Why P6 for Data Centers?</p>
+          <p>High-level oversight across expansions or multi-site deployments is critical. P6’s resource planning, multi-calendar features for shift work, and clear tracking of critical mechanical/electrical tasks outperforms basic tools.</p>
+        `,
+        keyFeatures: `
+          <ul class="sub-list">
+            <li>Detailed WBS for power distribution, cooling systems, rack setup, and commissioning</li>
+            <li>Multiple calendars to manage shift-based construction for 24/7 projects</li>
+            <li>Baseline to compare phased expansions or repeated modules</li>
+          </ul>
+        `,
+        bestPractices: `
+          <ul class="sub-list">
+            <li>Keep mechanical and electrical tasks clearly outlined with dependencies.</li>
+            <li>Factor in lead times for critical equipment like generators, UPS, and chillers.</li>
+            <li>Coordinate with IT commissioning teams for final connectivity tests.</li>
+          </ul>
+        `,
+        creatingSchedule: `
+          <p>Break out major phases: civil/structural, power distribution, mechanical HVAC, IT racks. Align them with equipment procurement schedules. Clearly define subsections for commissioning and integration tests.</p>
+        `,
+        maintainingSchedule: `
+          <p>Weekly updates on equipment deliveries, rack installation progress, and final system tests are crucial. Re-baseline if expansions are accelerated or a new phase is approved by the client.</p>
+        `,
+        constraints: `
+          <p>“Must Start” constraints are common around receiving critical power gear or chiller units. Keep a close eye on vendor delivery timelines that can slip.</p>
+        `,
+        criticalPath: `
+          <p>Often includes generator installation, chiller commissioning, and final integrated testing. Delays here can block data center go-live and result in large financial impacts for clients.</p>
+        `,
+        conclusion: `
+          <p>Data centers are fast-paced, capital-intensive projects with intricate coordination of trades. Using Primavera P6 helps ensure timely delivery, meets stringent uptime and redundancy requirements, and aligns with client expansions.</p>
+        `
+      },
+      generalConstruction: {
+        vocab: `
+          <p>In typical building projects, standard construction terms apply: RFI (Request for Information), Submittals, Punch List, Substantial Completion. Key scheduling acronyms remain the same (WBS, CPM, etc.).</p>
+        `,
+        historyOfScheduling: `
+          <p>Construction has been a driving force behind the advancement of scheduling tools. From Gantt charts in early building projects to the modern platforms like P6, the industry continually refines planning and execution methods.</p>
+        `,
+        p6History: `
+          <p>P6 is a cornerstone in commercial and residential building development for its robust scheduling, cost tracking, and resource management. Contractors, subcontractors, and owners rely on frequent updates to track progress.</p>
+        `,
+        compareP6: `
+          <p class="section-title">Why P6 in General Construction?</p>
+          <p>Projects can range from small-scale to high-rise towers, each with thousands of tasks—foundation, structure, façade, MEP. Smaller tools may be insufficient to track frequent changes, while P6 manages all trades under one umbrella.</p>
+        `,
+        keyFeatures: `
+          <ul class="sub-list">
+            <li>Multi-level WBS for each building section</li>
+            <li>Relationship linking for sequential trades (e.g., electrical rough-in before drywall)</li>
+            <li>Progress tracking, earned value reports, and resource demands for large subcontractor teams</li>
+          </ul>
+        `,
+        bestPractices: `
+          <ul class="sub-list">
+            <li>Create a clear WBS for site prep, structural, enclosure, MEP, finishes, and closeout.</li>
+            <li>Use constraints for mandated inspection or permit deadlines.</li>
+            <li>Publish frequent schedule updates to keep all subcontractors coordinated.</li>
+          </ul>
+        `,
+        creatingSchedule: `
+          <p>Establish the major building phases, then drill down: excavation, foundation, structural framing, cladding, interior works, MEP, finishing, commissioning, closeout. Link tasks logically and set realistic durations based on previous benchmarks.</p>
+        `,
+        maintainingSchedule: `
+          <p>Hold weekly or bi-weekly updates. Capture actual starts, finishes, and any delays. Re-baseline if scope changes (e.g., additional floors, design changes).</p>
+        `,
+        constraints: `
+          <p>Frequent constraints exist around inspections, materials lead times, or municipality approvals. Use “Finish On or Before” constraints for phased turnovers or partial occupancy requirements.</p>
+        `,
+        criticalPath: `
+          <p>Often found within the structural, façade, or MEP sequences. Monitor finishing activities for slip near the end of the project, as these often become critical as well.</p>
+        `,
+        conclusion: `
+          <p>General construction benefits from Primavera P6’s robust approach to scheduling multiple trades, managing scope changes, and coordinating extensive subcontractor networks. A well-maintained schedule is key to timely, cost-effective builds.</p>
+        `
+      },
+      commercialRealEstate: {
+        vocab: `
+          <p>Commercial real estate projects blend construction acumen with leasing and tenant improvements. Terms like TI (Tenant Improvement), Lease Handover Dates, and Build-out Schedules are common additions.</p>
+        `,
+        historyOfScheduling: `
+          <p>Commercial real estate scheduling gained traction alongside modern property development booms. Office towers, shopping malls, and mixed-use developments often require multi-phase scheduling with tenant coordination.</p>
+        `,
+        p6History: `
+          <p>P6 is frequently used to manage large commercial developments and track tenant fit-out phases. Developers can juggle multiple complex build-outs in parallel, updating project timelines to accommodate lease negotiations.</p>
+        `,
+        compareP6: `
+          <p class="section-title">Why P6 in Commercial Real Estate?</p>
+          <p>Beyond standard construction scheduling, owners must coordinate with prospective tenants, investment groups, and marketing timelines. P6’s multi-project capabilities and baseline tracking support rapidly changing occupancy demands.</p>
+        `,
+        keyFeatures: `
+          <ul class="sub-list">
+            <li>Integration of leasing milestones (tenant improvement start/end)</li>
+            <li>Tracking multiple floors or retail units with separate build-out schedules</li>
+            <li>Time-phased resource loading anticipating future expansions or renovations</li>
+          </ul>
+        `,
+        bestPractices: `
+          <ul class="sub-list">
+            <li>Separate base build schedule from tenant fit-out schedule in the WBS.</li>
+            <li>Use constraints for agreed-upon tenant occupancy dates / handover deadlines.</li>
+            <li>Include marketing and leasing tasks to track progress toward financial targets.</li>
+          </ul>
+        `,
+        creatingSchedule: `
+          <p>Set up the shell and core schedule, then detail each tenant improvement in sub-WBS. Account for design submittals, city approvals, and final inspections before tenant occupancy.</p>
+        `,
+        maintainingSchedule: `
+          <p>Monitor changes in tenant requirements, re-baseline if new tenants join or existing ones alter floorplans. Keep an eye on financial milestones tied to occupancy or rent commencements.</p>
+        `,
+        constraints: `
+          <p>“Must Finish By” constraints for lease handovers are critical. Overuse them carefully—keep the schedule realistic while guaranteeing key handover commitments.</p>
+        `,
+        criticalPath: `
+          <p>Often runs through the base building’s completion or critical tenant improvements that must finish before lease commencement. Any delay has financial implications.</p>
+        `,
+        conclusion: `
+          <p>Commercial real estate hinges on timely occupancy and effective coordination across multiple tenants. Primavera P6 synchronizes base building and tenant improvements, helping developers and investors control costs and meet lease deadlines.</p>
+        `
+      },
+      advancedManufacturing: {
+        vocab: `
+          <p>In advanced manufacturing (e.g., semiconductor fabs), specialized acronyms and tasks might include FAC (Factory Acceptance Tests), Cleanroom Protocols, and specialized tool Move-in Schedules.</p>
+        `,
+        historyOfScheduling: `
+          <p>High-tech manufacturing demands extremely precise environments and heavily phased installations of specialized equipment. Scheduling integrated design-build packages is key to meeting time-to-market demands in semiconductor or biotech manufacturing.</p>
+        `,
+        p6History: `
+          <p>Oracle’s P6 is a staple in large-scale facility builds for chip production (fabs), enabling real-time resource interplay across construction, tool install, process validation, and commercial production ramp-up.</p>
+        `,
+        compareP6: `
+          <p class="section-title">Why P6 in Advanced Manufacturing?</p>
+          <p>Tool move-in sequences, specialized vendor tasks, and parallel expansions push standard scheduling tools to the limit. P6’s robust logic efforts and multi-resource leveling handle thousands of specialized equipment tasks concurrently.</p>
+        `,
+        keyFeatures: `
+          <ul class="sub-list">
+            <li>Detailed WBS with process lines, cleanroom areas, tool sets, support utilities</li>
+            <li>Complex concurrency controls for overlapping construction and tool qualification</li>
+            <li>Baseline tracking to assess schedule acceleration attempts for competitive product launches</li>
+          </ul>
+        `,
+        bestPractices: `
+          <ul class="sub-list">
+            <li>Plan separate schedules for facility construction vs. tool installation, then integrate them for oversight.</li>
+            <li>Track precise start/finish of equipment move-in tasks to avoid collisions in limited cleanroom space.</li>
+            <li>Include test/commissioning steps and synergy with vendor schedules (some specialized equipment is produced on a tight timeline).</li>
+          </ul>
+        `,
+        creatingSchedule: `
+          <p>Define the WBS by major functional areas: structural envelope, cleanroom fit-out, mechanical/electrical & process utilities, tool installation, qualification. Split each area by specialized tasks (e.g., sub-fab piping, wafer tool installation) with logical relationships.</p>
+        `,
+        maintainingSchedule: `
+          <p>Continuous daily or weekly updates are common. Monitor any slips in critical tool shipments or utility connections. Re-baseline if scope changes (e.g., product mix changes requiring different tool footprints).</p>
+        `,
+        constraints: `
+          <p>Mandatory finish constraints often relate to bringing specific tool sets online to meet product launch deadlines. Over-constraint can hide real float; use with caution and clarity.</p>
+        `,
+        criticalPath: `
+          <p>Typically includes final facility readiness and tool qualification tasks that feed the main production ramp. Any delay here impacts time-to-market goals significantly.</p>
+        `,
+        conclusion: `
+          <p>Advanced manufacturing facilities rely on precise, phased schedules to manage complex infrastructure and specialized tool installs. Primavera P6’s powerful scheduling engine keeps such projects aligned, meeting high-stakes production deadlines.</p>
+        `
+      }
+    };
+
+    // Function to update the content inside each <details> based on selected theme
+    function updateTheme(theme) {
+      // If theme not found, fallback to general
+      const data = themesData[theme] || themesData.general;
+
+      // Assign HTML content to each card
+      document.getElementById('vocab-content').innerHTML = data.vocab;
+      document.getElementById('historyOfScheduling-content').innerHTML = data.historyOfScheduling;
+      document.getElementById('p6History-content').innerHTML = data.p6History;
+      document.getElementById('compareP6-content').innerHTML = data.compareP6;
+      document.getElementById('keyFeatures-content').innerHTML = data.keyFeatures;
+      document.getElementById('bestPractices-content').innerHTML = data.bestPractices;
+      document.getElementById('creatingSchedule-content').innerHTML = data.creatingSchedule;
+      document.getElementById('maintainingSchedule-content').innerHTML = data.maintainingSchedule;
+      document.getElementById('constraints-content').innerHTML = data.constraints;
+      document.getElementById('criticalPath-content').innerHTML = data.criticalPath;
+      document.getElementById('conclusion-content').innerHTML = data.conclusion;
+    }
+
+    // On page load, set the theme to "general" by default
+    window.onload = function() {
+      updateTheme("general");
+    };
+  </script>
 </body>
 </html>
