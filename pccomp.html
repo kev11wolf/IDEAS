@@ -1,0 +1,2188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Project Controls Comprehensive Guide</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- FONT -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- STYLES -->
+  <style>
+    :root {
+      --cw-red: #ee3524;       /* Cushman & Wakefield - Primary Red */
+      --cw-turquoise: #00b2a9; /* Example secondary color */
+      --cw-gray: #f1f1f1;
+      --cw-dark: #212121;
+      --cw-light: #ffffff;
+      --font-primary: 'Open Sans', sans-serif;
+      --card-radius: 12px;
+      --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      --transition-speed: 0.3s;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-primary);
+      background-color: var(--cw-gray);
+      color: var(--cw-dark);
+      line-height: 1.6;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 999; /* Ensure the header sits above other layers */
+      background-color: var(--cw-red);
+      color: var(--cw-light);
+      padding: 2rem 1rem;
+      text-align: center;
+    
+    }
+
+    header h1 {
+      margin: 0;
+      font-weight: 700;
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Short tagline below the main header */
+    .tagline {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: #ffffffcc;
+    }
+
+    /* Dropdown in Header */
+    .dropdown-container {
+      margin-top: 1rem;
+    }
+
+    .theme-select,
+    .pillar-select {
+      font-family: var(--font-primary);
+      font-size: 1rem;
+      background-color: var(--cw-light);
+      color: var(--cw-dark);
+      padding: 0.5rem;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      margin: 0.5rem;
+    }
+
+    .theme-select:hover,
+    .pillar-select:hover {
+      background-color: #eeeeee;
+    }
+
+    /* Introduction and section summary */
+    .intro {
+      width: 90%;
+      max-width: 1100px;
+      margin: 2rem auto 1.5rem auto;
+      background-color: var(--cw-light);
+      padding: 1.5rem;
+      border-radius: var(--card-radius);
+      box-shadow: var(--card-shadow);
+    }
+
+    .intro h2 {
+      margin-top: 0;
+      font-size: 1.5rem;
+      color: var(--cw-dark);
+    }
+
+    .intro p {
+      margin-bottom: 1rem;
+    }
+
+    .outline-list {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .outline-list li {
+      margin: 0.5rem 0;
+      position: relative;
+      padding-left: 1.2rem;
+    }
+
+    .outline-list li::before {
+      content: '•';
+      color: var(--cw-red);
+      position: absolute;
+      left: 0;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1100px;
+      margin: 1rem auto 2rem auto;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    /* Collapsible Card Styling */
+    details.card {
+      background-color: var(--cw-light);
+      border-radius: var(--card-radius);
+      box-shadow: var(--card-shadow);
+      padding: 1.5rem 2rem;
+      transition: box-shadow var(--transition-speed);
+    }
+
+    details.card:hover {
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    details.card[open] {
+      padding-top: 2rem;
+      padding-bottom: 2rem;
+    }
+
+    summary {
+      cursor: pointer;
+      outline: none;
+      user-select: none;
+      list-style: none;
+      text-align: center;
+      font-size: 1.2rem;
+      color: var(--cw-red);
+      font-weight: 700;
+      display: block;
+      border-radius: var(--card-radius) var(--card-radius) 0 0;
+    }
+
+    .card h2 {
+      margin-top: 0;
+      font-size: 1.5rem;
+    }
+
+    .card p {
+      margin-bottom: 1rem;
+    }
+
+    .sub-list {
+      margin-left: 1.5rem;
+      list-style: disc;
+    }
+
+    .sub-list li {
+      margin-bottom: 0.5rem;
+    }
+
+    .section-title {
+      color: var(--cw-turquoise);
+      font-size: 1.25rem;
+      margin-top: 1.5rem;
+      font-weight: 600;
+    }
+
+    a {
+      color: var(--cw-turquoise);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* Basic CTA styling */
+    .cta {
+      background-color: var(--cw-red);
+      color: var(--cw-light);
+      padding: 1rem;
+      border-radius: 6px;
+      text-align: center;
+      margin: 2rem auto 0 auto;
+      max-width: 400px;
+    }
+
+    .cta p {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    /* Improve mobile flow */
+    @media (max-width: 600px) {
+      .intro, .container {
+        margin: 1rem;
+        padding: 1rem;
+      }
+      header {
+        padding: 1.5rem 1rem;
+      }
+      header h1 {
+        font-size: 1.8rem;
+      }
+      .dropdown-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Project Controls Comprehensive Guide</h1>
+    <h2 class="tagline">Your One-Stop Resource for Effective Project Execution</h2>
+    <div class="dropdown-container">
+      <!-- INDUSTRY SELECTION -->
+      <label for="theme-select" style="margin-right: 0.5rem;">
+        Select Industry 
+        <span style="font-size: 0.9rem; color: #ffffffcc;">
+          (Choose an industry to tailor the guidance below)
+        </span>:
+      </label>
+      <select id="theme-select" class="theme-select" onchange="updateContent()">
+        <option value="general" selected>General</option>
+        <option value="lifeSciences">Life Sciences</option>
+        <option value="oilAndGas">Oil and Gas</option>
+        <option value="healthCare">Health Care / Hospitals</option>
+        <option value="dataCenters">Data Centers</option>
+        <option value="generalConstruction">General Construction</option>
+        <option value="commercialRealEstate">Commercial Real Estate</option>
+        <option value="advancedManufacturing">Advanced Manufacturing</option>
+      </select>
+
+      <!-- PILLAR SELECTION -->
+      <label for="pillar-select" style="margin-right: 0.5rem;">
+        Select Pillar 
+        <span style="font-size: 0.9rem; color: #ffffffcc;">
+          (Scheduling, Cost & Risk, or Project Management)
+        </span>:
+      </label>
+      <select id="pillar-select" class="pillar-select" onchange="updateContent()">
+        <option value="scheduling" selected>Scheduling</option>
+        <option value="costAndRisk">Cost &amp; Risk</option>
+        <option value="projectManagement">Project Management</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Introduction and Outline -->
+  <div class="intro">
+    <h2>Welcome to the Comprehensive Project Controls Guide</h2>
+    <p>
+      This resource is designed to give you an in-depth look at the core elements of project controls:
+      effective scheduling, solid cost and risk management, and structured project management. 
+      By exploring various industries and pillars, you’ll learn how to adapt these practices 
+      to real-world projects, optimize outcomes, and mitigate pitfalls before they escalate.
+    </p>
+    <p>Below is a quick outline of the 11 sections covered in each pillar:</p>
+    <ul class="outline-list">
+      <li>1. Core Terms &amp; Definitions</li>
+      <li>2. Historical Context &amp; Evolution</li>
+      <li>3. Tools &amp; Platform Development</li>
+      <li>4. Comparisons with Other Solutions</li>
+      <li>5. Essential Features &amp; Focus Areas</li>
+      <li>6. Best Practices &amp; Strategies</li>
+      <li>7. Steps to Creating a Schedule / Planning &amp; Forecasting / Initiating &amp; Defining</li>
+      <li>8. Maintaining &amp; Updating Schedules / Monitoring &amp; Controlling / Executing &amp; Tracking</li>
+      <li>9. Common Constraint Types / Financial Constraints / Project Boundaries</li>
+      <li>10. Exploring Critical Path &amp; Key Drivers</li>
+      <li>11. Final Thoughts &amp; Next Steps</li>
+    </ul>
+  </div>
+
+  <div class="container">
+    <!-- We create 11 collapsible cards, but their titles and content
+         will be dynamically set based on the selected pillar. -->
+
+    <details class="card" data-section="0">
+      <summary><h2 id="card-title-0"></h2></summary>
+      <div id="card-content-0"></div>
+    </details>
+
+    <details class="card" data-section="1">
+      <summary><h2 id="card-title-1"></h2></summary>
+      <div id="card-content-1"></div>
+    </details>
+
+    <details class="card" data-section="2">
+      <summary><h2 id="card-title-2"></h2></summary>
+      <div id="card-content-2"></div>
+    </details>
+
+    <details class="card" data-section="3">
+      <summary><h2 id="card-title-3"></h2></summary>
+      <div id="card-content-3"></div>
+    </details>
+
+    <details class="card" data-section="4">
+      <summary><h2 id="card-title-4"></h2></summary>
+      <div id="card-content-4"></div>
+    </details>
+
+    <details class="card" data-section="5">
+      <summary><h2 id="card-title-5"></h2></summary>
+      <div id="card-content-5"></div>
+    </details>
+
+    <details class="card" data-section="6">
+      <summary><h2 id="card-title-6"></h2></summary>
+      <div id="card-content-6"></div>
+    </details>
+
+    <details class="card" data-section="7">
+      <summary><h2 id="card-title-7"></h2></summary>
+      <div id="card-content-7"></div>
+    </details>
+
+    <details class="card" data-section="8">
+      <summary><h2 id="card-title-8"></h2></summary>
+      <div id="card-content-8"></div>
+    </details>
+
+    <details class="card" data-section="9">
+      <summary><h2 id="card-title-9"></h2></summary>
+      <div id="card-content-9"></div>
+    </details>
+
+    <details class="card" data-section="10">
+      <summary><h2 id="card-title-10"></h2></summary>
+      <div id="card-content-10"></div>
+    </details>
+  </div>
+
+  <!-- Concluding CTA -->
+  <div class="cta">
+    <p>
+      Ready to put these principles into practice? 
+      <strong><a href="#" style="color:white;">Explore advanced resources or contact a project controls specialist</a></strong>
+      today to take your projects to the next level.
+    </p>
+  </div>
+
+  <script>
+    /*
+      We have two dropdowns:
+        1) Industry
+        2) Pillar (Scheduling, Cost & Risk, Project Management)
+
+      Each pillar can have a different set of 11 section titles. 
+      Below, we’ve renamed them for clarity and improved engagement.
+    */
+
+    const schedulingSectionTitles = [
+      "1. Core Terms & Definitions",
+      "2. Historical Context & Evolution",
+      "3. Tools & Platform Development",
+      "4. Comparisons with Other Solutions",
+      "5. Essential Features & Focus Areas",
+      "6. Best Practices & Strategies",
+      "7. Steps to Creating a Schedule",
+      "8. Maintaining & Updating Schedules",
+      "9. Common Constraint Types",
+      "10. Exploring Critical Path & Key Drivers",
+      "11. Final Thoughts & Next Steps"
+    ];
+
+    const costAndRiskSectionTitles = [
+      "1. Core Terms & Definitions",
+      "2. Historical Context & Evolution",
+      "3. Tools & Platform Development",
+      "4. Comparisons with Other Solutions",
+      "5. Essential Features & Focus Areas",
+      "6. Best Practices & Strategies",
+      "7. Planning & Forecasting",
+      "8. Monitoring & Controlling Costs & Risks",
+      "9. Financial/Regulatory Constraints",
+      "10. Exploring Cost & Risk Drivers",
+      "11. Final Thoughts & Next Steps"
+    ];
+
+    const projectManagementSectionTitles = [
+      "1. Core Terms & Definitions",
+      "2. Historical Context & Evolution",
+      "3. Tools & Platform Development",
+      "4. Comparisons with Other Solutions",
+      "5. Essential Features & Focus Areas",
+      "6. Best Practices & Strategies",
+      "7. Initiating & Defining the Project",
+      "8. Executing & Tracking Progress",
+      "9. Project Constraints & Boundaries",
+      "10. Leadership & Key Drivers",
+      "11. Final Thoughts & Next Steps"
+    ];
+
+    const pillarTitles = {
+      scheduling: schedulingSectionTitles,
+      costAndRisk: costAndRiskSectionTitles,
+      projectManagement: projectManagementSectionTitles
+    };
+
+    /*
+      For each industry + pillar combo, we hold an array of 11 strings
+      corresponding to the newly renamed 11 sections above.
+    */
+
+    const themesData = {
+      general: {
+        scheduling: [
+          /* 0. Core Terms & Definitions */
+          `
+            <p><strong>General Scheduling Vocabulary:</strong></p>
+            <ul class="sub-list">
+              <li><strong>WBS (Work Breakdown Structure):</strong> The hierarchical decomposition of the project scope.</li>
+              <li><strong>Activity:</strong> A discrete task in the schedule with a start and finish date, typically assigned resources.</li>
+              <li><strong>Milestone:</strong> Significant event or checkpoint with zero duration.</li>
+              <li><strong>Baseline:</strong> A snapshot of the approved schedule used for performance comparison.</li>
+              <li><strong>Float:</strong> The measure of scheduling flexibility without affecting the project finish date.</li>
+            </ul>
+            <p>These terms form the backbone of scheduling approaches, whether in manufacturing, construction, or IT-based efforts.</p>
+          `,
+          /* 1. Historical Context & Evolution */
+          `
+            <p class="section-title">The Evolution of Scheduling</p>
+            <p>Early 20th-century methodologies, such as Henry Gantt’s bar charts, laid the foundation for modern scheduling. The introduction of PERT and Critical Path Method (CPM) in the mid-1900s enabled more complex projects to be planned and coordinated. 
+            As project sizes grew, software solutions like Primavera P6 became essential in reducing manual effort and preventing scheduling misalignments.</p>
+          `,
+          /* 2. Tools & Platform Development */
+          `
+            <p>Primavera, founded in 1983, quickly established itself as a key scheduling platform for engineering and construction. Oracle’s acquisition in 2008 integrated scheduling with business processes (like cost control, risk tracking) on an enterprise level.</p>
+            <p>Modern platforms emphasize collaboration, real-time data updates, and integration with cost and resource modules—vital for large-scale projects spanning multiple years or workstreams.</p>
+          `,
+          /* 3. Comparisons with Other Solutions */
+          `
+            <p><strong>Common scheduling tools include:</strong></p>
+            <ul class="sub-list">
+              <li>Microsoft Project (user-friendly for smaller or less complex projects).</li>
+              <li>Asta Powerproject (popular in construction-focused scheduling, with 4D functionality).</li>
+              <li>Primavera P6 (enterprise-level for large multi-project environments).</li>
+            </ul>
+            <p>Choosing a tool depends on project scale, industry requirements, and the complexity of resource/cost tracking.</p>
+          `,
+          /* 4. Essential Features & Focus Areas */
+          `
+            <ul class="sub-list">
+              <li><strong>Critical Path Calculation:</strong> Identifies the chain of zero-float tasks that drive final completion.</li>
+              <li><strong>Baseline Management:</strong> Saves official schedules for performance tracking.</li>
+              <li><strong>Resource & Role Loading:</strong> Allocates labor, equipment, or material resources to tasks.</li>
+              <li><strong>Complex Calendars:</strong> Accommodates multiple shifts, time zones, or holiday calendars.</li>
+              <li><strong>Portfolio Management:</strong> Allows oversight of numerous concurrent projects within a single tool.</li>
+            </ul>
+            <p>Together, these features enable robust planning and help maintain project clarity.</p>
+          `,
+          /* 5. Best Practices & Strategies */
+          `
+            <ul class="sub-list">
+              <li><strong>Establish a Logical WBS:</strong> Structure deliverables thoroughly to avoid confusion and missing tasks.</li>
+              <li><strong>Use Fewer Forced Constraints:</strong> Leverage network logic for true reflection of project float and dependencies.</li>
+              <li><strong>Regular Updates:</strong> Weekly or bi-weekly progress checks keep life in the schedule.</li>
+              <li><strong>Early Communication:</strong> Engage stakeholders and highlight potential delays or resource needs promptly.</li>
+              <li><strong>Track Actuals:</strong> Use historical data to refine future estimates and durations.</li>
+            </ul>
+          `,
+          /* 6. Steps to Creating a Schedule */
+          `
+            <p class="section-title">Building an Effective Timeline</p>
+            <ol class="sub-list">
+              <li><strong>Scope Identification:</strong> Break down project deliverables.</li>
+              <li><strong>Activity Definition:</strong> Define tasks with realistic durations and clear ownership.</li>
+              <li><strong>Logical Relationships:</strong> Link tasks to create a coherent path from start to finish.</li>
+              <li><strong>Resource Allocation:</strong> Assign labor, materials, and equipment to each task.</li>
+              <li><strong>Baseline Approval:</strong> Once stakeholders agree on the plan, save it as the reference baseline.</li>
+            </ol>
+            <p>Following these steps ensures the schedule remains attainable and accountable.</p>
+          `,
+          /* 7. Maintaining & Updating Schedules */
+          `
+            <p class="section-title">Keeping Schedules Accurate</p>
+            <p>Update progress frequently to reflect actual start/finish dates and any changes in resource availability. Rerun scheduling calculations to see if new critical paths emerge. 
+            Present weekly or monthly updates to stakeholders using Gantt charts or summary dashboards that highlight changes in schedule health.</p>
+          `,
+          /* 8. Common Constraint Types */
+          `
+            <ul class="sub-list">
+              <li><strong>Start On/Finish On:</strong> Fixes an activity to a specific date due to contractual obligations.</li>
+              <li><strong>Start No Earlier Than / Finish No Later Than:</strong> Provides bounding conditions without forcing them entirely.</li>
+              <li><strong>Mandatory Constraints:</strong> Strongly override scheduling logic—use cautiously to avoid distorted float calculations.</li>
+            </ul>
+          `,
+          /* 9. Exploring Critical Path & Key Drivers */
+          `
+            <p class="section-title">Critical Path Overview</p>
+            <p>The critical path comprises tasks with zero float collectively driving the finish date. Monitoring it helps anticipate schedule slips. 
+            In large projects, multiple near-critical paths can exist, demanding close attention.</p>
+            <p class="section-title">Key Drivers</p>
+            <p>High-risk tasks or resource-intensive activities can quickly become critical if delayed. Open communication on these drivers prevents unnoticed schedule damage.</p>
+          `,
+          /* 10. Final Thoughts & Next Steps */
+          `
+            <p>Scheduling is the blueprint that informs cost, risk, and stakeholder decisions. Tools like Primavera P6 provide a central system of record 
+            to manage complex timelines. Focus on credible data, active stakeholder engagement, and continuous updates to keep your schedules driving project success.</p>
+            <p>Beyond the basics, explore advanced techniques like Earned Value, resource smoothing, 4D scheduling (time + 3D models), and scenario analysis 
+            to further refine your approach.</p>
+          `
+        ],
+        costAndRisk: [
+          /* 0. Core Terms & Definitions */
+          `
+            <p><strong>General Cost & Risk Vocabulary:</strong></p>
+            <ul class="sub-list">
+              <li><strong>CAPEX (Capital Expenditure):</strong> Funds spent to buy or upgrade physical assets.</li>
+              <li><strong>OPEX (Operating Expenditure):</strong> Ongoing costs for sustaining operations.</li>
+              <li><strong>Contingency:</strong> Budget buffer for identified risks and uncertainties.</li>
+              <li><strong>Risk Register:</strong> Document to log and categorize project risks.</li>
+              <li><strong>Monte Carlo Simulation:</strong> Statistical method to model cost/schedule outcomes under uncertainty.</li>
+            </ul>
+          `,
+          /* 1. Historical Context & Evolution */
+          `
+            <p class="section-title">The Integration of Cost & Risk</p>
+            <p>Initially, cost controlling was separated from scheduling. However, large-scale ventures (e.g., infrastructure, aerospace) demonstrated that schedule delays inflate costs, and unforeseen expenditures can shift timelines. 
+            Modern project controls link cost forecasting with risk management for a proactive approach to project viability.</p>
+          `,
+          /* 2. Tools & Platform Development */
+          `
+            <p>Primavera P6 evolved from a purely scheduling tool to an integrated solution integrating cost loading and risk analysis. 
+            Oracle’s broader suite enables deeper synergy: combining schedule data with budgeting modules for real-time cost forecasting and scenario planning.</p>
+          `,
+          /* 3. Comparisons with Other Solutions */
+          `
+            <p><strong>Spreadsheet-based Costing vs. Enterprise Systems:</strong></p>
+            <ul class="sub-list">
+              <li>Spreadsheets for smaller or single projects but prone to manual errors.</li>
+              <li>Enterprise Tools (e.g., SAP, Oracle E-Business): Provide robust cost ledger integration.</li>
+              <li>Primavera Risk Analysis: Adds probabilistic modeling to your schedule-driven costs.</li>
+            </ul>
+          `,
+          /* 4. Essential Features & Focus Areas */
+          `
+            <ul class="sub-list">
+              <li><strong>Resource & Cost Loading:</strong> Time-phased assignment of labor/material/equipment rates.</li>
+              <li><strong>Earned Value Management (EVM):</strong> Merges schedule progress with cost performance metrics (CPI, SPI).</li>
+              <li><strong>Risk Modeling:</strong> Quantifies uncertainty impacts on cost baselines.</li>
+              <li><strong>Change Management:</strong> Evaluates financial impact of new scope or design changes.</li>
+              <li><strong>Contingency Tracking:</strong> Monitors how unallocated funds are consumed as risks materialize.</li>
+            </ul>
+          `,
+          /* 5. Best Practices & Strategies */
+          `
+            <ul class="sub-list">
+              <li><strong>Align Budget with Timeline:</strong> Ensure time-phased cost data reflects the actual scheduled tasks.</li>
+              <li><strong>Develop a Robust Risk Register:</strong> Identify contingency requirements for likely uncertainties.</li>
+              <li><strong>Use Trend & Variance Studies:</strong> Detect cost overruns early and rectify underlying issues.</li>
+              <li><strong>Regularly Reassess Contingency:</strong> Update as project scope clarifies or new risks emerge.</li>
+              <li><strong>Integrate EVM:</strong> Combine actual cost data with schedule progress to give objective performance metrics.</li>
+            </ul>
+          `,
+          /* 6. Planning & Forecasting */
+          `
+            <p class="section-title">Cost & Risk Planning</p>
+            <ol class="sub-list">
+              <li><strong>Scope & WBS Alignment:</strong> Tag cost codes to each deliverable for clarity.</li>
+              <li><strong>Identify Risks:</strong> Evaluate cost-impacting uncertainties like supply chain fluctuations.</li>
+              <li><strong>Allocate Contingency:</strong> Reserve funds based on probability/impact analysis.</li>
+              <li><strong>Time-Phase Costs:</strong> Map your cost curve across the project timeline for monthly or quarterly cash flow predictions.</li>
+            </ol>
+          `,
+          /* 7. Monitoring & Controlling Costs & Risks */
+          `
+            <p class="section-title">Executing Controls Strategy</p>
+            <p>Record actual expenditures regularly (invoices, time sheets) and compare against baseline cost. Log realized risks in your risk register and track their financial impact. 
+            Adjust the forecast if new issues arise or if previously identified risks are resolved without incident.</p>
+            <p><strong>EVM Connection:</strong> Monitor both cost and schedule performance indices. A budget overrun with a behind-schedule indicator signals potential deeper issues that must be addressed promptly.</p>
+          `,
+          /* 8. Financial/Regulatory Constraints */
+          `
+            <p>Funding often comes in tranches tied to milestones. Overruns may threaten those releases. Certain industries (e.g., public projects) have spending deadlines and regulatory compliance steps that can alter cost baselines if missed. 
+            Ensuring timely and honest reporting helps maintain access to necessary funds and avoids penalties.</p>
+          `,
+          /* 9. Exploring Cost & Risk Drivers */
+          `
+            <p class="section-title">Key Cost & Risk Drivers</p>
+            <ul class="sub-list">
+              <li><strong>Expensive Procurement Items:</strong> Delayed big-ticket items drastically impact the budget.</li>
+              <li><strong>Labor Market Volatility:</strong> Overtime, shortages, and skillset limitations drive labor costs up.</li>
+              <li><strong>Scope Changes:</strong> Unmanaged additions cause budget escalation and ripple effects on schedule.</li>
+              <li><strong>External Factors:</strong> Commodity prices, currency exchange rates, or local economic policies.</li>
+            </ul>
+          `,
+          /* 10. Final Thoughts & Next Steps */
+          `
+            <p>Robust cost and risk management ensures that projects remain viable under budget pressures and inevitable uncertainties. 
+            Integrating schedule data with cost tracking in tools like Primavera P6 fosters transparency across the project lifecycle.</p>
+            <p>Continue exploring advanced risk simulations (Monte Carlo), deeper EVM usage, and automated forecasting dashboards to refine your cost and risk approach in future projects.</p>
+          `
+        ],
+        projectManagement: [
+          /* 0. Core Terms & Definitions */
+          `
+            <p><strong>General Project Management Vocab:</strong></p>
+            <ul class="sub-list">
+              <li><strong>PMBOK:</strong> Project Management Body of Knowledge – a global standard of PM processes.</li>
+              <li><strong>Stakeholder:</strong> Anyone with a vested interest or influence on the project outcome.</li>
+              <li><strong>Triple Constraint:</strong> The balance of scope, time, and cost.</li>
+              <li><strong>Change Control:</strong> The formal process to manage modifications in scope, timeline, or budget.</li>
+            </ul>
+          `,
+          /* 1. Historical Context & Evolution */
+          `
+            <p class="section-title">Foundations of Project Management</p>
+            <p>From early infrastructure projects to modern-day multi-phased endeavors, project management established itself as a coordination discipline. The PMBOK and PRINCE2 frameworks developed standardized processes, bridging scheduling, budgeting, and stakeholder communication into cohesive guidelines.</p>
+          `,
+          /* 2. Tools & Platform Development */
+          `
+            <p>Initially, PM tasks were tracked manually (spreadsheets, Gantt charts). Tools like Primavera introduced integrated modules for scheduling, cost, and communications. 
+            Today, these platforms (e.g., Primavera P6, Microsoft Project Online, Deltek) allow enterprise-wide collaboration, real-time data updates, and portfolio oversight.</p>
+          `,
+          /* 3. Comparisons with Other Solutions */
+          `
+            <p><strong>Varying PM Tool Categories:</strong></p>
+            <ul class="sub-list">
+              <li>Lightweight Tools (Trello, Monday.com) – great for small teams, agile boards, quick collaboration.</li>
+              <li>Mid-range Platform (MS Project) – decent for moderate complexity, with scheduling logic built in.</li>
+              <li>Enterprise Suites (Primavera P6, Deltek) – handle large projects, advanced resource leveling, complex cost management, global multi-user access.</li>
+            </ul>
+          `,
+          /* 4. Essential Features & Focus Areas */
+          `
+            <ul class="sub-list">
+              <li><strong>Integration of Scope, Schedule, Cost:</strong> Unified approach ensures changes in one area reflect across all aspects.</li>
+              <li><strong>Portfolio & Program Management:</strong> Aligns multiple projects under a strategic umbrella.</li>
+              <li><strong>Reporting & Dashboards:</strong> Automated status updates, KPIs, resource usage, and risk snapshots.</li>
+              <li><strong>Collaboration & Role Management:</strong> Assign tasks, manage permissions, ease communication.</li>
+              <li><strong>Risk & Issues Tracking:</strong> Centralize potential threats or obstacles, track responses and resolutions.</li>
+            </ul>
+          `,
+          /* 5. Best Practices & Strategies */
+          `
+            <ul class="sub-list">
+              <li><strong>Define Clear Scope:</strong> Minimizes scope creep and ensures alignment on deliverables.</li>
+              <li><strong>Continuous Stakeholder Engagement:</strong> Involve key players early and frequently to avoid surprises.</li>
+              <li><strong>Solid Governance:</strong> A structured approach to approvals, change control, and risk escalation clarifies accountability.</li>
+              <li><strong>Use Data Insights:</strong> Historical metrics and regular performance reviews refine future decisions.</li>
+              <li><strong>Team Development:</strong> Skilled, empowered teams adapt better to project challenges.</li>
+            </ul>
+          `,
+          /* 6. Initiating & Defining the Project */
+          `
+            <p class="section-title">Setting the Stage</p>
+            <ol class="sub-list">
+              <li><strong>Project Charter:</strong> Articulate objectives, participant roles, and success criteria.</li>
+              <li><strong>Stakeholder Identification:</strong> Understand who impacts or is impacted by the project.</li>
+              <li><strong>Create the WBS:</strong> Decompose deliverables logically for better manageability.</li>
+              <li><strong>Define Success Metrics:</strong> Decide how you will measure schedule and cost performance at completion.</li>
+            </ol>
+          `,
+          /* 7. Executing & Tracking Progress */
+          `
+            <p class="section-title">Keeping Teams Aligned</p>
+            <p>During execution, the PM ensures tasks are completed on time, manages resources, and addresses risks. Tools like P6 help track baseline vs. actual progress, while regular meetings promote transparency. 
+            <strong>Change Control</strong> is vital—every request for schedule or scope adjustment goes through analysis and formal approval.</p>
+          `,
+          /* 8. Project Constraints & Boundaries */
+          `
+            <p>Typical constraints include resource availability, budgets, contractual deadlines, and technology limitations. 
+            Understanding these early allows for realistic planning and prevents overpromising or under-resourcing. 
+            In advanced PM tools, constraint-driven scheduling helps foresee potential blocks that could affect project continuity.</p>
+          `,
+          /* 9. Leadership & Key Drivers */
+          `
+            <p class="section-title">Project Leadership Essentials</p>
+            <p>Strong leadership fosters a culture of trust, accountability, and adaptability. Key drivers of success include well-communicated goals, recognized responsibilities, and consistent stakeholder engagement. 
+            Effective leaders also champion risk management, ensuring the team is prepared to respond rapidly to unexpected changes.</p>
+          `,
+          /* 10. Final Thoughts & Next Steps */
+          `
+            <p>Project Management is the orchestration of all project elements— scope, time, cost, risk, and above all, people. 
+            While a powerful tool like Primavera P6 streamlines data and process, success ultimately depends on leadership, communication, and continuous improvement.</p>
+            <p>For deeper mastery, explore PMP or PRINCE2 certifications, advanced resource leveling, multicriteria decision-making, and integrated program governance methods.</p>
+          `
+        ]
+      },
+
+      /*
+        Now we provide industry-specific expansions for each pillar.
+        We fill placeholders with relevant details.
+      */
+
+      lifeSciences: {
+        scheduling: [
+          /* 0. Core Terms & Definitions */
+          `
+            <p><strong>Life Sciences Scheduling Vocabulary:</strong></p>
+            <ul class="sub-list">
+              <li><strong>IQ (Installation Qualification), OQ (Operational Qualification), PQ (Performance Qualification):</strong> Verification stages for validating equipment/processes.</li>
+              <li><strong>cGMP (Current Good Manufacturing Practice):</strong> FDA guidelines ensuring products meet quality standards.</li>
+              <li><strong>Validation Windows:</strong> Time frames set aside for testing and verifying new systems or processes.</li>
+            </ul>
+            <p>These terms reflect the high-regulation environment of pharmaceuticals and biotech manufacturing.</p>
+          `,
+          /* 1. Historical Context & Evolution */
+          `
+            <p class="section-title">Regulatory Complexity & the Need for Rigorous Schedules</p>
+            <p>Life sciences projects must incorporate stringent FDA (or EMA) guidelines. Historically, as pharma and biotech grew in scale, specialized scheduling was necessary to juggle R&D, clinical phases, facility construction, and parallel validation activities. Major expansions (e.g., new vaccine production lines) underscore the criticality of integrated scheduling to avoid compliance lapses.</p>
+          `,
+          /* 2. Tools & Platform Development */
+          `
+            <p>Software like Primavera P6 gained traction in life sciences due to multi-phase validation processes and regulated gating steps. The integrated approach helps track each IQ, OQ, and PQ milestone while coordinating facility and utility upgrades. 
+            Linking these schedules to compliance tasks has become a standard in major biopharma construction, enabling timely sign-offs from regulatory bodies.</p>
+          `,
+          /* 3. Comparisons with Other Solutions */
+          `
+            <p>While MS Project may suffice for small scale R&D labs or pilot projects, enterprise-level expansions (e.g., large biomanufacturing campuses) require robust multi-project scheduling and real-time resource leveling found in Primavera P6. 
+            The ability to manage thousands of tasks tied to GMP documentation and vendor-led qualification steps is a key differentiator for large-scale facilities.</p>
+          `,
+          /* 4. Essential Features & Focus Areas */
+          `
+            <p>Key scheduling drivers in life sciences include tracking shipments of specialized equipment, coordinating validation tasks, and ensuring precise timelines for audits or clinical trial launches. 
+            Scheduling software must handle restricted or staged work areas (cleanrooms), frequent re-baselining as qualification needs evolve, and critical alignment with QA/regulatory teams.</p>
+          `,
+          /* 5. Best Practices & Strategies */
+          `
+            <ul class="sub-list">
+              <li><strong>Embed Compliance from Day One:</strong> Make sure QA/regulatory tasks are in the WBS; they are not “add-ons.”</li>
+              <li><strong>Plan for Re-validation Events:</strong> Changes during execution may trigger partial re-validation cycles.</li>
+              <li><strong>Vendor Collaboration:</strong> Timely equipment deliveries are essential to keep schedules on track.</li>
+              <li><strong>Frequent Baseline Reviews:</strong> Each approval milestone can shift subsequent tasks if regulatory feedback demands changes.</li>
+            </ul>
+          `,
+          /* 6. Steps to Creating a Schedule */
+          `
+            <p class="section-title">Building a Life Sciences Schedule</p>
+            <ol class="sub-list">
+              <li><strong>Separate WBS for Construction & Validation:</strong> Distinguish physical build tasks from qualification steps.</li>
+              <li><strong>Define Dependencies Carefully:</strong> IQ must be complete before OQ can begin, and so forth.</li>
+              <li><strong>Resource Planning:</strong> Align specialized QA staff, lab capacity, and external auditor time slots.</li>
+              <li><strong>Finalize Baseline After Regulatory Review:</strong> Ensure any mandated changes are integrated.</li>
+            </ol>
+          `,
+          /* 7. Maintaining & Updating Schedules */
+          `
+            <p>Weekly updates with QA and engineering teams are crucial, as any slip in validations could cascade into lost production windows or delayed product launches. 
+            Documentation must remain airtight for regulatory audits, so capturing actual start/finish times for qualification tasks is paramount.</p>
+          `,
+          /* 8. Common Constraint Types */
+          `
+            <ul class="sub-list">
+              <li><strong>Regulatory Inspection Windows:</strong> Mandatory site visits or audits cannot be moved casually.</li>
+              <li><strong>Equipment Delivery Dates:</strong> Some specialist tools have long lead times tracked as finish-to-start constraints.</li>
+              <li><strong>Facility Operating Hours:</strong> Production or cleanliness requirements may limit certain work to off-peak times.</li>
+            </ul>
+          `,
+          /* 9. Exploring Critical Path & Key Drivers */
+          `
+            <p class="section-title">Focus on Validation Dependencies</p>
+            <p>The critical path typically intersects major validation stages, equipment installations, or QA sign-offs. Delays in these often affect final facility commissioning. 
+            Visibility on potential feedback loops from regulatory inspections is crucial—any negative audit findings can create fresh tasks that land on the critical path.</p>
+          `,
+          /* 10. Final Thoughts & Next Steps */
+          `
+            <p>Life sciences scheduling requires an organized, compliant-first mindset. Timelines must incorporate all steps from construction to commissioning, to final validation sign-off. 
+            Advanced features like multi-project resource leveling, scenario planning, and robust baseline management solidify P6 as a leading choice. 
+            Deepening your expertise in integrated risk analysis and advanced scheduling logic will help safeguard multi-million-dollar investments and bring life-saving products to market faster.</p>
+          `
+        ],
+        costAndRisk: [
+          /* 0. Core Terms & Definitions */
+          `
+            <p><strong>Life Sciences Cost & Risk Vocabulary:</strong></p>
+            <ul class="sub-list">
+              <li><strong>Validation Contingency:</strong> Reserve for possible re-tests or protocol adjustments.</li>
+              <li><strong>Clinical Trial Budget:</strong> Funding allocated for testing new drugs/devices prior to approval.</li>
+              <li><strong>Quality Management System (QMS):</strong> Encompasses SOPs and recordkeeping for compliance.</li>
+            </ul>
+          `,
+          /* 1. Historical Context & Evolution */
+          `
+            <p>Historically, compliance fines or rework due to failed inspections highlight the importance of a cost-risk synergy. 
+            Life Sciences projects learned to budget specifically for unplanned validation cycles or additional QA resources, especially as cGMP regulations matured worldwide.</p>
+          `,
+          /* 2. Tools & Platform Development */
+          `
+            <p>Primavera expansions in biotech now tie scheduling tasks to cost codes for equipment, specialized media, or consumables used in R&D or manufacturing. 
+            Integrating risk modules allows for modeling potential regulatory hurdles, highlighting the financial impact of timeline shifts (e.g., a delayed FDA approval window).</p>
+          `,
+          /* 3. Comparisons with Other Solutions */
+          `
+            <p>While a simple spreadsheet can track smaller lab expansions, large-scale pharmaceutical manufacturing demands enterprise software with strong risk analysis and real-time cost updates. 
+            Tools like Oracle Primavera Risk Analysis or @RISK can run Monte Carlo simulations projecting the cost of potential compliance or validation setbacks.</p>
+          `,
+          /* 4. Essential Features & Focus Areas */
+          `
+            <ul class="sub-list">
+              <li><strong>Detailed Cost Breakdown Structures (CBS):</strong> Link R&D, production lines, and QA tasks to specific cost codes.</li>
+              <li><strong>Risk-based Budgeting:</strong> Allocate contingency for probable compliance or supply chain risks (e.g., biologics storage constraints).</li>
+              <li><strong>Change Control Integration:</strong> Evaluate cost/schedule impact when new test or QA protocols appear mid-project.</li>
+              <li><strong>Regulatory Penalty Modeling:</strong> Some advanced setups factor potential fines for delayed or incomplete compliance steps.</li>
+            </ul>
+          `,
+          /* 5. Best Practices & Strategies */
+          `
+            <ul class="sub-list">
+              <li><strong>Regularly Update the Risk Register:</strong> Regulatory environment can shift quickly (new guidelines), so keep it current.</li>
+              <li><strong>Assign Cost Owners Clearly:</strong> Each department (QA, R&D, manufacturing) must be accountable for spending within their domain.</li>
+              <li><strong>Incorporate Learning Curves:</strong> If adopting new technology, factor ramp-up times into cost predictions.</li>
+              <li><strong>Frequent Contingency Reviews:</strong> Validate if risk contingencies remain appropriate after each major validation milestone.</li>
+            </ul>
+          `,
+          /* 6. Planning & Forecasting */
+          `
+            <p>Cost planning in life sciences must account for specialized environmental systems (Cleanrooms, HVAC, lab expansions) and uncertain timelines for regulatory or clinical approvals. 
+            Forecasting includes intangible risks like potential rework for failing an OQ or a slight design tweak that triggers partial re-validation.</p>
+          `,
+          /* 7. Monitoring & Controlling Costs & Risks */
+          `
+            <p>As the project moves through qualification stages, default or actual cost data is fed back into the system. 
+            Watch for events like delayed lab equipment or extra consultant fees for extended QA oversight. 
+            Regularly compare actual spend to planned spend, investigating any notable variances immediately.</p>
+          `,
+          /* 8. Financial/Regulatory Constraints */
+          `
+            <p>Funding might hinge on meeting specific clinical or validation milestones. Miss a milestone, and future funding can be withheld. 
+            Regulators may impose additional fees or mandated improvements if cGMP standards aren’t met, ballooning the budget unexpectedly.</p>
+          `,
+          /* 9. Exploring Cost & Risk Drivers */
+          `
+            <p>Key drivers include last-minute protocol changes, specialized equipment lead times, deviations found during validation, and supply chain interruptions for biologics or active pharmaceutical ingredients (APIs). 
+            Each can create substantial cost overruns if not proactively managed.</p>
+          `,
+          /* 10. Final Thoughts & Next Steps */
+          `
+            <p>Life Sciences cost and risk management hinges on anticipating compliance-driven obstacles and building flexible budgets. 
+            Through integrated schedule and cost tracking, teams can pivot quickly, safeguarding product launch timelines and upholding regulatory standards. 
+            Further exploration of advanced modeling (e.g., scenario-based testing) will bolster your readiness for sudden market or regulatory shifts.</p>
+          `
+        ],
+        projectManagement: [
+          /* 0. Core Terms & Definitions */
+          `
+            <p><strong>Life Sciences PM Terms:</strong></p>
+            <ul class="sub-list">
+              <li><strong>cGMP:</strong> Current Good Manufacturing Practices – overarching set of regulations for drug/device manufacturing.</li>
+              <li><strong>Clinical Trial Phase Gates:</strong> Clear transitions (Ph I, II, III) each with unique stakeholder needs.</li>
+              <li><strong>Validation Protocol:</strong> Detailed plan describing methods, acceptance criteria, and documentation for verifying processes.</li>
+            </ul>
+          `,
+          /* 1. Historical Context & Evolution */
+          `
+            <p>Life sciences PM took shape around ensuring quality and safety as top priorities. 
+            Early projects mainly focused on building specialized labs or manufacturing lines, but modern expansions integrate advanced automation, digital recordkeeping, and supply chain complexities. 
+            Formal PM frameworks help unify cross-functional teams: R&D, QA, engineering, and operations.</p>
+          `,
+          /* 2. Tools & Platform Development */
+          `
+            <p>In large pharma expansions, PM software like P6 lets managers coordinate facility design, build phases, and detailed qualification tasks. 
+            Oracle’s ecosystem merges cost, schedule, and risk modules for expanded clarity on everything from raw material inventory to final packaging lines.</p>
+          `,
+          /* 3. Comparisons with Other Solutions */
+          `
+            <p>Smaller contract manufacturing organizations (CMOs) might use simpler tools (e.g., MS Project) and local databases. However, major biotech expansions rely on enterprise solutions that handle multi-site portfolio management, ensuring consistent reporting across R&D, pilot plants, and commercial production lines.</p>
+          `,
+          /* 4. Essential Features & Focus Areas */
+          `
+            <ul class="sub-list">
+              <li><strong>QA Oversight Integration:</strong> Project tasks link to sign-offs from QA or regulatory teams at each milestone.</li>
+              <li><strong>Stakeholder Mapping:</strong> Include scientists, compliance officers, engineering leads, commercial teams, etc.</li>
+              <li><strong>Phased Gate Approvals:</strong> Formal check-ins that ensure readiness to progress to next stage (construction, IQ, OQ).</li>
+              <li><strong>Risk-Driven Planning:</strong> Detailed risk logs for compliance or therapy pipeline shifts.</li>
+            </ul>
+          `,
+          /* 5. Best Practices & Strategies */
+          `
+            <ul class="sub-list">
+              <li><strong>Cross-Functional Workshops:</strong> Engagement between process engineers, QA, and project management from the start.</li>
+              <li><strong>Change Management:</strong> Even minor changes to key equipment or processes can necessitate requalification and new documentation cycles.</li>
+              <li><strong>Keep Robust Records:</strong> Regulatory audits can request extensive retrospective documentation for every shift and revision.</li>
+              <li><strong>Phase-based Contingency:</strong> Assign budgets and timelines for each validation or clinical trial phase, preventing unseen costs.</li>
+            </ul>
+          `,
+          /* 6. Initiating & Defining the Project */
+          `
+            <p><strong>Charter & Scope:</strong> Identify the product pipeline targets (e.g., biologics vs. small-molecule drugs), fundamental capacity goals, and regulatory compliance scope. 
+            <strong>Stakeholder Assessment:</strong> Recognize which regulatory bodies (FDA, EMA) or corporate leadership teams must approve gating steps.</p>
+          `,
+          /* 7. Executing & Tracking Progress */
+          `
+            <p>Execution typically involves orchestrating facility construction, equipment installation, and iterative validation runs. Tools like P6 help track parallel tasks across various suites or lines, ensuring alignment among scientific staff, engineering contractors, and QA inspectors. 
+            Weekly progress updates and daily stand-ups in critical phases keep teams responsive to late-arriving equipment or new compliance requirements.</p>
+          `,
+          /* 8. Project Constraints & Boundaries */
+          `
+            <p>Life sciences expansions often must avoid disrupting ongoing production or clinical trial activities. Cleanroom integrity is another boundary—construction or retooling activities must not compromise contamination controls. 
+            Strict compliance requirements and limited qualified vendors also constrain scheduling flexibility.</p>
+          `,
+          /* 9. Leadership & Key Drivers */
+          `
+            <p>Leading a life sciences project demands effective communication across technical and regulatory domains. 
+            Key drivers include first-to-market timelines for a new therapy, balancing robust quality management against aggressive project goals, and ensuring workforce readiness to operate newly commissioned equipment. 
+            A collaborative culture around compliance fosters success.</p>
+          `,
+          /* 10. Final Thoughts & Next Steps */
+          `
+            <p>Project Management in life sciences is an intricate blend of engineering, scientific rigor, and regulatory compliance. 
+            Structured approaches and proven PM tools help navigate this complexity, bringing safe, effective products to market efficiently. 
+            Consider deeper dives into risk-based validation frameworks, advanced scheduling for multi-product facilities, and integrated digital solutions that unify real-time production data with project dashboards.</p>
+          `
+        ]
+      },
+
+      oilAndGas: {
+        scheduling: [
+          /* 0. Core Terms & Definitions */
+          `
+            <p><strong>Oil & Gas Scheduling Vocabulary:</strong></p>
+            <ul class="sub-list">
+              <li><strong>FEED (Front-End Engineering Design):</strong> Early project phase shaping scope, cost, and technical solutions.</li>
+              <li><strong>EPC (Engineering, Procurement & Construction):</strong> Contracting approach covering entire project lifecycle.</li>
+              <li><strong>SIMOPS (Simultaneous Operations):</strong> Overlapping tasks in fields or rigs (production & construction running concurrently).</li>
+              <li><strong>Well Completions:</strong> Final steps of drilling to bring a well into production.</li>
+              <li><strong>Turnaround Schedule:</strong> Planned maintenance/shutdown for large process facilities or refineries.</li>
+            </ul>
+          `,
+          /* 1. Historical Context & Evolution */
+          `
+            <p>Oil & Gas megaprojects (North Sea, Gulf of Mexico) helped refine critical path methods due to expensive offshore platforms and specialized equipment. 
+            Delays meant massive cost overruns, spurring intense focus on schedule accuracy and heavy use of tools like PERT/CPM. 
+            Primavera P6 eventually became an industry norm, handling multi-year developments with thousands of interconnected activities.</p>
+          `,
+          /* 2. Tools & Platform Development */
+          `
+            <p class="section-title">Tools & Platform Development</p>
+            <p>Major O&G firms originated large-scale scheduling approaches that integrated engineering, procurement, and construction data. Early digital solutions tracked equipment deliveries and site progress for onshore/offshore facilities. 
+            With Oracle’s acquisition of Primavera, extensive modules for cost, risk, and resource management were integrated, critical for high-stakes (multi-billion dollar) O&G expansions.</p>
+          `,
+          /* 3. Comparisons with Other Solutions */
+          `
+            <p>While MS Project can track smaller onshore drilling campaigns, deeply complex offshore or multi-field developments require advanced logic and robust resource leveling— key strengths of Primavera P6. 
+            Asta Powerproject is sometimes used in specific construction contexts, but doesn't match the enterprise depth for simultaneously managed wells and large processing plants typical in O&G.</p>
+          `,
+          /* 4. Essential Features & Focus Areas */
+          `
+            <ul class="sub-list">
+              <li><strong>Multi-Year Planning:</strong> Large upstream projects can span 5–10 years with multiple project phases.</li>
+              <li><strong>Interface Management:</strong> Coordinating multiple contractors, pipeline tie-ins, and drilling rigs simultaneously.</li>
+              <li><strong>Weather Impact Analysis:</strong> Offshore scheduling must incorporate seasonal windows or storm seasons.</li>
+              <li><strong>Resource-Leveling for Rotating Crews:</strong> Skilled labor (e.g., drilling engineers) cycles between multiple sites or rigs.</li>
+            </ul>
+          `,
+          /* 5. Best Practices & Strategies */
+          `
+            <ul class="sub-list">
+              <li><strong>Thorough WBS Integration:</strong> Cover FEED, EPC, commissioning, and possibly decommissioning in the schedule structure.</li>
+              <li><strong>Rapid Re-baselining for Scope Changes:</strong> Subsurface uncertainties can change well plans mid-project.</li>
+              <li><strong>Focus on Critical Equipment Deliveries:</strong> Offshore modules often require special shipping or installation windows.</li>
+              <li><strong>SimOps Coordination:</strong> Overlapping operations must be carefully scheduled to avoid safety incidents or production interruption.</li>
+            </ul>
+          `,
+          /* 6. Steps to Creating a Schedule */
+          `
+            <p><strong>1. FEED Alignment:</strong> Derive initial tasks and durations from the conceptual design and early cost estimates.</p>
+            <p><strong>2. EPC Detailing:</strong> Expand tasks to cover procurement (long lead items like turbines, risers), module fabrication, and integrated testing steps.</p>
+            <p><strong>3. Link Dependencies:</strong> Tie offshore installation windows to vessel availability and weather constraints, ensuring realistic logic ties.</p>
+            <p><strong>4. Resource Planning:</strong> Factor in rotating crews, specialized engineering teams, and large equipment crane lifts.</p>
+            <p><strong>5. Baseline & Approvals:</strong> Secure stakeholder sign-off— from JV partners or government regulators—before execution commences.</p>
+          `,
+          /* 7. Maintaining & Updating Schedules */
+          `
+            <p>Project teams typically update progress weekly, capturing actual drilling rates, module fabrication status, or shipping delays. 
+            Re-run scheduling logic frequently to catch new potential critical paths. Keep a close eye on lead times for key equipment like blowout preventers or subsea trees. 
+            In multi-year projects, formal re-baselines may be necessary when significant scope changes occur.</p>
+          `,
+          /* 8. Common Constraint Types */
+          `
+            <ul class="sub-list">
+              <li><strong>Regulatory Permits:</strong> Mandated start/finish constraints tied to licensing windows or environmental approvals.</li>
+              <li><strong>Weather Windows:</strong> Hard constraints for offshore lifts or jacket installations due to seasonal storms.</li>
+              <li><strong>SimOps Boundaries:</strong> Some tasks cannot overlap due to safety (e.g., well completion cannot coincide with certain heavy-lift barge ops).</li>
+            </ul>
+          `,
+          /* 9. Exploring Critical Path & Key Drivers */
+          `
+            <p>The critical path in O&G can revolve around fabrication milestones or well completion timelines, especially if you have a singular sailaway window or rig mobilization date. 
+            Any slip on these high-valued tasks often leads to major cost overruns. 
+            Near-critical paths (like pipeline commissioning) can become equally pivotal if the main path recovers time or if an unexpected event delays a secondary path.</p>
+          `,
+          /* 10. Final Thoughts & Next Steps */
+          `
+            <p>Scheduling in Oil & Gas is about managing great complexity and high capital stakes. 
+            Tools like Primavera P6 create structured logs of thousands of tasks, giving leadership real-time insight. 
+            Enhance your scheduling approach further by diving into advanced resource histograms, scenario planning (e.g., weather downtime modeling), 
+            and risk-based scheduling that accounts for geological uncertainties and global supply chain vulnerabilities.</p>
+          `
+        ],
+        costAndRisk: [
+          /* 0. Core Terms & Definitions */
+          `
+            <p><strong>O&G Cost & Risk Terms:</strong></p>
+            <ul class="sub-list">
+              <li><strong>PSCs (Production Sharing Contracts):</strong> Agreements defining cost recovery and profit-sharing with host nations.</li>
+              <li><strong>NOCs (National Oil Companies):</strong> State-owned entities that often partner with IOCs (International Oil Companies).</li>
+              <li><strong>Crude Price Volatility:</strong> Commodity markets can swing rapidly, impacting project economics.</li>
+            </ul>
+          `,
+          /* 1. Historical Context & Evolution */
+          `
+            <p>From early on, multi-billion-dollar O&G megaprojects faced cost overruns driven by shifting oil prices, political risks, or reservoir surprises. 
+            The 1980s–90s saw integration of cost tracking and risk logs. By 2000s, EVM and scenario analysis with P6 or proprietary tools became commonplace, addressing unpredictability in upstream, midstream, and downstream segments.</p>
+          `,
+          /* 2. Tools & Platform Development */
+          `
+            <p>Over time, O&G giants integrated P6 with advanced cost modules, linking scheduling tasks to CAPEX budgets for subsea hardware, floating production storage and offloading units (FPSOs), or refining expansions. 
+            Risk management software (e.g., Oracle Primavera Risk Analysis) further refines exposure calculations, enabling better hedging or contingency planning based on real-time market signals.</p>
+          `,
+          /* 3. Comparisons with Other Solutions */
+          `
+            <p>Enterprise resource planning (ERP) tools like SAP or Oracle EBS handle procurement, finance, and material tracking, but often lack robust schedule risk analytics. 
+            P6 interfaced with dedicated risk engines or in-house tools provides a holistic cost-risk approach, essential when cost blowouts can run in the hundreds of millions of dollars if a critical path is delayed.</p>
+          `,
+          /* 4. Essential Features & Focus Areas */
+          `
+            <ul class="sub-list">
+              <li><strong>Time-Phased Cash Flow:</strong> Major O&G investments happen in lumps (e.g., drilling rigs, modules, major pipeline segments).</li>
+              <li><strong>Cost Breakdown Structures:</strong> Align each well or project area with a unique code for detailed CAPEX/OPEX tracking.</li>
+              <li><strong>Risk & Uncertainty Modeling:</strong> Factor reservoir unpredictability, commodity price swings, regulatory shifts.</li>
+              <li><strong>Change Management:</strong> Evaluate cost/schedule impacts if design changes follow new reservoir data or partner demands.</li>
+            </ul>
+          `,
+          /* 5. Best Practices & Strategies */
+          `
+            <ul class="sub-list">
+              <li><strong>Holistic Project Controls:</strong> Seamlessly integrate cost engineering, planning, and risk management from day one.</li>
+              <li><strong>Regular Risk Workshops:</strong> Cross-functional teams identify possible cost drivers (e.g., supply chain bottlenecks).</li>
+              <li><strong>Trend Analysis:</strong> Track cost growth or savings weekly, flag anomalies early to management.</li>
+              <li><strong>Adaptable Contingency:</strong> Shift contingency between well or module areas as project clarity improves.</li>
+            </ul>
+          `,
+          /* 6. Planning & Forecasting */
+          `
+            <p>During FEED, generate a high-level cost estimate with built-in contingencies. Post-FEED, refine it with actual vendor quotes for drilling rigs, subsea equipment, or manufacture yards. 
+            Monte Carlo modeling often simulates oil price ranges plus schedule uncertainties, aiding in deciding final investment or farm-out strategies. 
+            Forecast evolves continuously as exploratory wells confirm or refute reservoir assumptions.</p>
+          `,
+          /* 7. Monitoring & Controlling Costs & Risks */
+          `
+            <p>Track actual spend: rig days, barge costs, pipeline materials, etc. Update risk registers for events like weather delays or technical problems (e.g., stuck pipe, rig downtime). 
+            Controlling costs also means verifying contractor invoicing accuracy and adjusting forecasts if major changes arise. 
+            Routine cost vs. progress reporting helps detect poor performance or creeping expenses.</p>
+          `,
+          /* 8. Financial/Regulatory Constraints */
+          `
+            <p>Host governments may mandate local content rules or permit certain expansions only after environmental impact statements. 
+            External financing can hinge on scheduled progress milestones. Delays risk losing financing tranches, leading to rework or partial project suspension.</p>
+          `,
+          /* 9. Exploring Cost & Risk Drivers */
+          `
+            <p>Key drivers: 
+            <ul class="sub-list">
+              <li>Logistics: specialized vessels needed for heavy lift or subsea tie-ins.</li>
+              <li>Commodity Indices: steel, cement, or specialized chemical pricing can spike mid-project.</li>
+              <li>Geopolitics: changes in regulations, sanctions, or local government policies.</li>
+              <li>Technical Surprises: reservoir not as expected, forcing redesigned completions or bigger injection facilities.</li>
+            </ul></p>
+          `,
+          /* 10. Final Thoughts & Next Steps */
+          `
+            <p>Cost & risk in O&G demand proactive, integrated strategies given the sheer capital intensity. 
+            By leveraging advanced schedule-based cost forecasting and robust risk registers, you can mitigate billions in potential overruns. 
+            To progress further, delve into advanced scenario planning across full asset lifecycles, incorporate real-time drilling or process data, and refine your enterprise-wide cost control frameworks to remain agile in a volatile market.</p>
+          `
+        ],
+        projectManagement: [
+          /* 0. Core Terms & Definitions */
+          `
+            <p><strong>Oil & Gas PM Vocabulary:</strong></p>
+            <ul class="sub-list">
+              <li><strong>NOCs (National Oil Companies):</strong> State-owned entities that often partner with private operators.</li>
+              <li><strong>PSCs (Production Sharing Contracts):</strong> Outline cost recovery mechanisms and revenues for operators vs. host states.</li>
+              <li><strong>Joint Ventures:</strong> Collaborative project ownership among diverse partners (supermajors, local players).</li>
+              <li><strong>HSE (Health, Safety & Environment):</strong> A vital domain in O&G, integrated with overall PM frameworks.</li>
+            </ul>
+          `,
+          /* 1. Historical Context & Evolution */
+          `
+            <p>O&G project management matured alongside massive offshore developments in the 1970s–80s (e.g., North Sea). 
+            High complexity, global stakeholder involvement, and rigorous safety demands accelerated adoption of standardized PM processes. 
+            Today, this sector leads in robust project governance, bridging scheduling, cost control, risk, and multi-agency coordination.</p>
+          `,
+          /* 2. Tools & Platform Development */
+          `
+            <p>From early manual Gantt charts, O&G PM soared into enterprise solutions. Primavera P6 or equivalents often pair with advanced cost forecasting, risk analysis, and even advanced modeling for reservoir data. 
+            Real-time progress updates from field sites or drilling rigs feed into centralized dashboards where PMs and executives can make data-driven decisions.</p>
+          `,
+          /* 3. Comparisons with Other Solutions */
+          `
+            <p>While agile or lightweight PM tools can help small teams or certain engineering subprojects, large O&G developments typically require full-lifecycle oversight, from geology to refining. 
+            Enterprise solutions manage complex contracting structures (EPC, EPCIC, EPCC) with strong risk modules and multi-currency cost tracking—capabilities beyond simpler software solutions.</p>
+          `,
+          /* 4. Essential Features & Focus Areas */
+          `
+            <ul class="sub-list">
+              <li><strong>Portfolio & Program Management:</strong> Track multiple licenses, fields, or pipelines concurrently.</li>
+              <li><strong>HSE Integration:</strong> Safety milestones and risk assessments as embedded tasks, not optional extras.</li>
+              <li><strong>Interface Management:</strong> Detailed mapping of responsibilities across numerous contractors (topside, subsea, pipeline, onshore terminal, etc.).</li>
+              <li><strong>Regulatory Compliance:</strong> Frequent environmental or local content audits shape project workflows.</li>
+            </ul>
+          `,
+          /* 5. Best Practices & Strategies */
+          `
+            <ul class="sub-list">
+              <li><strong>Comprehensive Stakeholder Engagement:</strong> Government agencies, local communities, JV partners all require updates and alignment.</li>
+              <li><strong>Escalation Protocols:</strong> Define how major cost or safety issues get escalated swiftly for executive decisions.</li>
+              <li><strong>HSE & Quality Culture:</strong> Embed these as part of the standard PM approach, not separate add-ons.</li>
+              <li><strong>Contingency & Buffer Planning:</strong> Large O&G works often see strategic schedule floats to absorb geological or weather-related hiccups.</li>
+            </ul>
+          `,
+          /* 6. Initiating & Defining the Project */
+          `
+            <p>During initiation (FEED stage), define the project scope thoroughly: reservoir data, production targets, environmental constraints, and anticipated expansions. 
+            Identify key stakeholders, from state agencies to local communities. Preliminary schedule and budget frames help shape PSC or JV negotiations, ensuring clarity on cost recovery timelines and corridor usage rights.</p>
+          `,
+          /* 7. Executing & Tracking Progress */
+          `
+            <p>Execution involves awarding EPC/EPCI contracts, mobilizing rigs, constructing pipelines, and refining facilities—often in parallel. 
+            PMs must harmonize daily progress updates with long lead procurement (platform topsides, subsea systems). 
+            Repeated risk reviews are standard: if new reservoir data emerges, well design changes might ripple across the entire schedule and budget.</p>
+          `,
+          /* 8. Project Constraints & Boundaries */
+          `
+            <p>Constraints include licensing expiration dates, local content rules, limited skilled labor availability, and stringent environmental codes. 
+            Real-world boundaries—like remote or harsh offshore conditions—present logistical hurdles that influence daily scheduling. 
+            Aligning with government or partners on each milestone’s acceptance criteria remains critical for continued project approval and funding.</p>
+          `,
+          /* 9. Leadership & Key Drivers */
+          `
+            <p>Leaders in O&G PM must unify diverse stakeholders, from geologists to offshore rig teams, from financial sponsors to local communities. 
+            Key drivers often include safety performance, on-time first oil/gas, maintaining budget discipline, and fulfilling social or environmental obligations. 
+            Transparency in communications fosters trust among all parties, a must in large multi-billion ventures.</p>
+          `,
+          /* 10. Final Thoughts & Next Steps */
+          `
+            <p>Project Management in O&G orchestrates some of the most complex endeavors on the planet. 
+            Skilled PMs balance technical depth, risk management, compliance, and partnership intricacies. 
+            As you advance, consider certifications in advanced PM or specialized O&G training, integrate real-time operational data for agile decision-making, 
+            and push for high-level digitalization. This ensures your projects remain both safe and profitable, even under volatile market conditions.</p>
+          `
+        ]
+      },
+
+      healthCare: {
+        scheduling: [
+          /*
+            For brevity, fully expand placeholders:
+            11 items for scheduling in Health Care
+          */
+          /* 0. Core Terms & Definitions */
+          `
+            <p><strong>Health Care Scheduling Terms:</strong></p>
+            <ul class="sub-list">
+              <li><strong>AHCA (Agency for Health Care Administration):</strong> US-based regulation for hospital construction and operations.</li>
+              <li><strong>Life Safety Codes:</strong> Guidelines for design and operation, critical in hospital expansions.</li>
+              <li><strong>Infection Control Protocols:</strong> Specific scheduling steps to ensure areas remain contaminant-free.</li>
+            </ul>
+          `,
+          /* 1. Historical Context & Evolution */
+          `
+            <p>Hospital expansions and renovations have grown more complex, frequently occurring while facilities remain operational. 
+            Historical scheduling expansions recognized the special constraints: strictly controlled environments, urgent patient needs, and regulatory oversight. 
+            Gantt charts alone proved insufficient for phased expansions, metamorphing into advanced scheduling solutions for seamless workflow adherence.</p>
+          `,
+          /* 2. Tools & Platform Development */
+          `
+            <p>Tools like P6 help coordinate structural work, medical gas installations, HVAC modifications, and final licensing inspections. 
+            Health care providers rely on multi-phase scheduling for scenarios like building a new wing while preserving patient safety and operational continuity in existing areas.</p>
+          `,
+          /* 3. Comparisons with Other Solutions */
+          `
+            <p>MS Project can suffice for smaller outpatient clinic builds. However, major hospital expansions—particularly those that must coordinate multiple specialized trades 
+            and maintain compliance with state/federal bodies—benefit from P6’s robust logic ties, resource leveling, and large-scale orchestration capabilities.</p>
+          `,
+          /* 4. Essential Features & Focus Areas */
+          `
+            <ul class="sub-list">
+              <li><strong>Phased Access Plans:</strong> Coordinate partial or entire closures of wards.</li>
+              <li><strong>Life Safety Drill Down:</strong> Dedicated tasks for code compliance inspections (fire doors, egress routes).</li>
+              <li><strong>Off-Peak Construction Scheduling:</strong> Minimizing noise or ensuring no dust infiltration in critical wards (ER, ICU).</li>
+              <li><strong>Equipment Integration:</strong> Timely deliveries for imaging machines, operating tables, etc.</li>
+            </ul>
+          `,
+          /* 5. Best Practices & Strategies */
+          `
+            <ul class="sub-list">
+              <li><strong>Involve Medical Staff Early:</strong> They will highlight operational constraints and patient care priority areas.</li>
+              <li><strong>Migrate Patients Safely:</strong> If active wards must shift, schedule in detail to avoid confusion or risk.</li>
+              <li><strong>Strict Infection Control Planning:</strong> Use negative air pressure zones, protective barriers, routine disinfection tasks in the schedule.</li>
+              <li><strong>Frequent Notifications:</strong> Construction updates for staff, patients, and visitors reduce anxiety and maintain trust.</li>
+            </ul>
+          `,
+          /* 6. Steps to Creating a Schedule */
+          `
+            <p><strong>1. Define Project Scope & Impacted Areas:</strong> List all departments or wards to be renovated/constructed.</p>
+            <p><strong>2. Plan Phases:</strong> Sequence expansions so critical departments (e.g. ICU) remain functional or have minimal downtime.</p>
+            <p><strong>3. Map Special Stakeholders:</strong> Infection control teams, compliance officers, and departmental heads must sign off on each phase.</p>
+            <p><strong>4. Resource Allocation:</strong> Skilled trades with hospital experience, specialized cleaning staff, and safe demolition protocols.</p>
+            <p><strong>5. Establish Clear Milestones:</strong> Like obtaining a certificate of occupancy from AHCA or ramping a new trauma OR into full service.</p>
+          `,
+          /* 7. Maintaining & Updating Schedules */
+          `
+            <p>Weekly or even daily check-ins track unforeseen disruptions (e.g. emergency expansions for a COVID ward). 
+            Real-time adjustments must align with infection control protocols. Document actual start/finish times meticulously to maintain compliance records for future audits or government inspections.</p>
+          `,
+          /* 8. Common Constraint Types */
+          `
+            <ul class="sub-list">
+              <li><strong>AHCA Inspection Windows:</strong> Non-negotiable, must pass or rectify issues before opening newly built areas.</li>
+              <li><strong>Patient Safety:</strong> Imposes constraints on when or how certain noisy or intrusive tasks can proceed.</li>
+              <li><strong>Equipment Delivery Coordination:</strong> Large imaging equipment (MRI) can only be installed through special access routes, requiring precise scheduling.</li>
+            </ul>
+          `,
+          /* 9. Exploring Critical Path & Key Drivers */
+          `
+            <p>Often, obtaining regulatory approvals or specialized equipment installations drive the critical path. 
+            If a new surgical suite can’t be tested or certified, final operational readiness is delayed. 
+            Additional near-critical tasks can involve infection-control sign-offs or specialized training for new equipment usage.</p>
+          `,
+          /* 10. Final Thoughts & Next Steps */
+          `
+            <p>Health Care scheduling is about seamlessly weaving construction tasks into an active patient-care environment. 
+            With the right approach and a robust tool like Primavera P6, expansions can enhance medical capacity while preserving safety and compliance. 
+            Explore further by learning about telemedicine integration scheduling, advanced infection control procedures, and cross-facility expansions for complex hospital networks.</p>
+          `
+        ],
+        costAndRisk: [
+          /* 11 items fully expanded for cost & risk in Health Care */
+          `
+            <p><strong>Health Care Cost & Risk Vocab:</strong> <br />
+            <strong>Certificate of Need (CON):</strong> Regulatory approval in some regions before expanding services or constructing new facilities.<br />
+            <strong>FF&E (Furniture, Fixtures & Equipment):</strong> Specific to healthcare expansions (beds, med gas lines, etc.).</p>
+          `,
+          `
+            <p>Historically, hospital construction budgets were set aside as a typical capital improvement, but modern expansions face rising equipment costs (surgical robots, advanced imaging) and unpredictable changes in healthcare reimbursement models, increasing the importance of integrated cost-risk protocols.</p>
+          `,
+          `
+            <p>Tools like P6 or associated cost modules let healthcare PMs tie each expansion phase or new ward to specific budgets. 
+            Risk modules can incorporate government reimbursements, philanthropic funding uncertainties, or changes in patient population demand, producing more accurate forecasts.</p>
+          `,
+          `
+            <p>Spreadsheets once tracked expansions, but with multiple specialized trades, regulatory fees, and equipment orders, large systems favor broader solutions (P6, Deltek, or SAP integrated) for real-time updates and better cost containment. 
+            Once the project scales beyond a few million dollars, enterprise-level tracking is typically adopted.</p>
+          `,
+          `
+            <p>Essential features include: resource-based cost loading for each department, incremental approval cycles tied to regulatory boards, capturing new overhead or operational costs for post-expansion staffing, and robust risk analysis for potential changes in health regulation or accreditation requirements.</p>
+          `,
+          `
+            <p>Best practices: Involve finance teams early to confirm each department’s capital vs. operational budgets. Keep a dynamic risk register for potential code/regulation changes. 
+            Run frequent cost-to-completion forecasts, highlighting areas trending over budget (e.g. last-minute equipment upgrades). 
+            Align each expansion with broader hospital or healthcare network financial cycles.</p>
+          `,
+          `
+            <p>Planning & forecasting in healthcare expansions must address intangible risks, such as new infection control standards mid-build or revised patient capacity needs if local demographics shift. 
+            Incorporating possible adjustments into an upfront contingency is a hallmark of successful cost management.</p>
+          `,
+          `
+            <p>Monitoring & controlling costs rely on real-time data from construction progress, equipment lead times, and design changes demanded by surgeons or specialized medical staff. 
+            For risk management, watch out for clinical priorities: a sudden pivot to add more ICU capacity can drastically alter budgets.</p>
+          `,
+          `
+            <p>Financial/regulatory constraints often revolve around compliance or licensing boards that can stall project approvals, leading to holding costs. 
+            Federal or state grants might require meeting certain milestones or serving particular community needs, or risk losing funding entirely.</p>
+          `,
+          `
+            <p>Critical cost & risk drivers: <br/> • Specialized medical equipment with large price tags. <br/> • Rapid shifts in patient volumes or standards of care (pandemic surges). <br/> • Overruns in labor due to infection control protocols or required quarantines. <br/> • Mandated building code changes triggered by new legislation.</p>
+          `,
+          `
+            <p>In conclusion, controlling costs and managing risk in healthcare expansions demands integrated data, from real-time capital outlays to evolving regulatory requirements. 
+            Tools like P6 help ensure all stakeholders—administrators, clinicians, contractors—stay aligned, supporting safe and compliant expansions that benefit patients and the bottom line.</p>
+          `
+        ],
+        projectManagement: [
+          /* 11 items for healthcare PM expansions */
+          `
+            <p><strong>Health Care PM Vocab:</strong> <br/><strong>JCAHO (Joint Commission on Accreditation of Healthcare Organizations)</strong>, <strong>AHCA Inspections</strong>, <strong>Inpatient vs. Outpatient care design</strong>.</p>
+          `,
+          `
+            <p>Healthcare project management grew as hospital systems expanded regionally or replaced aging infrastructure. 
+            With patient safety at the forefront, PMs integrated infection control protocols, design reviews that comply with modern standards, and community impact analyses, bridging administrative priorities and clinical requirements under a unified plan.</p>
+          `,
+          `
+            <p>Platforms like Primavera P6 allow detailed coordination across architectural, mechanical, and medical staff. 
+            Advanced dashboards track how expansions align with broader hospital missions (improved patient capacity, specialized units for cardiology or oncology). 
+            Integration with cost and maintenance management systems ensures a seamless handover post-construction.</p>
+          `,
+          `
+            <p>Smaller clinics might rely on simpler solutions, but large hospitals or multi-campus systems often require enterprise-level PM software. 
+            The ability to manage concurrent expansions, complex budgets, strict code compliance, and frequent design changes sets modern PM tools apart from basic or ad-hoc solutions.</p>
+          `,
+          `
+            <p>Key focuses include ensuring safe operational continuity, robust compliance oversight, and interfacing with clinical staff who may have limited availability yet critical input. 
+            Best results come from structured gating processes, in which each newly renovated area goes through a rigorous readiness review before staff and patients occupy it.</p>
+          `,
+          `
+            <p>Best practices: <br/>
+            1) Early & ongoing staff involvement.<br/>
+            2) Clear escalation routes for changes in infection control or urgent expansions.<br/>
+            3) Scheduling dedicated downtime or alternative patient flows to keep critical services uninterrupted.<br/>
+            4) Leveraging site-specific pilot runs (e.g. partial ward openings) before full-scale go-live.</p>
+          `,
+          `
+            <p>During initiation, define the expansion or renovation scope in detail: which departments or wards, estimated bed capacity changes, diagnostic/treatment capabilities. 
+            Outline measurable success metrics (e.g., improved wait times, safe infection rates). Identify regulatory stakeholders and plan for each mandatory inspection or certificate process.</p>
+          `,
+          `
+            <p>Execution involves tight daily tracking of contractor tasks, equipment arrivals, and staff training. 
+            PMs must juggle possible crises: a sudden patient surge or a new directive from health authorities. Thorough change control ensures any adjustment does not undermine compliance. 
+            Weekly stakeholder meetings keep administrators, unit managers, and construction leads aligned.</p>
+          `,
+          `
+            <p>Constraints in healthcare projects often revolve around limited operational windows (e.g. focusing construction outside peak patient hours, ensuring daily housekeeping for dust control). 
+            Boundaries also include licensing deadlines or funding windows. PMs must remain flexible, as medical priorities can shift at any moment (public health emergencies, specialized expansions).</p>
+          `,
+          `
+            <p>Leadership in healthcare expansions goes beyond standard PM tasks, requiring empathy toward staff burnout and patient safety, consistent communication with local communities, 
+            and strong relationships with regulatory bodies. Clear direction on infection control standards, shift coordination, and documented accountability fosters a safe, efficient project environment.</p>
+          `,
+          `
+            <p>The ultimate challenge is delivering projects that enhance patient care without disrupting critical operations. 
+            A well-structured approach, supported by advanced PM tools, ensures expansions proceed smoothly and remain responsive to emerging health needs. 
+            Keep exploring program management for multi-campus expansions, advanced digital twin solutions for hospital workflows, and integrated facility management post-occupancy for continuous improvements.</p>
+          `
+        ]
+      },
+
+      dataCenters: {
+        scheduling: [
+          /* Expand 11 items for data center scheduling */
+          `
+            <p><strong>Data Center Scheduling - Core Terms & Definitions:</strong><br/>
+            <strong>CRAC Units (Computer Room Air Conditioning):</strong> Key equipment for maintaining optimal server temperatures.<br/>
+            <strong>N+1 Redundancy:</strong> Having at least one extra system/component for failover.<br/>
+            <strong>Tier Ratings:</strong> Uptime Institute’s classification (Tier I-IV) for data center reliability.</p>
+          `,
+          `
+            <p>As the digital revolution fueled growth in data storage and cloud computing, the scheduling of data centers became a specialized discipline. 
+            Coordinating civil construction, electrical, HVAC, and robust security systems requires meticulously staged timelines, 
+            especially given the massive power demands and essential uptime requirements.</p>
+          `,
+          `
+            <p>Platforms like Primavera P6 developed to handle multi-trade installation (chillers, UPS, generators, server racks). 
+            Data center companies need real-time coordination with utility providers. Over time, scheduling these expansions has evolved beyond reusing industrial facility templates— 
+            it’s now a refined process with dedicated data center PM standards (Uptime Institute, ISO certifications).</p>
+          `,
+          `
+            <p>MS Project may suit smaller server room expansions or regional data centers, but large hyperscale builds from providers like AWS, Google, or Microsoft rely on advanced solutions with multi-site oversight. 
+            P6 excels at coordinating thousands of tasks across different geographies and ensuring redundancies are validated in correct sequence.</p>
+          `,
+          `
+            <p>Focus areas: 
+            <ul class="sub-list">
+              <li>Critical environment tasks (power distribution, cooling loops) with minimal margin for error.</li>
+              <li>Sequenced installation of racks, cables, and security systems for minimal risk of damaging sensitive equipment.</li>
+              <li>High-level concurrency: often shell construction proceeds in parallel with early mechanical or electrical fit-outs.</li>
+            </ul></p>
+          `,
+          `
+            <p>Best Practice Strategies:
+            <ul class="sub-list">
+              <li>Segment project into design, shell construction, MEP (mechanical, electrical, plumbing) fit-out, and commissioning phases.</li>
+              <li>Integrate vendor lead times for specialized cooling solutions or advanced security layers early in the schedule.</li>
+              <li>Engage local utilities pre-emptively to confirm power substation expansions or high-voltage line scheduling.</li>
+              <li>Maintain thorough documentation on tested redundancies (N+1, 2N) to ensure consistent, validated uptime upon go-live.</li>
+            </ul></p>
+          `,
+          `
+            <p><strong>Steps to Creating a Schedule:</strong><br/>
+            1) Define capacity targets (MW of power, rack density) and identify compliance frameworks (e.g., Tier III).<br/>
+            2) Break down tasks for design, procurement, civil works, MEP, security, and commissioning.<br/>
+            3) Coordinate real estate timelines (land acquisition, permits) with construction start dates.<br/>
+            4) Link tasks across concurrent phases, e.g., interior fit-out can’t begin until partial shell completion is safe.<br/>
+            5) Baseline once all key stakeholders (IT teams, building officials, power utility) have reviewed and approved.</p>
+          `,
+          `
+            <p>Maintain updates at least weekly, capturing any shipping delays for specialized equipment. 
+            Commissioning tasks must follow precise test scripts for cooling, power, and network reliability. 
+            Document actual start/finish times meticulously to ensure no steps were skipped in creating the final data center environment. 
+            Summaries of each test phase (functional, integrated, reliability) help track readiness for operation.</p>
+          `,
+          `
+            <p>Common constraints revolve around secure site requirements (access only for cleared contractors), 
+            lead times for large-scale generators/UPS, or local permitting for high electricity usage. 
+            Also, expansions near urban centers can face noise or zoning constraints for mechanical plants.</p>
+          `,
+          `
+            <p>The critical path often hinges on major MEP installations (power distribution, backup systems, HVAC) or utility tie-ins. 
+            Fence-line security or server installation can become near-critical if extremely tight occupancy dates are planned. 
+            Watch for potential delays in final integrated testing, as that can hold the entire data center from going live, costing potential high revenue loss if launch is missed.</p>
+          `,
+          `
+            <p>Data center scheduling is about balancing technical footprints, intense power/cooling demands, and top-tier project management. 
+            Look into specialized commissioning software that ties seamlessly with P6, advanced digital twin modeling for real-time environment analysis, 
+            and ongoing expansions to keep up with fast-paced cloud growth. 
+            Embracing these can ensure on-time readiness for the ever-increasing data demands of the modern world.</p>
+          `
+        ],
+        costAndRisk: [
+          /* Expand 11 items for data center cost & risk */
+          `
+            <p><strong>Data Center Cost & Risk Vocab:</strong><br/>
+            <strong>PUE (Power Usage Effectiveness):</strong> Ratio of total facility energy to IT equipment energy.<br/>
+            <strong>Hot Aisle / Cold Aisle:</strong> A design approach to manage cooling efficiency.<br/>
+            <strong>High Availability (HA):</strong> A system’s ability to remain operational with minimal downtime.</p>
+          `,
+          `
+            <p>Massive investments in modern data centers (often hundreds of millions of dollars) have led to more rigorous cost and risk frameworks. 
+            Historically, initial expansions were done with simplified cost tracking, but surging demands and greater competition forced data center owners to adopt enterprise project controls to handle large-scale expansions effectively.</p>
+          `,
+          `
+            <p>Tools like P6 tie power/cooling installation tasks to specific cost codes, plus risk modules to anticipate supply chain disruptions for critical gear (generators, chillers). 
+            Real-time updates help track overspending or unplanned scope additions (e.g., extra security layers, advanced building management systems). 
+            Integration with building automation data offers a more predictive approach to cost adjustments if usage patterns shift mid-project.</p>
+          `,
+          `
+            <p>Some data center expansions still rely on custom-coded spreadsheets or partial ERP integrations, 
+            but global operators increasingly rely on robust solutions (like P6 with cost add-ons or Deltek) for multi-site expansions, especially when multiple geographies and contractors are involved. 
+            The ability to incorporate real-time resource availability and currency fluctuations can be critical for cost accuracy.</p>
+          `,
+          `
+            <p>Essential features: 
+            <ul class="sub-list">
+              <li>Time-phased cost loading for specialized MEP components (chillers, UPS, PDUs, server racks).</li>
+              <li>Contingency for unexpected power utility fees or building code changes.</li>
+              <li>Integration with risk logs capturing supply chain, shipping, local regulatory hurdles.</li>
+              <li>Detailed tracking of subcontractors for security systems, networking hardware, and compliance testing.</li>
+            </ul></p>
+          `,
+          `
+            <p>Best practices & strategies:
+            <ul class="sub-list">
+              <li>Engage key suppliers early (e.g., large generator manufacturers, HVAC providers) for more reliable cost estimates.</li>
+              <li>Incorporate energy efficiency goals (like PUE < 1.3) to estimate and control operational costs long-term.</li>
+              <li>Run scenario analyses on utility pricing or potential local policy shifts that may tax or limit large power draws.</li>
+              <li>Maintain a robust change control board: any addition of higher capacity or advanced systems can spike the budget unexpectedly.</li>
+            </ul></p>
+          `,
+          `
+            <p>Planning & forecasting revolve around anticipating multi-phase expansions (e.g., building out partial data hall capacity first, then scaling). 
+            Consider separate budgets for main builds vs. future expansions, factoring in potential HPC (high-performance computing) or AI-driven demands that can significantly raise power and cooling requirements.</p>
+          `,
+          `
+            <p>As build phases progress, actual spend is tracked vs. planned. Delays in major components might force re-sequencing and cost re-distribution. 
+            Risk events, such as a supplier going bankrupt or new code enforcement around backup diesel fuel, can trigger budget reallocation or schedule rework. 
+            Continuous EVM (Earned Value Management) monitoring helps highlight cost deviations promptly.</p>
+          `,
+          `
+            <p>Data center expansions often face local building codes limiting generator noise, environmental regulations on diesel usage, or carbon footprint mandates. 
+            Large electricity draws may require separate local or regional approvals. 
+            Missing these regulatory deadlines can stall further build-out, incurring costly overrun fees or lost service revenue opportunities.</p>
+          `,
+          `
+            <p>Key cost & risk drivers:
+            <ul class="sub-list">
+              <li>Sudden hardware revisions (server design, specialized racks) driving up costs.</li>
+              <li>Unexpected utility capacity constraints or expensive substation upgrades.</li>
+              <li>Supply chain disruptions for critical cooling or generator components.</li>
+              <li>Changing enterprise demands, requiring heavier build specs or advanced security that inflates budgets.</li>
+            </ul></p>
+          `,
+          `
+            <p>Conclusion: Cost & Risk in data center expansions require robust forecasting and agile change management. 
+            By integrating schedule-driven cost data and well-maintained risk registers, owners mitigate disruptions and keep build timelines aligned with high global demand. 
+            Explore advanced analytics on power usage, real-time supply chain tracking, and forward-looking scenario modeling to raise efficiency and strengthen your financial resilience.</p>
+          `
+        ],
+        projectManagement: [
+          /* 11 items for data center PM */
+          `
+            <p><strong>Data Center PM Vocabulary:</strong> <br/>
+            <strong>Colocation:</strong> Third-party data center space leased to multiple clients.<br/>
+            <strong>Hyperscale:</strong> Large facilities often owned by major cloud providers (AWS, Google, etc.).<br/>
+            <strong>Edge Data Center:</strong> Smaller facility located closer to end users to reduce latency.</p>
+          `,
+          `
+            <p>Data center project management expanded alongside the growth of the internet economy. Early server farms were basic additions to office buildings, 
+            but modern data centers are massive, specialized facilities often requiring advanced construction, robust security, and complicated MEP systems. 
+            PM structures had to adapt to handle 24/7 critical environments and near-zero downtime tolerance.</p>
+          `,
+          `
+            <p>From spreadsheets to enterprise tools like P6, data center PM now includes integrated dashboards for energy load, capacity planning, 
+            and network readiness. Leadership teams use these to coordinate construction phasing with new service rollouts, ensuring smooth transitions from build to operational readiness with minimal risk.</p>
+          `,
+          `
+            <p>While simpler tools may be employed in local, smaller-scale builds, the hyperscale environment demands advanced PM solutions capable of tracking thousands of tasks, supply chain complexities, multi-region expansions, 
+            and real-time resource usage. P6 offers that global vantage plus the depth to manage cost and schedule in unison.</p>
+          `,
+          `
+            <p>Key focuses include strict conformance to design standards for performance (Tier II, III, or IV), occupant security, operational continuity, and specialized commissioning steps (electrical load testing, failover checks). 
+            PM must also coordinate with property owners, local municipalities, and end clients with unique data needs or SLA requirements.</p>
+          `,
+          `
+            <p>Best Practices:
+            <ul class="sub-list">
+              <li>Establish robust gating: each phase must pass integrated testing (power & cooling) before proceeding to the next.</li>
+              <li>Plan for phased occupancy: partial data halls can go live while other modules are under construction, but coordinate well to avoid disruptions.</li>
+              <li>Enforce stringent security protocols among contractors to maintain facility integrity from day one.</li>
+              <li>Frequent check-ins with local utility or telco providers to ensure reliance on consistent external infrastructure.</li>
+            </ul></p>
+          `,
+          `
+            <p>Project initiation clarifies capacity goals, target Tier rating, and compliance frameworks. Defining success metrics might include near-zero downtime post-launch or achieving a specific PUE threshold. 
+            Stakeholder mapping covers internal IT teams, local governance, and any anchor tenant or colocation client. 
+            WBS definition typically sorts tasks into design, build, MEP integration, security, test, and commissioning packages.</p>
+          `,
+          `
+            <p>Execution requires orchestrating contractors or specialized trade alliances: civil, structural, mechanical, electrical, telecommunication, security. 
+            PMs must integrate daily progress data and handle design evolution as IT or cooling technologies update. Risk-based changes—like a demand for higher server density mid-build—trigger potential design reevaluation, cost changes, and revised schedules.</p>
+          `,
+          `
+            <p>Constraints include strict operational windows or zero tolerance for downtime if it’s an expansion to an active data center. 
+            Boundaries might revolve around municipal rules limiting building height, generator noise, or environmental impact. 
+            The PM must negotiate feasible work hours, coordinate critical path tasks around permissible times, and secure all relevant permits or occupant approvals in sync with the schedule.</p>
+          `,
+          `
+            <p>Leadership requires taking a broad perspective, aligning technical demands with business growth strategies. 
+            Key drivers for success range from robust cost control to speed-to-market, as cloud providers thrive on launching capacity before demand surges. 
+            Transparent communication across all stakeholders— including the eventual operations teams—ensures smooth transitions from construction to go-live status.</p>
+          `,
+          `
+            <p>Data center PM is a specialized field bridging heavy construction with IT infrastructure management. 
+            As demands for data storage and processing grow, so does the intricacy of these projects. 
+            Delve deeper into advanced commissioning strategies, digital twin technologies, and real-time capacity monitoring to further elevate your data center project outcomes, ensuring reliability in a data-driven world.</p>
+          `
+        ]
+      },
+
+      generalConstruction: {
+        scheduling: [
+          /* 11 items for general construction scheduling */
+          `
+            <p><strong>General Construction Scheduling - Core Terms & Definitions:</strong><br/>
+            <strong>RFI (Request for Information):</strong> Formal query to clarify plans or specs.<br/>
+            <strong>Submittals:</strong> Documents/materials contractors submit for approval by design professionals.<br/>
+            <strong>Punch List:</strong> Final set of tasks or issues to correct before project closeout.</p>
+          `,
+          `
+            <p>Outdoor or building construction has used Gantt charts for decades. As complexity grew— 
+            multiple subcontractors, strict codes, fast-track building methods— advanced scheduling with logical linking and resource management became essential. 
+            Tools from bar charts to P6 allow quicker identification of potential bottlenecks in multi-trade environments.</p>
+          `,
+          `
+            <p>Modern scheduling tools have integrated with cost modules, prefabrication workflows, and even 4D BIM (combining schedule + 3D models). 
+            This shift from purely time-based charts to collaborative digital solutions streamlines both communication and on-site coordination, mitigating rework from design changes or clashes.</p>
+          `,
+          `
+            <p>MS Project remains popular for smaller commercial or residential efforts, but larger builds— like stadiums, airports, or high-rise complexes— typically use P6 or other robust solutions. 
+            Asta Powerproject is another contender, especially in the UK. P6’s multi-user capabilities and enterprise approach are valued in large global construction firms.</p>
+          `,
+          `
+            <p>Essential features in general construction: multi-trade integration (steel, concrete, MEP, finishes), milestone-based deliveries for just-in-time materials, plus the ability to track constraints like local permitting or site logistics (e.g., limited crane times). 
+            Advanced scheduling might incorporate time-risk analysis if key suppliers or weather factors pose unpredictability.</p>
+          `,
+          `
+            <p>Best Practices & Strategies:
+            <ul class="sub-list">
+              <li>Begin with a clear WBS that matches each construction phase (foundation, superstructure, enclosure, interior fit-out).</li>
+              <li>Solicit subcontractor input on durations and dependencies— they often have real insights on feasibilities or lead times.</li>
+              <li>Conduct weekly lookahead schedules focusing on immediate tasks and potential obstacles (RFIs pending, submittal approvals).</li>
+              <li>Maintain robust documentation— changes to shop drawings or specs can quickly shift critical paths.</li>
+            </ul></p>
+          `,
+          `
+            <p>Steps to Creating a Schedule typically revolve around scope mapping (architectural, structural, MEP), 
+            then layering tasks in logical sequences. Resource (crew) allocation and delivery timelines for major materials or prefabricated systems are integrated. 
+            Once stakeholder sign-offs are complete, the baseline is established as the yardstick for measuring progress.</p>
+          `,
+          `
+            <p>Updating schedules can be daily or weekly. Subcontractor reporting is crucial— if a slab pour is delayed, it cascades into all tasks dependent on that pour. 
+            On large projects, create frequent comparison metrics, e.g., planned vs. actual starts/finishes. 
+            Align these updates with cost tracking for a holistic project controls approach.</p>
+          `,
+          `
+            <p>Common constraints revolve around building permits, local ordinances restricting noise or heavy equipment usage times, or missing material deliveries. 
+            On some projects, owner-imposed occupancy or critical milestone constraints complicate schedules further. 
+            Use constraints sparingly in the software, letting logical links show most dependencies, but represent true contractual or regulatory deadlines accurately.</p>
+          `,
+          `
+            <p>On many general construction efforts, the critical path might run through major structural elements, 
+            but near-critical items include specialized finishing trades that can hamper final occupancy. 
+            By continuously monitoring tasks with minimal float, site managers can anticipate resource reassignments or schedule accelerations if needed.</p>
+          `,
+          `
+            <p>General construction scheduling is the art of orchestrating multiple trades, materials, and design clarifications into a coherent timeline. 
+            Tools like P6, combined with collaborative processes, reduce miscommunication and rework. 
+            Embrace additional best practices: 4D modeling for clash detection, weekly coordination huddles with trade leads, 
+            and thorough closeout planning to ensure a smooth final turnover to the client and occupants.</p>
+          `
+        ],
+        costAndRisk: [
+          /* 11 items for cost & risk in general construction */
+          `
+            <p><strong>General Construction Cost & Risk Vocabulary:</strong><br/>
+            <strong>GCs (General Contractors), Subs (Subcontractors), Lump Sum vs. GMP (Guaranteed Maximum Price) contracts</strong>.</p>
+          `,
+          `
+            <p>Construction cost management historically revolved around the architect/engineer estimates and contractor bids. 
+            Over time, with design-build or fast-track delivery, cost control had to be more nimble. Risk management advanced to include supply chain volatility, code changes, or labor disputes. 
+            Large commercial or infrastructure projects often adopt an integrated system linking cost to the continuously updated project schedule.</p>
+          `,
+          `
+            <p>Tools like P6 with cost features or combined with ERP solutions (SAP, Oracle) track labor hours, materials, subcontracts, 
+            and overhead against baseline budgets. Risk functionality helps identify probable claims or potential reorder costs if new design changes occur mid-construction. 
+            This synergy prevents cost blowouts from unnoticed scope drift.</p>
+          `,
+          `
+            <p>While some small GCs still rely on spreadsheets, those tackling complex or multiple concurrent projects often transition to enterprise solutions. 
+            This ensures better forecasting, capturing changes in real time, and generating robust financial reports that owners or developers trust.</p>
+          `,
+          `
+            <p>Key focuses:
+            <ul class="sub-list">
+              <li>Detailed cost codes aligned with CSI divisions or similar breakdown structures.</li>
+              <li>Contingency for potential design revisions or unexpected site conditions (groundwater, structural issues).</li>
+              <li>Claims management— formal logging and negotiation of changes or disputes.</li>
+              <li>Risk identification for material price hikes, labor shortages, or weather-related delays.</li>
+            </ul></p>
+          `,
+          `
+            <p>Best Practices:
+            <ul class="sub-list">
+              <li>Keep close relationships with suppliers for real-time price updates (steel, lumber, etc.).</li>
+              <li>Synchronize schedule progress with cost usage to highlight burn rates or potential over-budget tasks early.</li>
+              <li>Maintain a robust risk register, especially for design clarifications or RFI backlogs that can cause rework or idle crews.</li>
+              <li>Adjust contingencies as the project matures— early phases often see heavier unknowns, while finishing phases might devote contingency to final detail changes.</li>
+            </ul></p>
+          `,
+          `
+            <p>Planning & Forecasting revolve around early feasibility studies, final estimates, and progressive buyouts with subcontractors. 
+            As design clarifications come in, cost forecasts are re-baselined and integrated with updated schedule logic. 
+            Highly effective teams track small gains or savings to reallocate funds where needed, avoiding unpleasant late-project cost spikes.</p>
+          `,
+          `
+            <p>Monitoring & Controlling cost means verifying subcontractor payment apps, timesheets, and materials usage. 
+            Risk events might include a big change order on structural steel or an unexpected site condition. 
+            Clear processes for approving, documenting, and controlling these changes help defend or minimize extra costs. 
+            Periodic earned value analysis ensures alignment between cost consumption and physical progress.</p>
+          `,
+          `
+            <p>Financial/Regulatory constraints might include local zoning changes or building code updates mid-project, 
+            or an owner’s financing milestone requiring certain portions be completed. 
+            Failing to meet them can incur penalty costs, withheld payments, or forced project scope adjustments.</p>
+          `,
+          `
+            <p>Cost and Risk Drivers 
+            <ul class="sub-list">
+              <li>Material cost fluctuations (e.g., steel tariffs, lumber shortages).</li>
+              <li>Labor union negotiations or skilled trade shortages.</li>
+              <li>Unexpected site conditions (contaminated soil, underground obstructions).</li>
+              <li>Change order frequency from design or owner decisions.</li>
+            </ul>
+            Anticipating and proactively managing these fosters smoother cost performance.</p>
+          `,
+          `
+            <p>In conclusion, cost & risk in general construction revolve around vigilant tracking, prompt issue resolution, and agile forecasting. 
+            Integrated software solutions, combined with open communication across design, contracting, and owner teams, 
+            ensure that projects remain on budget and prepared for the inevitable curveballs of building in dynamic environments.</p>
+          `
+        ],
+        projectManagement: [
+          /* 11 items for PM in general construction */
+          `
+            <p><strong>General Construction PM Vocab:</strong><br/>
+            <strong>Design-Bid-Build (DBB), Design-Build (DB), CM at Risk</strong>— various project delivery methods.<br/>
+            <strong>Substantial Completion:</strong> Stage where the building can be used for its intended purpose, though minor work remains.</p>
+          `,
+          `
+            <p>The evolution of modern construction PM owes heavily to large-scale projects— from skyscrapers to highways— 
+            demanding systematic coordination of design professionals, GCs, subcontractors, suppliers, and regulatory agencies. 
+            PMI standards and AIA guidelines shaped robust frameworks for scoping, scheduling, risk management, and stakeholder engagement in construction.</p>
+          `,
+          `
+            <p>Tools & platform expansions integrate job costing modules, procurement tracking, and schedule logic in a single environment. 
+            Platforms like P6 can attach submittal logs, RFI workflows, and daily site diaries, giving the PM real-time oversight of issues or clarifications that might impact the schedule or budget. 
+            Enterprise approaches unify large multi-portfolio builders seeking consistent data across multiple projects.</p>
+          `,
+          `
+            <p>Smaller specialty contractors might still manage with spreadsheets or simpler tools (e.g., Buildertrend) for less complex jobs like home building or small retail. 
+            For major commercial, industrial, or infrastructure projects, advanced solutions are favored to handle thousands of tasks, resource leveling, cost integration, and robust reporting for owners and lenders.</p>
+          `,
+          `
+            <p>Core focuses in construction PM often include scope management, schedule coordination, cost control, risk management, and stakeholder communication, 
+            plus a strong emphasis on quality and safety. Large projects typically adopt a formal governance structure with tiered approvals, ensuring changes or claims are validated at the right level.</p>
+          `,
+          `
+            <p>Best Practices:
+            <ul class="sub-list">
+              <li>Develop a thorough Project Execution Plan (PEP) that maps roles, responsibilities, and communication flows.</li>
+              <li>Hold regular coordination meetings with design teams and subcontractors to proactively solve interface issues.</li>
+              <li>Implement formal change control— a well-documented process for modifications in scope, schedule, or cost.</li>
+              <li>Leverage site visits and audits to ensure alignment between paper plans and actual on-site conditions.</li>
+            </ul></p>
+          `,
+          `
+            <p>Initiation & definition revolve around clarifying project scope (building size, function, design specs), identifying major stakeholders (owner, local authorities, design consultants), 
+            and setting baseline targets for time, cost, and quality. Preliminary risk analysis helps shape contingency strategies. 
+            A robust WBS ensures each portion of the scope is accounted for in planning and budgeting.</p>
+          `,
+          `
+            <p>Executing & tracking progress is a daily affair, with site superintendents managing labor distribution, material deliveries, and safety protocols. 
+            The PM tracks evolving schedules, addresses RFI responses, and escalates critical issues. 
+            As built data and documentation are recorded meticulously for final turnover. 
+            Frequent cost & schedule reviews keep any creeping deviation in check.</p>
+          `,
+          `
+            <p>Common constraints & boundaries might include local building codes, occupant needs (if renovations are done in an active facility), union rules, or weather restrictions. 
+            Understanding all these constraints early helps set realistic schedules. 
+            Boundaries with adjacent property owners or city infrastructure can also complicate certain tasks (e.g., road closures for crane lifts).</p>
+          `,
+          `
+            <p>Leadership & key drivers revolve around forging a collaborative team ethos, ensuring each subcontractor and labor crew is working cohesively. 
+            Key drivers often include schedule reliability (meeting critical turnover dates), cost containment, safety performance, and quality of workmanship. 
+            Skilled PMs merge technical knowledge with strong communication and problem-solving abilities.</p>
+          `,
+          `
+            <p>Final Thoughts: Project Management in general construction weaves technical demands, people management, and regulatory compliance into one tapestry. 
+            Tools like P6 help manage complexity, but the PM’s leadership, negotiation, and foresight truly drive success. 
+            As you sharpen your skills, explore advanced lean construction techniques, 4D/5D BIM integration, or integrated project delivery (IPD) methods to push the boundaries of efficiency and collaboration even further.</p>
+          `
+        ]
+      },
+
+      commercialRealEstate: {
+        scheduling: [
+          /* 11 items, newly expanded for scheduling in commercial real estate */
+          `
+            <p><strong>Commercial Real Estate Scheduling - Core Terms & Definitions:</strong><br/>
+            <strong>TI (Tenant Improvements):</strong> Custom space modifications for incoming tenants.<br/>
+            <strong>Build-Out:</strong> Final interior construction for occupant needs.<br/>
+            <strong>Leasing Phases:</strong> Timelines to market and sign prospective tenants before or during construction.</p>
+          `,
+          `
+            <p>High-rise office buildings, retail centers, and mixed-use developments rely on scheduling to balance base-building work with specialized tenant improvements. 
+            Historically, simpler Gantt charts tracked shell completion, but large-scale commercial expansions or multi-tenant complexes demanded advanced logic to handle overlapping tenant demands and phased occupancy strategies.</p>
+          `,
+          `
+            <p>Modern solutions like P6 integrate leasing data to forecast when certain floors or units might be turned over to tenants. 
+            Coordination with anchor tenants is crucial: if they require major modifications (e.g., restaurant hood systems, large office customization), the schedule adjusts. 
+            Tracking amenity areas (lobbies, parking) also ensures the project meets opening deadlines for grand openings or partial occupancy events.</p>
+          `,
+          `
+            <p>MS Project can work for smaller multi-tenant spaces, but large mixed-use or multi-phase retail developments typically rely on enterprise solutions to handle complex sequences, 
+            possibly integrating with real estate portfolio software for unified oversight across many properties. 
+            The ability to manage concurrent TIs or landlord work letters is a strong advantage of advanced scheduling platforms.</p>
+          `,
+          `
+            <p>Key features include phased handovers, tenant coordination tasks, base-building milestones (e.g., core and shell completion), robust resource leveling for finish trades, 
+            and the capacity to adapt to design changes triggered by new tenant leases. 
+            Often, marketing or pre-leasing tasks are also woven into the timeline, ensuring spaces go operational quickly once physically complete.</p>
+          `,
+          `
+            <p>Best Practices:
+            <ul class="sub-list">
+              <li>Collaborate closely with leasing teams to forecast potential TIs or occupant requirements early.</li>
+              <li>Define clear demising or turnover points in the schedule— partial floors or entire shells might open to targeted tenants.</li>
+              <li>Incorporate building commissioning tasks for HVAC, elevator testing, and code inspections prior to tenant occupancy.</li>
+              <li>Document each tenant’s unique build-out specs in the WBS to avoid confusion among contractors or property managers.</li>
+            </ul></p>
+          `,
+          `
+            <p>Creating a schedule generally begins with base building design and shell construction tasks. Next, integrate potential or confirmed tenant improvements. 
+            Add marketing milestones for pre-leasing or final occupant sign-offs. Once you finalize your phasing plan, baseline the schedule and share with all stakeholders (construction, leasing, property management).</p>
+          `,
+          `
+            <p>Maintaining & updating schedules involves weekly or bi-weekly progress checks. 
+            Watch for new lease signings that can alter or add tasks for TIs. 
+            Manage partial openings if a portion of the project is deemed ready (like opening a retail anchor store even if smaller shop spaces are still under construction). 
+            Re-baseline if major changes occur, such as additional floors for a new anchor tenant.</p>
+          `,
+          `
+            <p>Common constraints can include city permits for commercial use, safety inspections for core systems like sprinklers or elevator operations, 
+            plus local codes around egress routes or occupant load. If the building is partially occupied, carefully sequence loud or disruptive work around operating businesses or peak foot traffic times.</p>
+          `,
+          `
+            <p>The critical path might run through main base-building tasks (structural completion, MEP systems, final certifications). 
+            However, tenant improvements can be near-critical if they involve specialized systems (e.g., commercial kitchens) or urgent tenant opening dates. 
+            Missing an anchor’s grand opening can also cause financial losses or lease penalty fees for the developer.</p>
+          `,
+          `
+            <p>Final Thoughts: Scheduling in commercial real estate merges typical construction tasks with occupant-driven changes, phased openings, and marketing objectives. 
+            By leveraging a robust scheduling solution and maintaining close coordination with leasing/tenant teams, project owners maximize occupancy readiness while minimizing costly delays or unhappy tenants. 
+            Further exploration of integrated real estate portfolio management and 4D visualization can elevate these schedules for even bigger, multi-property developments.</p>
+          `
+        ],
+        costAndRisk: [
+          /* 11 expansions for cost & risk in commercial real estate */
+          `
+            <p><strong>Commercial Real Estate Cost & Risk Vocab:</strong><br/>
+            <strong>ROI (Return on Investment), Cap Rate, TI Allowances</strong>— landlord-provided funds for customizing tenant spaces.</p>
+          `,
+          `
+            <p>In the past, commercial developments often faced cost overruns from slow leasing or changing market conditions. 
+            As developments grew in scale, owners recognized the need for integrated cost tracking and robust risk management, ensuring they could pivot as tenant demands or financing structures evolved (e.g. REIT regulations, syndicated loans).</p>
+          `,
+          `
+            <p>Tools like P6 can tie budgets for base-building vs. TI build-outs and link them to a schedule that triggers cost flow. 
+            For instance, if an anchor tenant is delayed, the developer might shift spend or reallocate funds to marketing for another occupant. 
+            Risk modules track macro-economic changes or local code updates that could temper prospective tenants or add to cost.</p>
+          `,
+          `
+            <p>For smaller or single-building projects, basic spreadsheets might suffice. 
+            But multi-block or multi-phase developments typically carry multi-million or billion-dollar budgets, 
+            requiring advanced solutions that unify finance, cost codes, and scheduling logic for coherent forecasting and better risk detection, especially if there’s a complex financing arrangement with multiple investors.</p>
+          `,
+          `
+            <p>Key focuses:
+            <ul class="sub-list">
+              <li>Cash flow timing: bridging construction loans, occupant rent commencement, and capital reimbursements.</li>
+              <li>Tenant credit risk: unleased spaces or defaults can hamper project finances mid-construction.</li>
+              <li>Change orders for occupant-specific design modifications beyond initial TI allowances.</li>
+              <li>Risk from market fluctuations— if the real estate cycle dips, lease rates or absorption can slow down significantly.</li>
+            </ul></p>
+          `,
+          `
+            <p>Best Practices:
+            <ul class="sub-list">
+              <li>Segment budgets for base construction, TIs, contingencies, and future expansions or modifications.</li>
+              <li>Maintain an updated risk register factoring in commercial market shifts, potential interest rate hikes, or anchor tenant uncertainties.</li>
+              <li>Run scenario analyses: how does the project fare if key tenants delay or renegotiate lease terms?</li>
+              <li>Align monthly cost tracking with leasing milestones, ensuring the finance team sees real-time impacts of tenant changes.</li>
+            </ul></p>
+          `,
+          `
+            <p>Planning & forecasting for commercial real estate includes feasibility studies, pro forma analysis, stakeholder negotiations for anchor tenants, and government approvals. 
+            The cost baseline must reflect both direct construction expenses and intangible marketing or hold costs if occupancy is delayed. 
+            Keep contingency for potential design adjustments once major tenants specify interior uses.</p>
+          `,
+          `
+            <p>Monitoring & controlling involves tracking all subcontractor costs against the base building budget. 
+            Meanwhile, TI costs can vary widely— if a new tenant requires elaborate interior finishes, the developer might dip into a TI allowance or renegotiate. 
+            Risk management includes watchful oversight of external indicators: local real estate demand, competitor projects, or shifts in consumer traffic patterns (for retail/mixed-use).</p>
+          `,
+          `
+            <p>Financial/regulatory constraints can include local economic incentive packages (like tax abatements) tied to certain occupancy or job creation thresholds. 
+            Missing these may reduce planned project revenue. 
+            Likewise, commercial real estate projects may rely on staged bank loan disbursements triggered by certain completion milestones, meaning schedule slips hamper cash flow.</p>
+          `,
+          `
+            <p>Cost & Risk Drivers:
+            <ul class="sub-list">
+              <li>Anchor tenant lease terms— significantly shape project finance viability.</li>
+              <li>Material or labor price fluctuations— typical in large urban builds, especially if specialized trades are scarce.</li>
+              <li>Market dynamics— a downturn can leave more vacant space or force rent concessions.</li>
+              <li>Design changes— occupant-driven or code-related, each can inflate finishing budgets or extend the timeline.</li>
+            </ul></p>
+          `,
+          `
+            <p>In conclusion, cost & risk management in commercial real estate is about balancing the developer’s returns with the realities of construction and leasing complexities. 
+            By coupling robust scheduling data (via P6) with frequent financial reviews, owners can keep projects profitable and agile. 
+            Future enhancements include integrated property management software, real-time lease analytics, and advanced risk modeling to better handle uncertain or rapidly shifting real estate cycles.</p>
+          `
+        ],
+        projectManagement: [
+          /* 11 expansions for PM in commercial real estate */
+          `
+            <p><strong>Commercial Real Estate PM Terminology:</strong><br/>
+            <strong>LOI (Letter of Intent):</strong> Preliminary agreement with prospective tenant before a formal lease.<br/>
+            <strong>CAM (Common Area Maintenance):</strong> Shared building expenses allocated among tenants.</p>
+          `,
+          `
+            <p>Commercial Real Estate project management gained momentum as developments became more multi-faceted: integrated office, retail, and residential spaces requiring cross-disciplinary coordination. 
+            Over time, professional PM roles evolved, bridging developers, investors, design teams, and occupant needs within standard frameworks reminiscent of PMI or real estate-specific guidelines (ULI best practices).</p>
+          `,
+          `
+            <p>Tools including P6 integrate with real estate CRMs, lease management systems, or property analytics platforms. 
+            PMs can track not only project timelines but prospective occupant demands— ensuring design modifications occur early if anchor tenants request them. 
+            This synergy accelerates tenant fit-outs, reducing the vacancy period between construction completion and revenue generation.</p>
+          `,
+          `
+            <p>For smaller strip malls or basic re-fits, a dedicated PM might suffice with simpler planning tools. 
+            Complex multi-floor commercial towers or multi-phase developments typically leverage robust solutions that can manage thousands of tasks, track multiple TIs concurrently, 
+            and produce investor-friendly dashboards on cost, schedule, and occupancy rates.</p>
+          `,
+          `
+            <p>Core focuses: 
+            <ul class="sub-list">
+              <li>Integrating developer objectives (ROI, brand image) with occupant or city requirements.</li>
+              <li>Coordinating design teams, GCs, brokers, leasing agents, and tenant reps early in the process.</li>
+              <li>Handling phased occupancy or partial property openings, ensuring each area meets code compliance for safe usage.</li>
+            </ul></p>
+          `,
+          `
+            <p>Best PM Practices:
+            <ul class="sub-list">
+              <li>Maintain a single source of truth for design documents, leasing data, and schedule updates.</li>
+              <li>Establish a structured change control: new tenant requests must be evaluated for cost, schedule, and code compliance before acceptance.</li>
+              <li>Communicate frequently with property management teams who will operate the building long-term, ensuring a smooth handover from construction.</li>
+              <li>Involve marketing or broker teams in milestone reviews, aligning advertising or open house events with actual construction readiness.</li>
+            </ul></p>
+          `,
+          `
+            <p>Initiating the project typically involves feasibility, site selection, conceptual designs, anchor tenant targeting, and financial modeling. 
+            A charter or developer’s commitment clarifies scope (office tower vs. mixed-use) and major strategy points. 
+            The WBS might subdivide base-building tasks from potential TIs or specialized occupant demands (e.g., gym, rooftop lounge).</p>
+          `,
+          `
+            <p>Executing & tracking requires daily coordination among GCs, MEP trades, interior finishes, plus leasing or marketing updates. 
+            As leases are signed, new tasks might appear for the tenant’s custom work. 
+            Regular site walks help confirm progress and quality. 
+            PMs handle escalations— from design conflicts to occupant timeline accelerations— ensuring alignment with overall project milestones and budgets.</p>
+          `,
+          `
+            <p>Constraints often revolve around building codes, local noise ordinances, or traffic management if in a busy downtown. 
+            Boundaries also include financial lenders releasing funds in stages or occupant deadlines. 
+            Balancing these constraints demands proactive planning and consistent communications with city authorities, occupant reps, and the developer’s finance teams.</p>
+          `,
+          `
+            <p>Leadership in commercial real estate PM emphasizes multi-lateral negotiation skills, bridging design flair, pragmatic construction details, and occupant business needs. 
+            Key drivers: timely delivery to sustain project ROI, occupant satisfaction (leading to stable leases), and compliance with local rules. 
+            Transparent progress reporting fosters trust among investors, municipal entities, and prospective tenants.</p>
+          `,
+          `
+            <p>Final Thoughts: 
+            Commercial real estate PM merges construction rigor with tenant-centric thinking. 
+            Tools like P6 enhance coordination across base builds, TIs, leasing schedules, and cost management. 
+            Growth areas include advanced occupant experience analytics, green building certifications, and digital building twins to enhance facility handovers. 
+            Mastering this synergy ensures profitable projects that harmonize with their urban or suburban environments.</p>
+          `
+        ]
+      },
+
+      advancedManufacturing: {
+        scheduling: [
+          /* 11 expansions for scheduling in advanced manufacturing */
+          `
+            <p><strong>Advanced Manufacturing Scheduling Terms:</strong><br/>
+            <strong>Cleanroom Protocols:</strong> Strict environment standards for semiconductor or biotech production.<br/>
+            <strong>Tool Move-in:</strong> Precisely timed deliveries/installations of specialized manufacturing equipment.<br/>
+            <strong>FAC (Factory Acceptance Tests):</strong> Checkouts at vendor sites before shipping large equipment to the facility.</p>
+          `,
+          `
+            <p>Industries like semiconductor, aerospace, and precision electronics increasingly require rigid scheduling for production lines and expansions. 
+            Historically, repetitive or manual scheduling was prone to errors. As technology advanced, integrated software solutions have become essential to handle synchronous steps— from facility construction to intricate equipment installation and qualification.</p>
+          `,
+          `
+            <p>Platforms like P6 incorporate multi-phase builds (shell construction, utilities, specialized manufacturing areas) with phased equipment onboarding. 
+            The complexity matches life sciences in that certain lines or tools require validation or yield performance checks before full capacity can be realized. 
+            Over time, integrated data flows improved day-to-day planning, preventing assembly line disruptions.</p>
+          `,
+          `
+            <p>While smaller specialized manufacturing expansions might use modest scheduling solutions, large advanced fabs (e.g., semiconductor plants) rely on P6 for multi-thousand tasks. 
+            Detailed resource planning ensures enough skilled technicians are available for tool install, and no contamination occurs from overlapping trades in critical clean zones.</p>
+          `,
+          `
+            <p>Focus includes bridging building expansions, specialized production lines, high-voltage power or inert gas systems, and robust automation software integration. 
+            Schedules track everything from micro-level tool calibrations to major property expansions or retooling cycles. 
+            Parallel tasks— such as subfab systems, process piping, or automation software setups— require carefully linked dependencies.</p>
+          `,
+          `
+            <p>Best Practices:
+            <ul class="sub-list">
+              <li>Segment WBS by process area, utility systems, and each major equipment group to ensure clarity.</li>
+              <li>Involve equipment suppliers early for accurate shipping and installation durations, including any customization lead time.</li>
+              <li>Coordinate qualification and yield ramp tasks with the base schedule— it’s not just about physical install but also verifying performance metrics.</li>
+              <li>Use scenario planning to handle potential supply chain disruptions for critical parts or advanced tooling.</li>
+            </ul></p>
+          `,
+          `
+            <p>Building a schedule typically requires engineering input for each manufacturing process step, plus facility design specifics. 
+            Once tasks and durations are pinned down, you integrate tool maker commitments, shipping windows, site readiness tasks, and qualification windows. 
+            Officially baseline after ensuring synergy among construction, system owners, and production managers.</p>
+          `,
+          `
+            <p>Frequent updates let you catch any drift in equipment deliveries or unexpected test failures. 
+            Real-time progress is vital, especially in high-volume manufacturing lines, as each day of delay can push back product launches or hamper throughput. 
+            Weekly cross-functional reviews ensure potential slip points are tackled proactively.</p>
+          `,
+          `
+            <p>Common constraints involve specialized conditions: e.g., controlling vibration for lithography, or inert gas supply lines that must pass rigorous safety tests. 
+            Regulatory or environmental constraints (chemical usage, exhaust permitting) can also impose mandatory starts or finishes. 
+            Minimizing cross-contamination or downtime in areas with ongoing production is another typical constraint in expansions of running facilities.</p>
+          `,
+          `
+            <p>Critical path likely focuses on major tool installations or environmental control systems (HVAC, chemical distribution). 
+            If a single piece of equipment is delayed, it can create a ripple effect on the entire production ramp. 
+            Identify near-critical tasks involving high-risk steps (delicate calibrations) that might quickly slip onto the critical path if issues arise.</p>
+          `,
+          `
+            <p>Conclusion: 
+            Scheduling advanced manufacturing expansions demands precise coordination among facility engineers, process owners, equipment vendors, and QA specialists. 
+            Tools like P6 handle large activity networks, bridging the gap from facility build-out to final production readiness. 
+            Further improvement might involve real-time IoT data or advanced digital twin simulations that detect scheduling or performance risks early, ensuring stable, high-quality manufacturing outputs.</p>
+          `
+        ],
+        costAndRisk: [
+          /* 11 expansions for cost & risk in advanced manufacturing */
+          `
+            <p><strong>Advanced Manufacturing Cost & Risk Vocab:</strong><br/>
+            <strong>Bill of Materials (BOM):</strong> Full list of components/parts required for product lines.<br/>
+            <strong>Capital Equipment:</strong> High-value production tools or test systems, often with large lead times.<br/>
+            <strong>Scrap & Yield Loss:</strong> Wasted materials or products that don’t meet quality specs, impacting cost efficiency.</p>
+          `,
+          `
+            <p>Cost management in advanced manufacturing soared to new levels as ultra-precise equipment or cleanroom expansions soared into the hundreds of millions (or billions) of dollars. 
+            Even small overruns can hamper overall ROI, especially when product cycles (like new chips) hit markets in short windows. 
+            Risk analysis now covers everything from supply chain disruptions to emergent competitor technologies that might shift the business case mid-build.</p>
+          `,
+          `
+            <p>Tools like P6 with cost modules or integrated ERP solutions track everything from large facility expansions to smaller line upgrades. 
+            Detailed risk logs model how yield ramp might shift if certain high-precision steps fail initial tests. 
+            Real-time resource usage data ensures labor or specialized contractor spending remains in line with budgets, quickly flagging anomalies.</p>
+          `,
+          `
+            <p>Smaller expansions might use spreadsheets for budget tracking, but large, multi-line or multi-fab expansions often require enterprise-level solutions to handle complex financial structures, possible government incentives, or cost-sharing with partners. 
+            The synergy between schedule progress and cost tracking is crucial to avoid misalignments that degrade ROI.</p>
+          `,
+          `
+            <p>Key focuses:
+            <ul class="sub-list">
+              <li>Time-phased loading for specialized equipment costs, factoring potential escalations if installation delays occur.</li>
+              <li>Risk-based budgeting around new materials or processes untested at large scale (e.g., next-gen wafer sizes).</li>
+              <li>Contingencies for rework if initial yields fall below acceptance thresholds.</li>
+              <li>Managing currency fluctuations or raw material cost spikes when sourcing exotic metals or advanced tech components.</li>
+            </ul></p>
+          `,
+          `
+            <p>Best Practices:
+            <ul class="sub-list">
+              <li>Pre-negotiate flexible contracts with key suppliers, allowing schedule shifts without extreme cost penalties.</li>
+              <li>Integrate yield ramp assumptions into cost forecasting— each delay or process mismatch can create rework or scrap losses.</li>
+              <li>Factor potential technology leaps— a competitor might release a more advanced node, forcing design changes mid-project.</li>
+              <li>Scenario plan for catastrophic equipment failures or global shipping constraints, ensuring the budget can handle unplanned expansions or replacements.</li>
+            </ul></p>
+          `,
+          `
+            <p>Planning & forecasting must consider intangible R&D risk— if the new production line must accommodate a next-generation process, 
+            expansions or custom tool designs might shift from initial cost estimates. 
+            Build in robust contingency tied specifically to uncertain yields or design changes. 
+            Earned Value Management helps cross-check physical progress with spending on large expansions or product introduction phases.</p>
+          `,
+          `
+            <p>Monitoring & controlling sees actual cost data updated frequently from vendor invoices, site labor logs, and equipment acceptance tests. 
+            Risk triggers—like delayed shipping of a critical subcomponent or an unexpected design tweak—force scope changes or re-baselining. 
+            If yield targets are missed, more time and money may be needed for tool requalification or process re-engineering, impacting the final budget significantly.</p>
+          `,
+          `
+            <p>Financial/regulatory constraints revolve around environmental permits for chemical usage, government incentives tied to achieving certain production volumes or local job creation, or IP agreements with technology partners. 
+            Failing these constraints might lead to lost subsidies or forced compliance upgrades, boosting costs unexpectedly.</p>
+          `,
+          `
+            <p>Key drivers include advanced tool readiness, R&D developments, competitor actions, and raw material price fluctuations. 
+            Any major misstep in equipment procurement or process yield can balloon cost or delay product launch, risking a large share of the potential market window. 
+            Thus, risk management is not a side task but a core pillar in advanced manufacturing expansions.</p>
+          `,
+          `
+            <p>In conclusion, cost & risk management for advanced manufacturing expansions merges facility build logic with deep technical unpredictabilities. 
+            By integrating schedule-based cost tracking and refining risk registers to account for yield or tech leaps, 
+            project teams guard their massive capital outlays and stay nimble in the face of rapidly shifting industry landscapes.</p>
+          `
+        ],
+        projectManagement: [
+          /* 11 expansions for advanced manufacturing PM */
+          `
+            <p><strong>Advanced Manufacturing PM Terms:</strong><br/>
+            <strong>Pilot Line:</strong> A small-scale production line for early testing and validation.<br/>
+            <strong>Ramp-up:</strong> Gradual increase of production after initial qualification to reach target output.</p>
+          `,
+          `
+            <p>Project Management in advanced manufacturing parallels life sciences in complexity: large capital expansions, rigorous testing phases, and specialized compliance. 
+            Over decades, industries like semiconductors established structured PM frameworks to handle overlapping design, construction, tooling, and qualification steps, each critical to business competitiveness.</p>
+          `,
+          `
+            <p>Tools & platform history sees expansions from scheduling-only solutions to integrated modules capturing product design, BOM changes, and real-time machine data. 
+            Oracle’s acquisition of Primavera accelerated synergy possibilities, letting manufacturing or R&D data feed scheduling updates if new processes need extra steps. 
+            This transforms PM from a static plan to a dynamic feedback loop across engineering, supply chain, and line operations.</p>
+          `,
+          `
+            <p>Smaller job shops might only need local scheduling or a manufacturing execution system (MES). 
+            Large advanced plants or multi-fab expansions require enterprise PM solutions, bridging global supply chain complexities, advanced R&D collaboration, 
+            and possibly cross-site coordination (e.g., building multiple lines in different countries). 
+            P6’s robust resource leveling and scenario planning is a hallmark for multi-phase projects.</p>
+          `,
+          `
+            <p>Key features & focus areas:
+            <ul class="sub-list">
+              <li>Integration of facility build, equipment installs, and yield improvement tasks into a single PM structure.</li>
+              <li>Technological or R&D gating steps ensuring readiness for each new product node or advanced assembly line.</li>
+              <li>Close alignment with supply chain logistics, especially if specialized components are single-sourced globally.</li>
+              <li>Risk-based decision-making— expansions might pivot if a more advanced technology unexpectedly matures faster.</li>
+            </ul></p>
+          `,
+          `
+            <p>Best Practices:
+            <ul class="sub-list">
+              <li>Foster cross-functional teams: process engineers, supply chain managers, QA, and facilities must coordinate daily.</li>
+              <li>Use iterative stage gates: each major milepost (tool installation, process validation, yield demonstration) is thoroughly reviewed before the next step.</li>
+              <li>Proactively manage design changes if R&D modifies product specs mid-expansion. This can drastically shift equipment or facility needs.</li>
+              <li>Combine strong leadership with data analytics: track cycle times, machine uptime, and team performance metrics.</li>
+            </ul></p>
+          `,
+          `
+            <p>Initiating & defining advanced manufacturing expansions typically begins with a product roadmap or capacity demand forecast. 
+            PMs collaborate with finance, R&D, and operations to confirm site requirements, targeted throughput, and tipping point ROI. 
+            The WBS might separate civil works, subfab or overhead systems, each tool group, and final test or integration steps for clarity.</p>
+          `,
+          `
+            <p>Executing & tracking progress merges classic construction tasks (concrete pouring, structural assembly) with advanced manufacturing tasks (tool install, hardware-software integration, line qualification). 
+            Weekly or even daily cross-department reviews keep schedules current. 
+            If any portion lags, the PM ensures resources are reallocated or risk mitigation triggers are launched quickly.</p>
+          `,
+          `
+            <p>Constraints & boundaries can include specialized facility needs (cleanroom classifications, EHS regulations for chemical usage), 
+            global supply chain dependencies (some specialized tools only come from certain countries with possible shipping constraints), 
+            and IP or licensing constraints with technology partners. 
+            Missing these boundaries can stall entire expansions for months.</p>
+          `,
+          `
+            <p>Leadership & key drivers revolve around accelerating production readiness, controlling massive capital expenditures, and ensuring the final product meets performance yields. 
+            Effective PM fosters a culture of synergy among engineering, operations, and vendors. 
+            Key drivers often include time-to-market windows, brand reputation for cutting-edge production, and stable ramp performance to secure business goals.</p>
+          `,
+          `
+            <p>Final Thoughts: 
+            Advanced manufacturing PM is an intricate blend of complex construction oversight, advanced tooling coordination, QA mandates, and rapid iteration. 
+            Tools like P6 ensure broad visibility, but success also demands agile leadership, real-time data (IoT, MES), and flexible risk strategies. 
+            As you refine your approach, look to digital twins, integrated operational analytics, and robust supply chain forecasting to keep expansions on target in an ever-evolving manufacturing landscape.</p>
+          `
+        ]
+      }
+    };
+
+    /*
+     * updateContent():
+     * 1) Determine selected industry & pillar from dropdowns.
+     * 2) Fetch the array of 11 section titles from pillarTitles[pillar].
+     * 3) Fetch the array of 11 content elements from themesData[industry][pillar].
+     * 4) For each of the 11 cards, update the summary <h2> title and <div> content.
+     *    If the data is missing or undefined, show an empty string or fallback text.
+    */
+    function updateContent() {
+      const industry = document.getElementById("theme-select").value;
+      const pillar = document.getElementById("pillar-select").value;
+
+      const sectionTitles = pillarTitles[pillar] || schedulingSectionTitles;
+      const contentArray = (themesData[industry] && themesData[industry][pillar])
+        ? themesData[industry][pillar]
+        : themesData["general"]["scheduling"];
+
+      for (let i = 0; i < 11; i++) {
+        const titleElem = document.getElementById(`card-title-${i}`);
+        const contentElem = document.getElementById(`card-content-${i}`);
+
+        // Set the summary title
+        titleElem.textContent = sectionTitles[i] || `Section ${i + 1}`;
+
+        // Set the HTML content
+        const sectionHTML = contentArray[i] || `<p>No content defined for this section.</p>`;
+        contentElem.innerHTML = sectionHTML;
+      }
+    }
+
+    // On page load, load default content
+    window.onload = function() {
+      updateContent();
+    };
+  </script>
+</body>
+</html>
