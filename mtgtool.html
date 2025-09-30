@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mortgage Monopoly: Plan Your Payoff</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f4f7fa; 
+            margin: 0; 
+            padding: 20px; 
+            color: #333;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .dark-theme {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        .dark-theme .card {
+            background: #2c2c2c;
+            box-shadow: 0 4px 20px rgba(255,255,255,0.1);
+        }
+        .dark-theme .card-header {
+            color: #ecf0f1;
+        }
+        .dark-theme label {
+            color: #bdc3c7;
+        }
+        .dark-theme input {
+            background: #34495e;
+            color: #e0e0e0;
+            border: 1px solid #4a4a4a;
+        }
+        .dark-theme .summary-column { 
+            border-left: 1px solid #4a4a4a; 
+        }
+        .dark-theme table {
+            border-collapse: collapse;
+            width: 100%;
+            color: #e0e0e0;
+        }
+        .dark-theme th, .dark-theme td {
+            border: 1px solid #4a4a4a;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+        }
+        .card { 
+            background: white; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
+            padding: 20px; 
+            margin-bottom: 20px; 
+            transition: background-color 0.3s;
+        }
+        .card-header { 
+            font-size: 1.2em; 
+            font-weight: bold; 
+            margin-bottom: 15px; 
+            color: #2c3e50;
+        }
+        #controls { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px; 
+        }
+        label { 
+            display: flex; 
+            flex-direction: column; 
+            font-size: 0.9em; 
+            color: #555;
+        }
+        input { 
+            padding: 8px; 
+            border: 1px solid #ddd; 
+            border-radius: 6px; 
+            margin-top: 5px;
+        }
+        #toggles { 
+            margin: 15px 0; 
+        }
+        #chart-container { 
+            margin-top: 20px; 
+        }
+        #summary-card { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 20px; 
+        }
+        .summary-column { 
+            padding: 10px; 
+            border-left: 1px solid #eee; 
+        }
+        .summary-column:first-child { 
+            border-left: none; 
+        }
+        #about { 
+            display: none; 
+            margin-top: 20px; 
+        }
+        button { 
+            background: #3498db; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            margin-right: 10px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover { 
+            background: #2980b9; 
+        }
+        .dark-theme button { 
+            background: #2980b9; 
+        }
+        .dark-theme button:hover { 
+            background: #3498db; 
+        }
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(90deg, #3498db, #8e44ad);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            color: white;
+        }
+        header h1 {
+            margin: 0 0 0 20px;
+            font-size: 2em;
+            font-weight: bold;
+        }
+        .logo-svg {
+            width: 60px;
+            height: 60px;
+            animation: rotate 10s linear infinite;
+        }
+        @keyframes rotate {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(360deg); }
+        }
+        #dark-theme-toggle {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+        #amortization-card {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        .dark-theme th {
+            background-color: #2a2a2a;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <svg class="logo-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <g transform="rotate(45 50 50)">
+                <rect x="30" y="30" width="40" height="40" fill="#e74c3c" stroke="#ffffff" stroke-width="2"/>
+                <path d="M30 30 L50 10 L70 30" fill="#c0392b"/>
+                <rect x="45" y="45" width="10" height="25" fill="#7f8c8d"/>
+                <rect x="35" y="50" width="10" height="10" fill="#ecf0f1"/>
+                <rect x="55" y="50" width="10" height="10" fill="#ecf0f1"/>
+            </g>
+        </svg>
+        <h1>Mortgage Monopoly: Plan Your Payoff</h1>
+    </header>
+    <button id="dark-theme-toggle">Toggle Dark Theme</button>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">Controls</div>
+            <div id="controls">
+                <label>15-Year Rate (%): <input type="number" id="rate15" min="0" max="20" step="0.01" value="5.34"></label>
+                <label>20-Year Rate (%): <input type="number" id="rate20" min="0" max="20" step="0.01" value="6.59"></label>
+                <label>30-Year Rate (%): <input type="number" id="rate30" min="0" max="20" step="0.01" value="6.59"></label>
+                <label>Escrow ($/month): <input type="number" id="escrow" value="335" step="any"></label>
+                <label>HOA ($/month): <input type="number" id="hoa" value="0" step="any"></label>
+                <label>PMI ($/month): <input type="number" id="pmi" value="0" step="any"></label>
+                <label>Closing Costs ($): <input type="number" id="closing" value="9600" step="any"></label>
+                <label>Current Balance ($): <input type="number" id="balance" value="320000" step="any"></label>
+                <label>Target Monthly Payment ($): <input type="number" id="targetPayment" value="3000" step="any"></label>
+                <label><input type="checkbox" id="rollclosing" checked> Roll closing costs into loan</label>
+            </div>
+        </div>
+        <div class="card" id="toggles">
+            <div class="card-header">Graph Options</div>
+            <button id="all-terms">See All Terms</button>
+            <button id="isolate-15">Isolate 15-Year</button>
+            <button id="isolate-20">Isolate 20-Year</button>
+            <button id="isolate-30">Isolate 30-Year</button>
+        </div>
+        <div class="card" id="chart-container">
+            <div class="card-header">Cumulative Cost Over Time</div>
+            <canvas id="chart" width="800" height="400"></canvas>
+        </div>
+        <div class="card">
+            <div class="card-header">Scenario Summaries</div>
+            <div id="summary-card"></div>
+        </div>
+        <div class="card">
+            <div class="card-header">Amortization Tables</div>
+            <div id="amortization-card"></div>
+        </div>
+        <button id="about-button">About This Tool</button>
+        <div id="about" class="card">
+            <div class="card-header">About This Tool</div>
+            <p>This tool visualizes mortgage refinance scenarios by simulating amortization schedules for different loan terms and rates. It calculates monthly payments, allocates extra payments to principal (within your target budget), and plots cumulative total costs over time.</p>
+            <h4>How Calculations Work:</h4>
+            <p>1. <strong>Loan Amount</strong>: Starts with your current balance. If rolling closing costs, adds them to the principal.</p>
+            <p>2. <strong>Monthly P&I Payment</strong>: Uses the fixed-rate mortgage formula:<br>
+            <code>P = [r * PV] / [1 - (1 + r)^(-n)]</code><br>
+            where P = monthly payment, r = monthly interest rate (annual rate / 12), PV = present value (loan amount), n = number of months.</p>
+            <p>3. <strong>Extra Principal</strong>: Calculated as max(0, target payment - fixed costs - P&I). If P&I + fixed > target, no extra and notes over budget.</p>
+            <p>4. <strong>Amortization Simulation</strong>: Month-by-month loop:<br>
+            - Interest for month = current balance * monthly rate<br>
+            - Principal payment = P&I - interest<br>
+            - Reduce balance by principal + extra<br>
+            - Accumulate total cost (including fixed costs and initial closing if not rolled)</p>
+            <p>5. <strong>Cumulative Cost</strong>: Sum of all payments + upfront closing (if not rolled). Graph shows this over months, flatlining after payoff.</p>
+            <p>6. <strong>Total Interest</strong>: Sum of all interest portions paid.</p>
+            <p>7. <strong>Isolate Graph</strong>: When isolating a term, shows cumulative total cost, principal paid, interest paid, and incremental principal/interest per month on dual axes (cumulative on left, incremental on right).</p>
+            <p>8. <strong>Amortization Tables</strong>: Detailed month-by-month tables for each loan term, displaying Month, P&I Payment, Extra Principal, Interest, Principal, Balance, Cumulative Interest, and Cumulative Principal. Tables are scrollable for full viewing.</p>
+            <p>9. <strong>Graph Options</strong>: Toggle between viewing all terms (cumulative total cost for 15-, 20-, and 30-year loans) or isolating one term to see detailed breakdowns. The dark theme toggle (top-right) switches to a darker color scheme for better visibility in low-light settings.</p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Chart.js
+        const ctx = document.getElementById('chart').getContext('2d');
+        let chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [] },
+            options: {
+                scales: {
+                    x: { title: { display: true, text: 'Months' } },
+                    y: { 
+                        title: { display: true, text: 'Cumulative Cost (USD)' },
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                            }
+                        }
+                    },
+                    yRight: { 
+                        position: 'right', 
+                        title: { display: false, text: 'Incremental Payment (USD)' },
+                        grid: { drawOnChartArea: false },
+                        suggestedMin: 0,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: true },
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += '$' + Math.round(context.parsed.y).toLocaleString('en-US');
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        let selectedTerm = null; // null for all terms, or '15-Year', '20-Year', '30-Year' for isolated view
+
+        function calculateMonthlyPayment(principal, monthlyRate, months) {
+            if (monthlyRate === 0) return principal / months;
+            return principal * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+        }
+
+        function simulateScenario(loanAmount, rate, termMonths, fixedCosts, totalBudget, roll, closing) {
+            const monthlyRate = rate / 12;
+            const pi = calculateMonthlyPayment(loanAmount, monthlyRate, termMonths);
+            const availableForPIAndExtra = totalBudget - fixedCosts;
+            let extra = Math.max(0, availableForPIAndExtra - pi);
+            let monthlyPaid = fixedCosts + pi + extra;
+            let overBudget = false;
+            if (pi + fixedCosts > totalBudget) {
+                extra = 0;
+                monthlyPaid = fixedCosts + pi;
+                overBudget = true;
+            }
+
+            let cumCosts = [roll ? 0 : closing];
+            let cumPrincipal = [0];
+            let cumInterest = [0];
+            let incPrincipal = [0];
+            let incInterest = [0];
+            let monthlyData = []; // For amortization table
+            let currentBalance = loanAmount;
+            let totalInterest = 0;
+            let totalPrincipal = 0;
+            let totalCost = cumCosts[0];
+            let month = 1;
+            let payoffMonth = 0;
+
+            while (currentBalance > 0 && month <= 600) {
+                const interest = currentBalance * monthlyRate;
+                totalInterest += interest;
+                let principal = pi - interest;
+                if (principal > currentBalance) principal = currentBalance;
+                totalPrincipal += principal + extra;
+                currentBalance -= principal + extra;
+                if (currentBalance < 0) currentBalance = 0;
+                totalCost += monthlyPaid;
+                cumCosts[month] = totalCost;
+                cumPrincipal[month] = totalPrincipal;
+                cumInterest[month] = totalInterest;
+                incPrincipal[month] = principal + extra;
+                incInterest[month] = interest;
+                monthlyData.push({
+                    month,
+                    pi: Math.round(pi).toLocaleString('en-US'),
+                    extra: Math.round(extra).toLocaleString('en-US'),
+                    interest: Math.round(interest).toLocaleString('en-US'),
+                    principal: Math.round(principal + extra).toLocaleString('en-US'),
+                    balance: Math.round(currentBalance).toLocaleString('en-US'),
+                    cumInterest: Math.round(totalInterest).toLocaleString('en-US'),
+                    cumPrincipal: Math.round(totalPrincipal).toLocaleString('en-US')
+                });
+                if (currentBalance <= 0 && payoffMonth === 0) {
+                    payoffMonth = month;
+                    const overpay = -currentBalance;
+                    totalCost -= overpay;
+                    cumCosts[month] = totalCost;
+                }
+                month++;
+            }
+
+            for (let m = month; m <= 600; m++) {
+                cumCosts[m] = totalCost;
+                cumPrincipal[m] = totalPrincipal;
+                cumInterest[m] = totalInterest;
+                incPrincipal[m] = 0;
+                incInterest[m] = 0;
+            }
+
+            return { 
+                cumCosts, 
+                totalInterest: Math.round(totalInterest), 
+                totalCost: Math.round(totalCost), 
+                payoffMonth, 
+                overBudget, 
+                cumPrincipal, 
+                cumInterest, 
+                incPrincipal, 
+                incInterest,
+                monthlyData
+            };
+        }
+
+        function updateChart() {
+            const balance = parseFloat(document.getElementById('balance').value) || 0;
+            const closing = parseFloat(document.getElementById('closing').value) || 0;
+            const roll = document.getElementById('rollclosing').checked;
+            const loanAmount = roll ? balance + closing : balance;
+            const escrow = parseFloat(document.getElementById('escrow').value) || 0;
+            const hoa = parseFloat(document.getElementById('hoa').value) || 0;
+            const pmi = parseFloat(document.getElementById('pmi').value) || 0;
+            const fixedCosts = escrow + hoa + pmi;
+            const totalBudget = parseFloat(document.getElementById('targetPayment').value) || 3000;
+
+            const terms = [
+                { name: '15-Year', months: 180, rate: parseFloat(document.getElementById('rate15').value) / 100, color: 'red' },
+                { name: '20-Year', months: 240, rate: parseFloat(document.getElementById('rate20').value) / 100, color: 'green' },
+                { name: '30-Year', months: 360, rate: parseFloat(document.getElementById('rate30').value) / 100, color: 'blue' }
+            ];
+
+            let datasets = [];
+            let maxMonths = 0;
+            let summaries = [];
+            let amortTables = [];
+
+            terms.forEach(term => {
+                const sim = simulateScenario(loanAmount, term.rate, term.months, fixedCosts, totalBudget, roll, closing);
+                maxMonths = Math.max(maxMonths, sim.payoffMonth || term.months);
+
+                if (selectedTerm === term.name) {
+                    // Isolated view: show total cost, cumulative principal, cumulative interest, incremental principal, incremental interest
+                    datasets = [
+                        {
+                            label: `${term.name} Total Cost (${(term.rate * 100).toFixed(2)}%) ${sim.overBudget ? '(Over Budget)' : ''}`,
+                            data: sim.cumCosts.map(val => Math.round(val)),
+                            borderColor: term.color,
+                            fill: false,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: `${term.name} Cumulative Principal`,
+                            data: sim.cumPrincipal.map(val => Math.round(val)),
+                            borderColor: 'purple',
+                            fill: false,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: `${term.name} Cumulative Interest`,
+                            data: sim.cumInterest.map(val => Math.round(val)),
+                            borderColor: 'orange',
+                            fill: false,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: `${term.name} Incremental Principal`,
+                            data: sim.incPrincipal.map(val => Math.round(val)),
+                            borderColor: 'cyan',
+                            fill: false,
+                            yAxisID: 'yRight'
+                        },
+                        {
+                            label: `${term.name} Incremental Interest`,
+                            data: sim.incInterest.map(val => Math.round(val)),
+                            borderColor: 'yellow',
+                            fill: false,
+                            yAxisID: 'yRight'
+                        }
+                    ];
+                } else if (selectedTerm === null) {
+                    // Default view: show total cost for all terms
+                    datasets.push({
+                        label: `${term.name} (${(term.rate * 100).toFixed(2)}%) ${sim.overBudget ? '(Over Budget)' : ''}`,
+                        data: sim.cumCosts.map(val => Math.round(val)),
+                        borderColor: term.color,
+                        fill: false,
+                        yAxisID: 'y'
+                    });
+                }
+
+                summaries.push(
+                    `<div class="summary-column"><strong>${term.name} (${(term.rate * 100).toFixed(2)}%)</strong><br>` +
+                    `Payoff in ${sim.payoffMonth} months<br>Total Interest: $${sim.totalInterest.toLocaleString('en-US')}<br>` +
+                    `Total Cost (incl. refi & fixed): $${sim.totalCost.toLocaleString('en-US')}<br>` +
+                    `${sim.overBudget ? '(Over Budget)' : ''}</div>`
+                );
+
+                // Build amortization table HTML
+                let tableHtml = `<div class="summary-column"><strong>${term.name} Amortization</strong><table><thead><tr><th>Month</th><th>P&I</th><th>Extra</th><th>Interest</th><th>Principal</th><th>Balance</th><th>Cum Interest</th><th>Cum Principal</th></tr></thead><tbody>`;
+                sim.monthlyData.forEach(row => {
+                    tableHtml += `<tr><td>${row.month}</td><td>$${row.pi}</td><td>$${row.extra}</td><td>$${row.interest}</td><td>$${row.principal}</td><td>$${row.balance}</td><td>$${row.cumInterest}</td><td>$${row.cumPrincipal}</td></tr>`;
+                });
+                tableHtml += `</tbody></table></div>`;
+                amortTables.push(tableHtml);
+            });
+
+            chart.data.labels = Array.from({ length: maxMonths + 1 }, (_, i) => i);
+            chart.data.datasets = datasets;
+            chart.options.scales.y.title.text = selectedTerm ? 'Cumulative Cost (USD)' : 'Cumulative Total Cost (USD)';
+            chart.update();
+
+            document.getElementById('summary-card').innerHTML = summaries.join('');
+            document.getElementById('amortization-card').innerHTML = amortTables.join('');
+        }
+
+        // Event listeners
+        ['rate15', 'rate20', 'rate30', 'escrow', 'hoa', 'pmi', 'closing', 'balance', 'rollclosing', 'targetPayment'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateChart);
+        });
+
+        document.getElementById('about-button').addEventListener('click', () => {
+            const about = document.getElementById('about');
+            about.style.display = about.style.display === 'none' ? 'block' : 'none';
+        });
+
+        document.getElementById('dark-theme-toggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-theme');
+            // Force chart redraw to ensure visibility
+            chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: {
+                    scales: {
+                        x: { title: { display: true, text: 'Months' } },
+                        y: { 
+                            title: { display: true, text: 'Cumulative Cost (USD)' },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                                }
+                            }
+                        },
+                        yRight: { 
+                            position: 'right', 
+                            title: { display: false, text: 'Incremental Payment (USD)' },
+                            grid: { drawOnChartArea: false },
+                            suggestedMin: 0,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: {
+                            enabled: true,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += '$' + Math.round(context.parsed.y).toLocaleString('en-US');
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            updateChart();
+        });
+
+        document.getElementById('all-terms').addEventListener('click', () => {
+            selectedTerm = null;
+            updateChart();
+        });
+
+        document.getElementById('isolate-15').addEventListener('click', () => {
+            selectedTerm = '15-Year';
+            updateChart();
+        });
+
+        document.getElementById('isolate-20').addEventListener('click', () => {
+            selectedTerm = '20-Year';
+            updateChart();
+        });
+
+        document.getElementById('isolate-30').addEventListener('click', () => {
+            selectedTerm = '30-Year';
+            updateChart();
+        });
+
+        // Initial update
+        updateChart();
+    </script>
+</body>
+</html>
