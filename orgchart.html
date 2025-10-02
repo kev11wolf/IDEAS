@@ -6,7 +6,7 @@
   <!-- Load Roboto font -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-  <!-- Library for JPG Export: html2canvas -->
+  <!-- Library for JPG/PNG Export: html2canvas -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
     body, button, input, .org-node, select {
@@ -205,6 +205,39 @@
       padding-bottom: 4px;
       font-size: 1rem;
     }
+    /* About modal */
+    #aboutModal {
+      display: none;
+      position: fixed;
+      z-index: 10000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    #aboutContent {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 8px;
+    }
+    #closeAbout {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    #closeAbout:hover,
+    #closeAbout:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
     /* Print adjustments: remove or override fixed dimensions and transformations */
     @media print {
       body {
@@ -288,9 +321,10 @@
       <button id="loadChartBtn">Load</button>
       <input type="file" id="loadFile" accept="application/json" style="display:none;">
     </div>
-    <!-- Print to JPG button -->
+    <!-- Export buttons -->
     <div class="control-row">
-      <button id="printJPGBtn">Print to JPG</button>
+      <button id="printJPGBtn">Export to JPG</button>
+      <button id="exportPNGBtn">Export to PNG</button>
     </div>
   </div>
   <div class="toolbar-column">
@@ -334,6 +368,12 @@
     <div class="control-row" style="font-size:0.9rem;">
       <span>Nodes: <span id="nodesCount">0</span></span>
       <span>Connectors: <span id="connectorsCount">0</span></span>
+    </div>
+  </div>
+  <div class="toolbar-column">
+    <h3>About</h3>
+    <div class="control-row">
+      <button id="aboutBtn">About This Tool</button>
     </div>
   </div>
   <div id="nodeEditPanel">
@@ -383,7 +423,13 @@
 <div id="orgChartOuter">
   <div id="orgChartContainer">
     <!-- SVG for connectors; nodes will be created dynamically -->
-    <svg id="connectorSVG"></svg>
+    <svg id="connectorSVG">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#333333" />
+        </marker>
+      </defs>
+    </svg>
   </div>
 </div>
 <div id="contextMenu" style="display: none;">
@@ -397,18 +443,38 @@
   <button id="ctxAddNewNode">Add New Node</button>
   <button id="ctxAutoCenterBG">Auto Center Org Chart</button>
 </div>
-
+<!-- About Modal -->
+<div id="aboutModal">
+  <div id="aboutContent">
+    <span id="closeAbout">&times;</span>
+    <h2>About This Tool</h2>
+    <p>This is an interactive Organizational Chart editor built entirely with vanilla HTML, CSS, and JavaScript. No frameworks or external servers are used—everything runs client-side in your browser.</p>
+    <h3>Key Features:</h3>
+    <ul>
+      <li><strong>Nodes:</strong> Create, drag, resize, edit, delete, copy/paste, auto-size, and select multiple nodes.</li>
+      <li><strong>Connectors:</strong> Draw lines between nodes with arrows; connectors imply hierarchy for auto-organization.</li>
+      <li><strong>Hierarchy & Layout:</strong> Auto-organize into levels based on connections (parent-child relationships).</li>
+      <li><strong>Zoom & Pan:</strong> Zoom in/out with buttons/slider, pan by left-click dragging on the canvas background.</li>
+      <li><strong>Editing:</strong> Change node details like name, title, department, colors, font size via sidebar.</li>
+      <li><strong>Search & Filter:</strong> Filter nodes by name/dept or custom attributes.</li>
+      <li><strong>History:</strong> Undo/redo actions.</li>
+      <li><strong>Exports:</strong> Save/load JSON, export to JPG (with background) or PNG (transparent).</li>
+      <li><strong>Stats:</strong> View node and connector counts.</li>
+    </ul>
+    <h3>How It Works:</h3>
+    <p>Nodes are DIV elements positioned absolutely. Connectors are SVG lines with arrows. Data is stored in JavaScript arrays/objects. Changes auto-save to localStorage. For hierarchy, connectors set parentId on child nodes, enabling tree-based auto-layout.</p>
+    <p>Use context menu (right-click) on nodes or background for quick actions. Keyboard: Arrow keys to move selected node, Delete to remove, Enter to edit.</p>
+    <p>This tool is designed for desktop use. For questions or issues, inspect console or modify the code—it's open!</p>
+  </div>
+</div>
 <script>
 /************************************************
  * Global Data & Settings
  ************************************************/
-
 // Start with an empty orgData; we'll load default or localStorage below.
 let orgData = [];
-
 // Connectors stored as { from: idNum, to: idNum, line: <svg line> }
 let connectors = [];
-
 // Selection & states
 let selectedNodes = new Set();
 let currentScale = 1.0;
@@ -425,14 +491,11 @@ let startNodeId = null;
 let copiedNodeData = null;
 let contextClickX = 0;
 let contextClickY = 0;
-
 // Snap-to-grid
 let snapGridSize = 10;
-
 // Undo/Redo
 let stateHistory = [];
 let currentHistoryIndex = -1;
-
 // UI references
 const orgChartOuter = document.getElementById('orgChartOuter');
 const orgChartContainer = document.getElementById('orgChartContainer');
@@ -441,7 +504,6 @@ const contextMenu = document.getElementById('contextMenu');
 const nodeChooser = document.getElementById('nodeChooser');
 const nodesCountEl = document.getElementById('nodesCount');
 const connectorsCountEl = document.getElementById('connectorsCount');
-
 // Edit panel references
 const editNameInput = document.getElementById('editNodeName');
 const editTitleInput = document.getElementById('editNodeTitle');
@@ -455,7 +517,6 @@ const editTextColorInput = document.getElementById('editTextColor');
 const editBorderColorInput = document.getElementById('editBorderColor');
 const editFontSizeInput = document.getElementById('editFontSize');
 const deleteNodeBtn = document.getElementById('deleteNodeBtn');
-
 // Context menu items
 const ctxDeleteNode = document.getElementById('ctxDeleteNode');
 const ctxAutoSizeNode = document.getElementById('ctxAutoSizeNode');
@@ -466,16 +527,24 @@ const ctxCopyNode = document.getElementById('ctxCopyNode');
 const ctxPasteNode = document.getElementById('ctxPasteNode');
 const ctxAddNewNode = document.getElementById('ctxAddNewNode');
 const ctxAutoCenterBG = document.getElementById('ctxAutoCenterBG');
-
 // "Select All Nodes" button reference
 const selectAllBtn = document.getElementById('selectAllBtn');
-// "Print to JPG" button reference
+// Export buttons references
 const printJPGBtn = document.getElementById('printJPGBtn');
-
+const exportPNGBtn = document.getElementById('exportPNGBtn');
+// Panning state
+let isPanning = false;
+let panStartX = 0;
+let panStartY = 0;
+let panStartTranslateX = 0;
+let panStartTranslateY = 0;
+// About modal
+const aboutModal = document.getElementById('aboutModal');
+const closeAbout = document.getElementById('closeAbout');
+const aboutBtn = document.getElementById('aboutBtn');
 /************************************************
  * INIT
  ************************************************/
-
 function init() {
   // Attempt to load from local storage.
   // If this fails or has no data, we load default nodes:
@@ -499,7 +568,8 @@ function init() {
         colorAlpha: 100,
         textColor: "#000000",
         borderColor: "#333333",
-        fontSize: 14
+        fontSize: 14,
+        parentId: null
       },
       {
         id: 2,
@@ -517,7 +587,8 @@ function init() {
         colorAlpha: 100,
         textColor: "#000000",
         borderColor: "#333333",
-        fontSize: 14
+        fontSize: 14,
+        parentId: 1
       }
     ];
   }
@@ -527,17 +598,16 @@ function init() {
   updateStats();
   pushState("Initial load");
 }
-
 /************************************************
  * CREATE & UPDATE NODES
  ************************************************/
+let nodeElements = {};
 function createOrgNodes() {
   // Remove existing elements
   Object.values(nodeElements).forEach(el => {
     if (el.parentNode) el.parentNode.removeChild(el);
   });
   nodeElements = {};
-
   // Create new elements from orgData
   orgData.forEach(node => {
     const nodeEl = document.createElement('div');
@@ -551,6 +621,8 @@ function createOrgNodes() {
     nodeEl.style.color = node.textColor;
     nodeEl.style.borderColor = node.borderColor;
     nodeEl.style.fontSize = node.fontSize + 'px';
+    nodeEl.setAttribute('role', 'treeitem');
+    nodeEl.setAttribute('aria-label', `Node: ${node.name}, Title: ${node.title}`);
     nodeEl.innerHTML = `
       <div class="name"></div>
       <div class="title"></div>
@@ -565,26 +637,20 @@ function createOrgNodes() {
     makeDraggableAndResizable(nodeEl, node);
     updateNodeElement(node.id);
   });
-
   updateNodeDropdown();
   updateStats();
 }
-
 function updateNodeElement(nodeId, autoSize=false) {
   const node = orgData.find(n => n.id === nodeId);
   if (!node) return;
-
   const nodeEl = nodeElements[nodeId];
   if (!nodeEl) return;
-
   nodeEl.querySelector('.name').textContent = node.name;
   nodeEl.querySelector('.title').textContent = node.title;
-
   const depEl = nodeEl.querySelector('.department');
   const offEl = nodeEl.querySelector('.officeLocation');
   const clientEl = nodeEl.querySelector('.client');
   const yearsEl = nodeEl.querySelector('.years');
-
   if (node.department) {
     depEl.style.display = 'block';
     depEl.textContent = node.department;
@@ -609,22 +675,17 @@ function updateNodeElement(nodeId, autoSize=false) {
   } else {
     yearsEl.style.display = 'none';
   }
-
   nodeEl.style.backgroundColor = hexAlphaToRGBA(node.colorHex, node.colorAlpha);
   nodeEl.style.color = node.textColor;
   nodeEl.style.borderColor = node.borderColor;
   nodeEl.style.fontSize = node.fontSize + 'px';
-
   if (autoSize) {
     autoSizeSingleNode(nodeId);
   }
 }
-
 /************************************************
  * DRAG & RESIZE
  ************************************************/
-let nodeElements = {};
-
 function makeDraggableAndResizable(nodeEl, nodeData) {
   const resizeHandle = nodeEl.querySelector('.resize-handle');
   nodeEl.addEventListener('mousedown', e => {
@@ -633,7 +694,6 @@ function makeDraggableAndResizable(nodeEl, nodeData) {
       startNodeResize(e, nodeEl, nodeData);
       return;
     }
-
     // Multiple selection with CTRL
     if (e.ctrlKey) {
       if (selectedNodes.has(nodeData.id)) {
@@ -652,8 +712,8 @@ function makeDraggableAndResizable(nodeEl, nodeData) {
     nodeChooser.value = nodeData.id;
     startNodeDrag(e, nodeData);
   });
+  nodeEl.addEventListener('keydown', handleKeyboardNav);
 }
-
 function startNodeDrag(e, nodeData) {
   isDraggingNodes = true;
   const { x: mouseX, y: mouseY } = screenToLocal(e.clientX, e.clientY);
@@ -664,13 +724,11 @@ function startNodeDrag(e, nodeData) {
     groupOffsets[selId] = { offsetX: theNode.x - mouseX, offsetY: theNode.y - mouseY };
   });
 }
-
 function startNodeResize(e, nodeEl, nodeData) {
   let startW = nodeEl.offsetWidth;
   let startH = nodeEl.offsetHeight;
   let startX = e.clientX;
   let startY = e.clientY;
-
   function mouseMoveResize(ev) {
     ev.preventDefault();
     let newW = startW + (ev.clientX - startX);
@@ -683,17 +741,14 @@ function startNodeResize(e, nodeEl, nodeData) {
     nodeData.height = newH;
     updateAllConnectors();
   }
-
   function mouseUpResize() {
     document.removeEventListener('mousemove', mouseMoveResize);
     document.removeEventListener('mouseup', mouseUpResize);
     pushState("Resize node");
   }
-
   document.addEventListener('mousemove', mouseMoveResize);
   document.addEventListener('mouseup', mouseUpResize);
 }
-
 document.addEventListener('mousemove', e => {
   if (isDraggingNodes) {
     e.preventDefault();
@@ -701,7 +756,6 @@ document.addEventListener('mousemove', e => {
     selectedNodes.forEach(selId => {
       const theNode = orgData.find(n => n.id === selId);
       if (!theNode) return;
-
       let newX = mouseX + groupOffsets[selId].offsetX;
       let newY = mouseY + groupOffsets[selId].offsetY;
       // Snap to grid
@@ -720,14 +774,12 @@ document.addEventListener('mousemove', e => {
     updateAllConnectors();
   }
 });
-
 document.addEventListener('mouseup', () => {
   if (isDraggingNodes) {
     isDraggingNodes = false;
     pushState("Move nodes");
   }
 });
-
 /************************************************
  * ZOOM & TRANSFORM
  ************************************************/
@@ -738,43 +790,43 @@ function setZoom(newScale, reason = "") {
   applyTransform();
   pushState(reason);
 }
-
 function applyTransform() {
   orgChartContainer.style.transformOrigin = 'top left';
   orgChartContainer.style.transform = `translate(${translationX}px, ${translationY}px) scale(${currentScale})`;
 }
-
 function screenToLocal(screenX, screenY) {
   const rect = orgChartContainer.getBoundingClientRect();
   let localX = (screenX - rect.left - translationX) / currentScale;
   let localY = (screenY - rect.top - translationY) / currentScale;
   return { x: localX, y: localY };
 }
-
 /************************************************
  * CONNECTORS
  ************************************************/
-function createConnector(a, b) {
+function createConnector(from, to) {
   const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
   line.setAttribute("stroke-width", 2);
   line.setAttribute("stroke", connectorColorHex);
   line.setAttribute("stroke-opacity", connectorAlpha / 100);
+  line.setAttribute("marker-end", "url(#arrow)");
   connectorSVG.appendChild(line);
-  const obj = { from: a, to: b, line };
+  const obj = { from, to, line };
   connectors.push(obj);
+  // Update hierarchy
+  const childNode = orgData.find(n => n.id === to);
+  if (childNode) {
+    childNode.parentId = from;
+  }
   updateConnectorPositions(obj);
   updateStats();
 }
-
 function updateConnectorPositions(conn) {
   const { from, to, line } = conn;
   const nodeA = orgData.find(n => n.id === from);
   const nodeB = orgData.find(n => n.id === to);
   if (!nodeA || !nodeB) return;
-
   const centerA = { x: nodeA.x + nodeA.width / 2, y: nodeA.y + nodeA.height / 2 };
   const centerB = { x: nodeB.x + nodeB.width / 2, y: nodeB.y + nodeB.height / 2 };
-
   line.setAttribute("x1", centerA.x);
   line.setAttribute("y1", centerA.y);
   line.setAttribute("x2", centerB.x);
@@ -782,12 +834,10 @@ function updateConnectorPositions(conn) {
   line.setAttribute("stroke", connectorColorHex);
   line.setAttribute("stroke-opacity", connectorAlpha / 100);
 }
-
 function updateAllConnectors() {
   connectors.forEach(conn => updateConnectorPositions(conn));
   updateStats();
 }
-
 function clearAllConnectors() {
   connectors.forEach(c => {
     if (c.line && c.line.parentNode) {
@@ -795,9 +845,10 @@ function clearAllConnectors() {
     }
   });
   connectors = [];
+  // Reset parentIds
+  orgData.forEach(n => n.parentId = null);
   updateStats();
 }
-
 /************************************************
  * SELECTION
  ************************************************/
@@ -807,18 +858,18 @@ function unselectAllNodes() {
   updateEditFields();
   nodeChooser.value = "";
 }
-
 function updateSelectedStyles() {
   Object.keys(nodeElements).forEach(idStr => {
     const idNum = parseInt(idStr, 10);
     if (selectedNodes.has(idNum)) {
       nodeElements[idNum].classList.add('selected');
+      nodeElements[idNum].setAttribute('aria-selected', 'true');
     } else {
       nodeElements[idNum].classList.remove('selected');
+      nodeElements[idNum].setAttribute('aria-selected', 'false');
     }
   });
 }
-
 /************************************************
  * EDIT PANEL
  ************************************************/
@@ -832,7 +883,6 @@ function updateEditFields() {
     enableEditFields();
   }
 }
-
 function disableEditFields(msg) {
   editNameInput.value = msg;
   editTitleInput.value = msg;
@@ -845,7 +895,6 @@ function disableEditFields(msg) {
   editTextColorInput.value = "#000000";
   editBorderColorInput.value = "#333333";
   editFontSizeInput.value = 14;
-
   [
     editNameInput,
     editTitleInput,
@@ -861,12 +910,10 @@ function disableEditFields(msg) {
     deleteNodeBtn
   ].forEach(el => el.disabled = true);
 }
-
 function enableEditFields() {
   const onlyId = [...selectedNodes][0];
   const node = orgData.find(n => n.id === onlyId);
   if (!node) return;
-
   editNameInput.value = node.name;
   editTitleInput.value = node.title;
   editDeptInput.value = node.department || "";
@@ -879,7 +926,6 @@ function enableEditFields() {
   editTextColorInput.value = node.textColor;
   editBorderColorInput.value = node.borderColor;
   editFontSizeInput.value = node.fontSize;
-
   [
     editNameInput,
     editTitleInput,
@@ -895,13 +941,11 @@ function enableEditFields() {
     deleteNodeBtn
   ].forEach(el => el.disabled = false);
 }
-
 function onFieldChange() {
   if (selectedNodes.size !== 1) return;
   const onlyId = [...selectedNodes][0];
   const node = orgData.find(n => n.id === onlyId);
   if (!node) return;
-
   node.name = editNameInput.value;
   node.title = editTitleInput.value;
   node.department = editDeptInput.value;
@@ -914,11 +958,9 @@ function onFieldChange() {
   node.textColor = editTextColorInput.value;
   node.borderColor = editBorderColorInput.value;
   node.fontSize = parseInt(editFontSizeInput.value, 10);
-
   updateNodeElement(onlyId, true);
   pushState("Edit node fields");
 }
-
 [
   editNameInput,
   editTitleInput,
@@ -932,12 +974,14 @@ function onFieldChange() {
   editBorderColorInput,
   editFontSizeInput
 ].forEach(inp => inp.addEventListener('input', onFieldChange));
-
 function deleteSelectedNode() {
   if (selectedNodes.size !== 1) return;
   const idNum = [...selectedNodes][0];
+  // Update children parentId
+  orgData.forEach(n => {
+    if (n.parentId === idNum) n.parentId = null;
+  });
   orgData = orgData.filter(n => n.id !== idNum);
-
   // Remove connectors linked to this node
   connectors.forEach(conn => {
     if (conn.from === idNum || conn.to === idNum) {
@@ -947,12 +991,10 @@ function deleteSelectedNode() {
     }
   });
   connectors = connectors.filter(c => c.from !== idNum && c.to !== idNum);
-
   // Remove the node element
   const el = nodeElements[idNum];
   if (el && el.parentNode) el.parentNode.removeChild(el);
   delete nodeElements[idNum];
-
   unselectAllNodes();
   updateAllConnectors();
   updateNodeDropdown();
@@ -960,7 +1002,6 @@ function deleteSelectedNode() {
   pushState("Delete node");
 }
 deleteNodeBtn.addEventListener('click', deleteSelectedNode);
-
 /************************************************
  * NODE DROPDOWN
  ************************************************/
@@ -970,7 +1011,6 @@ function updateNodeDropdown() {
   opt.value = "";
   opt.textContent = "Select a node...";
   nodeChooser.appendChild(opt);
-
   const sorted = [...orgData].sort((a, b) => a.name.localeCompare(b.name));
   sorted.forEach(n => {
     const o = document.createElement('option');
@@ -978,14 +1018,12 @@ function updateNodeDropdown() {
     o.textContent = n.name;
     nodeChooser.appendChild(o);
   });
-
   if (selectedNodes.size === 1) {
     nodeChooser.value = [...selectedNodes][0];
   } else {
     nodeChooser.value = "";
   }
 }
-
 nodeChooser.addEventListener('change', e => {
   const idNum = parseInt(e.target.value, 10);
   if (!isNaN(idNum)) {
@@ -995,7 +1033,6 @@ nodeChooser.addEventListener('change', e => {
     updateEditFields();
   }
 });
-
 /************************************************
  * CONTEXT MENU
  ************************************************/
@@ -1004,7 +1041,6 @@ document.addEventListener('contextmenu', e => {
   contextMenu.style.display = 'none';
   contextClickX = e.clientX;
   contextClickY = e.clientY;
-
   const nodeDiv = e.target.closest('.org-node');
   if (nodeDiv) {
     const nodeIdNum = parseInt(nodeDiv.id.replace('node-',''),10);
@@ -1020,7 +1056,6 @@ document.addEventListener('contextmenu', e => {
     showContextMenuForBackground(e);
   }
 });
-
 function showContextMenuForNode(e) {
   ctxDeleteNode.style.display = "block";
   ctxAutoSizeNode.style.display = "block";
@@ -1032,12 +1067,10 @@ function showContextMenuForNode(e) {
   ctxAddNewNode.style.display = "none";
   ctxAutoCenterBG.style.display = "none";
   ctxPasteNode.disabled = (copiedNodeData === null);
-
   contextMenu.style.display = 'block';
   contextMenu.style.left = e.pageX + 'px';
   contextMenu.style.top = e.pageY + 'px';
 }
-
 function showContextMenuForBackground(e) {
   ctxDeleteNode.style.display = "none";
   ctxAutoSizeNode.style.display = "none";
@@ -1049,12 +1082,10 @@ function showContextMenuForBackground(e) {
   ctxPasteNode.style.display = "block";
   ctxAutoCenterBG.style.display = "block";
   ctxPasteNode.disabled = (copiedNodeData === null);
-
   contextMenu.style.display = 'block';
   contextMenu.style.left = e.pageX + 'px';
   contextMenu.style.top = e.pageY + 'px';
 }
-
 document.addEventListener('click', e => {
   if (!e.target.closest('#contextMenu')) {
     contextMenu.style.display = 'none';
@@ -1063,7 +1094,6 @@ document.addEventListener('click', e => {
     }
   }
 });
-
 ctxDeleteNode.addEventListener('click', () => {
   deleteSelectedNode();
   contextMenu.style.display = 'none';
@@ -1102,10 +1132,10 @@ ctxAutoCenterBG.addEventListener('click', () => {
   autoCenter();
   contextMenu.style.display = 'none';
 });
-
 function handleConnectorClick(nodeId) {
   if (startNodeId === null) {
     startNodeId = nodeId;
+    alert("Select the second node to connect to.");
   } else {
     if (startNodeId !== nodeId) {
       createConnector(startNodeId, nodeId);
@@ -1115,7 +1145,6 @@ function handleConnectorClick(nodeId) {
     isDrawingConnector = false;
   }
 }
-
 /************************************************
  * Z-INDEX
  ************************************************/
@@ -1125,32 +1154,27 @@ function bringSelectedNodesToFront() {
   });
   pushState("Bring front");
 }
-
 function sendSelectedNodesToBack() {
   selectedNodes.forEach(idNum => {
     nodeElements[idNum].style.zIndex = 1;
   });
   pushState("Send back");
 }
-
 /************************************************
  * ZOOM
  ************************************************/
 function zoomIn() {
   setZoom(currentScale + 0.1, "Zoom in");
 }
-
 function zoomOut() {
   setZoom(currentScale - 0.1, "Zoom out");
 }
-
 const zoomSlider = document.getElementById('zoomSlider');
 zoomSlider.addEventListener('input', e => {
   let val = parseInt(e.target.value, 10);
   let newScale = val / 100;
   setZoom(newScale, "Slider zoom");
 });
-
 /************************************************
  * AUTO CENTER
  ************************************************/
@@ -1159,21 +1183,18 @@ function autoCenter() {
   if (bounds.width <= 0 || bounds.height <= 0) return;
   let outerWidth = orgChartOuter.clientWidth;
   let outerHeight = orgChartOuter.clientHeight;
-
   let scaleX = outerWidth / bounds.width;
   let scaleY = outerHeight / bounds.height;
   let newScale = Math.min(scaleX, scaleY);
   newScale *= 0.95;
   newScale = Math.min(newScale, MAX_ZOOM);
   newScale = Math.max(newScale, MIN_ZOOM);
-
   currentScale = newScale;
   translationX = (outerWidth - bounds.width * newScale) / 2 - bounds.minX * newScale;
   translationY = (outerHeight - bounds.height * newScale) / 2 - bounds.minY * newScale;
   applyTransform();
   pushState("Auto center");
 }
-
 /************************************************
  * STATS
  ************************************************/
@@ -1181,11 +1202,10 @@ function updateStats() {
   nodesCountEl.textContent = orgData.length;
   connectorsCountEl.textContent = connectors.length;
 }
-
 /************************************************
  * NODE UTILS
  ************************************************/
-function addNewNode(x=300, y=200) {
+function addNewNode(x=300, y=200, parentId=null) {
   const maxId = orgData.reduce((acc, n) => Math.max(acc, n.id), 0);
   const newId = maxId + 1;
   const nn = {
@@ -1203,7 +1223,8 @@ function addNewNode(x=300, y=200) {
     colorAlpha: 100,
     textColor: "#000000",
     borderColor: "#333333",
-    fontSize: 14
+    fontSize: 14,
+    parentId
   };
   orgData.push(nn);
   createOrgNodes();
@@ -1211,7 +1232,6 @@ function addNewNode(x=300, y=200) {
   updateStats();
   pushState("Add node");
 }
-
 function removeConnectionsFromSelectedNode() {
   if (selectedNodes.size !== 1) return;
   const idNum = [...selectedNodes][0];
@@ -1223,16 +1243,18 @@ function removeConnectionsFromSelectedNode() {
     }
   });
   connectors = connectors.filter(c => c.from !== idNum && c.to !== idNum);
+  // Reset child parentIds
+  orgData.forEach(n => {
+    if (n.parentId === idNum) n.parentId = null;
+  });
   updateAllConnectors();
   pushState("Remove connections");
 }
-
 function copySelectedNode() {
   if (selectedNodes.size !== 1) return;
   const onlyId = [...selectedNodes][0];
   const srcNode = orgData.find(n => n.id === onlyId);
   if (!srcNode) return;
-
   copiedNodeData = {
     name: srcNode.name,
     title: srcNode.title,
@@ -1246,11 +1268,11 @@ function copySelectedNode() {
     colorAlpha: srcNode.colorAlpha,
     textColor: srcNode.textColor,
     borderColor: srcNode.borderColor,
-    fontSize: srcNode.fontSize
+    fontSize: srcNode.fontSize,
+    parentId: srcNode.parentId
   };
   pushState("Copy node data");
 }
-
 function pasteNodeAt(x, y) {
   if (!copiedNodeData) return;
   const maxId = orgData.reduce((acc, n) => Math.max(acc, n.id), 0);
@@ -1270,7 +1292,8 @@ function pasteNodeAt(x, y) {
     colorAlpha: copiedNodeData.colorAlpha,
     textColor: copiedNodeData.textColor,
     borderColor: copiedNodeData.borderColor,
-    fontSize: copiedNodeData.fontSize
+    fontSize: copiedNodeData.fontSize,
+    parentId: copiedNodeData.parentId
   };
   orgData.push(nn);
   createOrgNodes();
@@ -1278,19 +1301,54 @@ function pasteNodeAt(x, y) {
   updateStats();
   pushState("Paste node");
 }
-
-function autoOrganize() {
-  let xStart = 400; /* start to the right to maintain buffer + toolbar */
-  let yStart = 100, xGap = 200, yGap = 150;
-  orgData.forEach((n, i) => {
-    n.x = xStart + (i % 3) * xGap;
-    n.y = yStart + Math.floor(i / 3) * yGap;
+function buildHierarchy() {
+  const hierarchy = {};
+  orgData.forEach(node => {
+    if (!hierarchy[node.id]) hierarchy[node.id] = { node, children: [] };
+    if (node.parentId) {
+      if (!hierarchy[node.parentId]) hierarchy[node.parentId] = { node: orgData.find(n => n.id === node.parentId), children: [] };
+      hierarchy[node.parentId].children.push(hierarchy[node.id]);
+    }
   });
+  // Find roots
+  const roots = Object.values(hierarchy).filter(item => !item.node.parentId);
+  return roots;
+}
+function autoOrganize() {
+  const hierarchy = buildHierarchy();
+  if (hierarchy.length === 0) return;
+
+  const levelGap = 150;
+  const siblingGap = 200;
+  let currentX = 400;
+
+  function layoutLevel(nodes, level = 0) {
+    nodes.forEach(item => {
+      item.node.x = currentX;
+      item.node.y = 100 + level * levelGap;
+      currentX += item.node.width + siblingGap;
+      if (item.children.length > 0) {
+        const childStartX = currentX;
+        layoutLevel(item.children, level + 1);
+        // Center parent over children
+        const childWidth = currentX - childStartX - siblingGap;
+        item.node.x = childStartX + (childWidth / 2) - (item.node.width / 2);
+      }
+    });
+  }
+
+  hierarchy.forEach(root => {
+    const startXForRoot = currentX;
+    layoutLevel([root]);
+    // Adjust if multiple roots
+    const rootWidth = currentX - startXForRoot - siblingGap;
+    root.node.x = startXForRoot + (rootWidth / 2) - (root.node.width / 2);
+  });
+
   createOrgNodes();
   updateAllConnectors();
   pushState("Auto-organize");
 }
-
 function autoSizeSingleNode(idNum) {
   const nodeEl = nodeElements[idNum];
   const node = orgData.find(n => n.id === idNum);
@@ -1305,123 +1363,116 @@ function autoSizeSingleNode(idNum) {
   node.height = newH;
   nodeEl.style.width = newW + 'px';
   nodeEl.style.height = newH + 'px';
-
   updateAllConnectors();
 }
-
 function autoSizeAllNodes() {
   orgData.forEach(n => autoSizeSingleNode(n.id));
   pushState("Auto-size all");
 }
-
 function autoSizeSelectedNodes() {
   selectedNodes.forEach(id => autoSizeSingleNode(id));
   pushState("Auto-size selected");
 }
-
 /************************************************
- * PRINT TO JPG
+ * EXPORT FUNCTIONS
  ************************************************/
-function printToJPG() {
-  // Temporarily remove any transform from the container
-  const originalTransform = orgChartContainer.style.transform;
-  orgChartContainer.style.transform = 'none';
+async function exportChart(format = 'jpeg', backgroundColor = '#FFFFFF') {
+  try {
+    // Get full bounds including connectors
+    const nodeBounds = getNodesBoundingBox();
+    let minX = nodeBounds.minX, minY = nodeBounds.minY, maxX = nodeBounds.minX + nodeBounds.width, maxY = nodeBounds.minY + nodeBounds.height;
+    connectors.forEach(conn => {
+      const pos = { x1: parseFloat(conn.line.getAttribute('x1')), y1: parseFloat(conn.line.getAttribute('y1')), x2: parseFloat(conn.line.getAttribute('x2')), y2: parseFloat(conn.line.getAttribute('y2')) };
+      minX = Math.min(minX, pos.x1, pos.x2);
+      minY = Math.min(minY, pos.y1, pos.y2);
+      maxX = Math.max(maxX, pos.x1, pos.x2);
+      maxY = Math.max(maxY, pos.y1, pos.y2);
+    });
+    const width = maxX - minX;
+    const height = maxY - minY;
+    if (width <= 0 || height <= 0) {
+      alert("No content to export.");
+      return;
+    }
 
-  // Update connector positions in untransformed state
-  updateAllConnectors();
+    const margin = 50;
+    const exportWidth = width + margin * 2;
+    const exportHeight = height + margin * 2;
 
-  // Store connector positions (x1,y1,x2,y2) after updating
-  const linePositions = connectors.map(conn => {
-    return {
-      x1: conn.line.getAttribute("x1"),
-      y1: conn.line.getAttribute("y1"),
-      x2: conn.line.getAttribute("x2"),
-      y2: conn.line.getAttribute("y2")
-    };
-  });
+    // Temporarily reset transform
+    const originalTransform = orgChartContainer.style.transform;
+    orgChartContainer.style.transform = 'none';
+    updateAllConnectors(); // Recalculate in untransformed state
 
-  // Compute bounding box of all nodes (plus margin)
-  const bounds = getNodesBoundingBox();
-  if (bounds.width <= 0 || bounds.height <= 0) {
-    alert("No nodes to export to JPG.");
-    orgChartContainer.style.transform = originalTransform; // restore
-    updateAllConnectors();
-    return;
-  }
-  const margin = 50;
-  const exportWidth = bounds.width + margin * 2;
-  const exportHeight = bounds.height + margin * 2;
+    // Create offscreen container
+    const exportContainer = document.createElement('div');
+    exportContainer.style.position = 'absolute';
+    exportContainer.style.left = '-9999px';
+    exportContainer.style.width = `${exportWidth}px`;
+    exportContainer.style.height = `${exportHeight}px`;
+    exportContainer.style.background = backgroundColor;
+    document.body.appendChild(exportContainer);
 
-  // Create an offscreen container
-  const exportContainer = document.createElement('div');
-  exportContainer.style.position = 'absolute';
-  exportContainer.style.left = '-999999px';
-  exportContainer.style.top = '0';
-  exportContainer.style.width = exportWidth + 'px';
-  exportContainer.style.height = exportHeight + 'px';
-  exportContainer.style.background = '#FFFFFF';
-  document.body.appendChild(exportContainer);
+    // Clone and offset
+    const clone = orgChartContainer.cloneNode(true);
+    const offsetX = margin - minX;
+    const offsetY = margin - minY;
+    clone.style.left = `${offsetX}px`;
+    clone.style.top = `${offsetY}px`;
+    exportContainer.appendChild(clone);
 
-  // Clone the chart
-  const clone = orgChartContainer.cloneNode(true);
-  clone.style.transform = 'none';
-
-  // Offset so bounding area starts at margin
-  const offsetX = margin - bounds.minX;
-  const offsetY = margin - bounds.minY;
-  clone.style.position = 'absolute';
-  clone.style.left = offsetX + 'px';
-  clone.style.top = offsetY + 'px';
-  clone.style.background = '#FFFFFF';
-  clone.style.width = '2000px';
-  clone.style.height = '2000px';
-  exportContainer.appendChild(clone);
-
-  // Adjust the SVG size in the clone
-  const cloneSVG = clone.querySelector('#connectorSVG');
-  if (cloneSVG) {
+    // Adjust clone SVG
+    const cloneSVG = clone.querySelector('#connectorSVG');
     cloneSVG.setAttribute('width', exportWidth);
     cloneSVG.setAttribute('height', exportHeight);
-  }
 
-  // Offset each connector line in the clone so it matches node positions
-  const cloneLines = (cloneSVG) ? cloneSVG.querySelectorAll('line') : [];
-  linePositions.forEach((pos, i) => {
-    const lineEl = cloneLines[i];
-    if (!lineEl) return;
-    lineEl.setAttribute('x1', parseFloat(pos.x1) + offsetX);
-    lineEl.setAttribute('y1', parseFloat(pos.y1) + offsetY);
-    lineEl.setAttribute('x2', parseFloat(pos.x2) + offsetX);
-    lineEl.setAttribute('y2', parseFloat(pos.y2) + offsetY);
-  });
+    // Offset nodes and lines in clone
+    const cloneNodes = clone.querySelectorAll('.org-node');
+    cloneNodes.forEach(nodeEl => {
+      const left = parseFloat(nodeEl.style.left) + offsetX;
+      const top = parseFloat(nodeEl.style.top) + offsetY;
+      nodeEl.style.left = `${left}px`;
+      nodeEl.style.top = `${top}px`;
+    });
+    const cloneLines = cloneSVG.querySelectorAll('line');
+    cloneLines.forEach(line => {
+      line.setAttribute('x1', parseFloat(line.getAttribute('x1')) + offsetX);
+      line.setAttribute('y1', parseFloat(line.getAttribute('y1')) + offsetY);
+      line.setAttribute('x2', parseFloat(line.getAttribute('x2')) + offsetX);
+      line.setAttribute('y2', parseFloat(line.getAttribute('y2')) + offsetY);
+    });
 
-  // Use a scale factor for higher resolution
-  const scaleFactor = 2;
-  html2canvas(exportContainer, {
-    width: exportWidth,
-    height: exportHeight,
-    scale: scaleFactor,
-    backgroundColor: '#FFFFFF',
-    useCORS: true
-  }).then(canvas => {
+    // Render with html2canvas
+    const scaleFactor = 2;
+    const canvas = await html2canvas(exportContainer, {
+      width: exportWidth,
+      height: exportHeight,
+      scale: scaleFactor,
+      backgroundColor: backgroundColor,
+      useCORS: true,
+      logging: false
+    });
+
+    // Cleanup
     document.body.removeChild(exportContainer);
-    // Restore original transform & re-update connectors
     orgChartContainer.style.transform = originalTransform;
     updateAllConnectors();
-    // Download image
+
+    // Download
+    const quality = (format === 'jpeg') ? 0.95 : undefined;
+    const mimeType = (format === 'jpeg') ? 'image/jpeg' : 'image/png';
+    const extension = (format === 'jpeg') ? 'jpg' : 'png';
     const link = document.createElement('a');
-    link.href = canvas.toDataURL("image/jpeg", 0.95);
-    link.download = "orgchart.jpg";
+    link.href = canvas.toDataURL(mimeType, quality);
+    link.download = `orgchart.${extension}`;
     link.click();
-  }).catch(e => {
-    document.body.removeChild(exportContainer);
-    // Restore transform on failure
+  } catch (e) {
+    alert(`Export failed: ${e.message}`);
+    // Restore on error
     orgChartContainer.style.transform = originalTransform;
     updateAllConnectors();
-    alert("Error creating JPG: " + e);
-  });
+  }
 }
-
 /************************************************
  * IMPORT, SAVE, HISTORY
  ************************************************/
@@ -1438,7 +1489,6 @@ function saveChart() {
   a.click();
   document.body.removeChild(a);
 }
-
 function loadChartFromJSON(str) {
   try {
     const parsed = JSON.parse(str);
@@ -1456,7 +1506,6 @@ function loadChartFromJSON(str) {
     alert("Error reading file:\n" + e);
   }
 }
-
 function pushState(actionDesc="") {
   const connectorPairs = connectors.map(c => ({ from: c.from, to: c.to }));
   const snapshot = {
@@ -1470,7 +1519,6 @@ function pushState(actionDesc="") {
   currentHistoryIndex = stateHistory.length - 1;
   localStorage.setItem('orgChartAutoSave', JSON.stringify(snapshot));
 }
-
 function restoreState(index) {
   if (index < 0 || index >= stateHistory.length) return;
   const saved = stateHistory[index];
@@ -1481,21 +1529,18 @@ function restoreState(index) {
   updateAllConnectors();
   updateStats();
 }
-
 function undoChart() {
   if (currentHistoryIndex > 0) {
     currentHistoryIndex--;
     restoreState(currentHistoryIndex);
   }
 }
-
 function redoChart() {
   if (currentHistoryIndex < stateHistory.length - 1) {
     currentHistoryIndex++;
     restoreState(currentHistoryIndex);
   }
 }
-
 /**
  * Loads from localStorage if present. Returns true if loaded successfully, else false.
  */
@@ -1520,7 +1565,6 @@ function loadFromLocalStorage() {
   }
   return false;
 }
-
 /************************************************
  * MISC UTILS
  ************************************************/
@@ -1544,7 +1588,6 @@ function getNodesBoundingBox() {
   const height = maxY - minY;
   return { minX, minY, width, height };
 }
-
 function hexAlphaToRGBA(hex, alphaVal) {
   if (!hex.startsWith("#")) return "rgba(0,0,0,1)";
   const r = parseInt(hex.slice(1, 3), 16);
@@ -1553,7 +1596,85 @@ function hexAlphaToRGBA(hex, alphaVal) {
   const a = alphaVal / 100;
   return `rgba(${r},${g},${b},${a})`;
 }
-
+/************************************************
+ * KEYBOARD NAVIGATION
+ ************************************************/
+function handleKeyboardNav(e) {
+  if (selectedNodes.size !== 1) return;
+  const idNum = [...selectedNodes][0];
+  const node = orgData.find(n => n.id === idNum);
+  if (!node) return;
+  const step = 10;
+  switch (e.key) {
+    case 'ArrowUp':
+      node.y -= step;
+      break;
+    case 'ArrowDown':
+      node.y += step;
+      break;
+    case 'ArrowLeft':
+      node.x -= step;
+      break;
+    case 'ArrowRight':
+      node.x += step;
+      break;
+    case 'Delete':
+      deleteSelectedNode();
+      return;
+    case 'Enter':
+      // Focus edit name
+      editNameInput.focus();
+      return;
+    default:
+      return;
+  }
+  e.preventDefault();
+  nodeElements[idNum].style.left = node.x + 'px';
+  nodeElements[idNum].style.top = node.y + 'px';
+  updateAllConnectors();
+  pushState("Keyboard move");
+}
+/************************************************
+ * PANNING
+ ************************************************/
+orgChartOuter.addEventListener('mousedown', e => {
+  if (e.target.closest('.org-node') || e.button !== 0) return;
+  isPanning = true;
+  panStartX = e.clientX;
+  panStartY = e.clientY;
+  panStartTranslateX = translationX;
+  panStartTranslateY = translationY;
+  orgChartOuter.style.cursor = 'grabbing';
+});
+document.addEventListener('mousemove', e => {
+  if (!isPanning) return;
+  const dx = e.clientX - panStartX;
+  const dy = e.clientY - panStartY;
+  translationX = panStartTranslateX + dx;
+  translationY = panStartTranslateY + dy;
+  applyTransform();
+});
+document.addEventListener('mouseup', () => {
+  if (isPanning) {
+    isPanning = false;
+    orgChartOuter.style.cursor = 'default';
+    pushState("Pan");
+  }
+});
+/************************************************
+ * ABOUT MODAL
+ ************************************************/
+aboutBtn.addEventListener('click', () => {
+  aboutModal.style.display = "block";
+});
+closeAbout.addEventListener('click', () => {
+  aboutModal.style.display = "none";
+});
+window.addEventListener('click', (e) => {
+  if (e.target === aboutModal) {
+    aboutModal.style.display = "none";
+  }
+});
 /************************************************
  * EVENT LISTENERS & CUSTOM ACTIONS
  ************************************************/
@@ -1561,29 +1682,27 @@ document.getElementById('newNodeBtn').addEventListener('click', () => addNewNode
 document.getElementById('autoOrganizeBtn').addEventListener('click', autoOrganize);
 document.getElementById('autoSizeBtn').addEventListener('click', autoSizeAllNodes);
 document.getElementById('autoSizeSelectedBtn').addEventListener('click', autoSizeSelectedNodes);
-
 document.getElementById('drawConnectorBtn').addEventListener('click', () => {
   isDrawingConnector = !isDrawingConnector;
-  if (isDrawingConnector) startNodeId = null;
+  if (isDrawingConnector) {
+    startNodeId = null;
+    alert("Select first node, then select second node to connect to.");
+  }
 });
-
 document.getElementById('clearConnectorsBtn').addEventListener('click', () => {
   clearAllConnectors();
   pushState("Clear connectors");
 });
-
 document.getElementById('connectorColorInput').addEventListener('input', e => {
   connectorColorHex = e.target.value;
   updateAllConnectors();
   pushState("Connector color");
 });
-
 document.getElementById('connectorAlphaRange').addEventListener('input', e => {
   connectorAlpha = parseInt(e.target.value, 10);
   updateAllConnectors();
   pushState("Connector alpha");
 });
-
 document.getElementById('saveChartBtn').addEventListener('click', saveChart);
 document.getElementById('loadChartBtn').addEventListener('click', () => {
   document.getElementById('loadFile').click();
@@ -1598,10 +1717,9 @@ document.getElementById('loadFile').addEventListener('change', e => {
   r.readAsText(f);
   e.target.value = "";
 });
-
-// Print to JPG button
-printJPGBtn.addEventListener('click', printToJPG);
-
+// Export buttons
+printJPGBtn.addEventListener('click', () => exportChart('jpeg', '#FFFFFF'));
+exportPNGBtn.addEventListener('click', () => exportChart('png', null));
 document.getElementById('zoomOutBtn').addEventListener('click', zoomOut);
 document.getElementById('zoomInBtn').addEventListener('click', zoomIn);
 document.getElementById('undoBtn').addEventListener('click', undoChart);
@@ -1609,7 +1727,6 @@ document.getElementById('redoBtn').addEventListener('click', redoChart);
 document.getElementById('bringFrontBtn').addEventListener('click', bringSelectedNodesToFront);
 document.getElementById('sendBackBtn').addEventListener('click', sendSelectedNodesToBack);
 document.getElementById('autoCenterBtn').addEventListener('click', autoCenter);
-
 const searchInputEl = document.getElementById('searchInput');
 const clearFilterBtnEl = document.getElementById('clearFilterBtn');
 searchInputEl.addEventListener('input', filterNodesByNameDept);
@@ -1627,12 +1744,10 @@ function filterNodesByNameDept() {
     else el.classList.remove('hidden');
   });
 }
-
 const attributeSelectEl = document.getElementById('attributeSelect');
 const attributeInputEl = document.getElementById('attributeInput');
 const attributeFilterBtnEl = document.getElementById('attributeFilterBtn');
 const clearAttributeFilterBtnEl = document.getElementById('clearAttributeFilterBtn');
-
 attributeFilterBtnEl.addEventListener('click', () => {
   const attr = attributeSelectEl.value;
   const val = attributeInputEl.value.toLowerCase().trim();
@@ -1647,7 +1762,6 @@ attributeFilterBtnEl.addEventListener('click', () => {
     }
   });
 });
-
 clearAttributeFilterBtnEl.addEventListener('click', () => {
   attributeInputEl.value = "";
   orgData.forEach(n => {
@@ -1655,7 +1769,6 @@ clearAttributeFilterBtnEl.addEventListener('click', () => {
     if (el) el.classList.remove('hidden');
   });
 });
-
 // Handle connector creation clicks
 orgChartContainer.addEventListener('click', e => {
   const nodeDiv = e.target.closest('.org-node');
@@ -1664,7 +1777,6 @@ orgChartContainer.addEventListener('click', e => {
     handleConnectorClick(nodeIdNum);
   }
 });
-
 // "Select All Nodes" button listener
 selectAllBtn.addEventListener('click', () => {
   selectedNodes = new Set(orgData.map(n => n.id));
@@ -1672,7 +1784,9 @@ selectAllBtn.addEventListener('click', () => {
   updateEditFields();
   pushState("Select all nodes");
 });
-
+// Make container focusable for keyboard
+orgChartContainer.setAttribute('tabindex', '0');
+orgChartContainer.setAttribute('role', 'tree');
 // Finally, initialize
 init();
 </script>
