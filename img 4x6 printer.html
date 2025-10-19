@@ -2,567 +2,400 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>4x6 Image Combiner - High Resolution Export</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Overall Page Styling */
-    body {
-      background: #f5f7fa;
-      margin: 20px;
-      font-family: "Helvetica Neue", Arial, sans-serif;
-      color: #333;
-    }
-
-    /* Card Container */
-    .card {
-      background: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
-      padding: 20px;
-      max-width: 900px;
-      margin: auto;
-    }
-
-    .card h1 {
-      margin-top: 0;
-      font-size: 1.5em;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-
-    /* Button and Control Bar */
-    .buttons-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-
-    button {
-      background: #007bff;
-      color: #fff;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9em;
-      transition: background 0.3s ease;
-      outline: none;
-    }
-    button:hover {
-      background: #0069d9;
-    }
-
-    /* Upload Section */
-    .upload-section {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-    .upload-item {
-      display: flex;
-      align-items: center;
-    }
-    .upload-item label {
-      display: inline-block;
-      min-width: 120px;
-      margin-right: 8px;
-      font-weight: 500;
-    }
-    .upload-item input[type="file"] {
-      font-size: 0.9em;
-    }
-
-    /* Canvas Container */
-    #canvasContainer {
-      border-radius: 4px;
-      border: 1px solid #eaeaea;
-      overflow: hidden;
-      margin-bottom: 20px;
-      text-align: center;
-    }
-
-    /* The Preview Canvas */
     #previewCanvas {
-      background-color: #f0f0f0;
+      background-color: #ffff00; /* Bright yellow for visibility */
       cursor: grab;
-      display: block;
-      margin: 0 auto;
+    }
+    #previewCanvas:active {
+      cursor: grabbing;
+    }
+    .drop-zone {
+      transition: background-color 0.3s ease;
+    }
+    .drop-zone.dragover {
+      background-color: rgba(59, 130, 246, 0.1);
+      border-color: #3b82f6;
     }
   </style>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-2xl p-6 max-w-4xl w-full">
+    <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">Photo Editor / High-Resolution Export</h1>
 
-<div class="card">
-  <h1>Photo Editor / High-Resolution Export</h1>
-
-  <!-- Buttons bar (orientation buttons removed to fix layout) -->
-  <div class="buttons-bar">
-    <button id="rotateImg1">Rotate Image 1</button>
-    <button id="rotateImg2">Rotate Image 2</button>
-    <button id="saveBtn">Export Combined Image</button>
-  </div>
-
-  <!-- Upload Section -->
-  <div class="upload-section">
-    <div class="upload-item">
-      <label for="file1">Upload Image 1:</label>
-      <input type="file" id="file1" accept="image/*" />
+    <!-- Buttons Bar -->
+    <div class="flex flex-wrap gap-3 justify-center mb-6">
+      <button id="rotateImg1" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Rotate Left Image</button>
+      <button id="rotateImg2" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Rotate Right Image</button>
+      <button id="saveBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">Export Combined Image</button>
     </div>
-    <div class="upload-item">
-      <label for="file2">Upload Image 2:</label>
-      <input type="file" id="file2" accept="image/*" />
+
+    <!-- Upload Section -->
+    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-6">
+      <div class="flex items-center gap-2">
+        <label for="file1" class="font-medium text-gray-700">Left Image:</label>
+        <input type="file" id="file1" accept="image/*" class="text-sm text-gray-600" />
+      </div>
+      <div class="flex items-center gap-2">
+        <label for="file2" class="font-medium text-gray-700">Right Image:</label>
+        <input type="file" id="file2" accept="image/*" class="text-sm text-gray-600" />
+      </div>
+    </div>
+
+    <!-- Canvas Container -->
+    <div class="relative bg-gray-200 rounded-lg overflow-hidden">
+      <canvas id="previewCanvas" width="800" height="600" class="mx-auto"></canvas>
     </div>
   </div>
 
-  <!-- Canvas Container -->
-  <div id="canvasContainer">
-    <!-- Adjusted default to 800x600 => always horizontal (long ways),
-         line always vertical splitting into two 2×3 halves -->
-    <canvas id="previewCanvas" width="800" height="600"></canvas>
-  </div>
-</div>
+  <script>
+    const canvas = document.getElementById('previewCanvas');
+    const ctx = canvas.getContext('2d');
+    const file1 = document.getElementById('file1');
+    const file2 = document.getElementById('file2');
+    const saveBtn = document.getElementById('saveBtn');
+    const rotateImg1Btn = document.getElementById('rotateImg1');
+    const rotateImg2Btn = document.getElementById('rotateImg2');
 
-<script>
-/* =========================================
-   CONFIG & GLOBALS
-========================================= */
-const canvas = document.getElementById('previewCanvas');
-const ctx = canvas.getContext('2d');
+    const images = [
+      { img: null, x: 0, y: 0, scale: 1, angle: 0 }, // Left image
+      { img: null, x: 0, y: 0, scale: 1, angle: 0 }  // Right image
+    ];
 
-const file1 = document.getElementById('file1');
-const file2 = document.getElementById('file2');
-const saveBtn = document.getElementById('saveBtn');
-const rotateImg1Btn = document.getElementById('rotateImg1');
-const rotateImg2Btn = document.getElementById('rotateImg2');
+    let dragging = false;
+    let dragIndex = null;
+    let offsetX = 0;
+    let offsetY = 0;
 
-// Force the layout: always horizontal, always vertical split
-const orientation = 'horizontal';   // fixed
-const lineOrientation = 'vertical'; // fixed
-
-// We’ll use a fixed canvas dimension for "horizontal" orientation
-// so each half is effectively 2×3 ratio
-canvas.width = 800;
-canvas.height = 600;
-
-/*
-Each image: {
-  img,       // the HTMLImageElement (full resolution)
-  x, y,      // top-left position in the PREVIEW canvas space
-  scale,     // scale factor (1 = full original dimension in the PREVIEW)
-  angle,     // rotation in degrees
-}
-*/
-const images = [
-  { img: null, x: 0, y: 0, scale: 1, angle: 0 }, // Image 0
-  { img: null, x: 0, y: 0, scale: 1, angle: 0 }  // Image 1
-];
-
-// Drag states
-let dragging = false;
-let dragIndex = null;
-let offsetX = 0;
-let offsetY = 0;
-
-/* =========================================
-   UTILS
-========================================= */
-
-/**
- * The bounding region for the half (0 => left, 1 => right),
- * line is always vertical.
- * Returns { x, y, w, h }
- */
-function getRegionBounds(index) {
-  const w = canvas.width;
-  const h = canvas.height;
-  const lineWidth = 5;
-  // vertical always
-  const mid = w / 2;
-  if (index === 0) {
-    return {
-      x: 0,
-      y: 0,
-      w: mid - lineWidth / 2,
-      h: h
-    };
-  } else {
-    return {
-      x: mid + lineWidth / 2,
-      y: 0,
-      w: w - (mid + lineWidth / 2),
-      h: h
-    };
-  }
-}
-
-/**
- * Auto-fit a newly uploaded (or newly loaded) image into its half.
- * Ensures entire image is visible and centered in that half.
- */
-function autoFitImage(index) {
-  const imgData = images[index];
-  const img = imgData.img;
-  if (!img) return;
-
-  const savedAngle = imgData.angle;
-  imgData.angle = 0; // temporarily ignore rotation for size calc
-
-  // The region for that half
-  const region = getRegionBounds(index);
-
-  // The raw image size
-  const iw = img.width;
-  const ih = img.height;
-
-  // The region's width/height
-  const regionW = region.w;
-  const regionH = region.h;
-
-  // Fit scale so the entire raw image fits
-  const scaleX = regionW / iw;
-  const scaleY = regionH / ih;
-  const fitScale = Math.min(scaleX, scaleY);
-
-  // Assign scale
-  imgData.scale = fitScale;
-
-  // Center in region
-  const scaledW = iw * fitScale;
-  const scaledH = ih * fitScale;
-  const centerX = region.x + regionW / 2;
-  const centerY = region.y + regionH / 2;
-  imgData.x = centerX - scaledW / 2;
-  imgData.y = centerY - scaledH / 2;
-
-  // restore the angle
-  imgData.angle = savedAngle;
-}
-
-/**
- * Re-center image to the middle of its half (keeping its current scale & new angle).
- */
-function reCenterImage(index) {
-  const data = images[index];
-  if (!data.img) return;
-
-  const region = getRegionBounds(index);
-  const angleRad = data.angle * Math.PI / 180;
-  const cosA = Math.abs(Math.cos(angleRad));
-  const sinA = Math.abs(Math.sin(angleRad));
-  const w = data.img.width * data.scale;
-  const h = data.img.height * data.scale;
-  const boundingW = w * cosA + h * sinA;
-  const boundingH = w * sinA + h * cosA;
-
-  const centerX = region.x + region.w / 2;
-  const centerY = region.y + region.h / 2;
-  data.x = centerX - boundingW / 2;
-  data.y = centerY - boundingH / 2;
-}
-
-/**
- * Handle file upload -> create a new HTMLImageElement -> store in images[].
- * Then auto-fit for the preview.
- */
-function handleFile(input, index) {
-  if (!input.files || !input.files[0]) return;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new Image();
-    img.onload = () => {
-      images[index].img = img;
-      // Reset transformations
-      images[index].angle = 0;
-      images[index].scale = 1;
-      // Fit into half
-      autoFitImage(index);
-      draw();
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(input.files[0]);
-}
-
-/* =========================================
-   DRAW LOGIC IN PREVIEW
-========================================= */
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // 5px dividing line, always vertical
-  ctx.save();
-  ctx.fillStyle = 'white';
-  const mid = canvas.width / 2;
-  ctx.fillRect(mid - 2.5, 0, 5, canvas.height);
-  ctx.restore();
-
-  // Draw each image clipped to its half
-  ctx.save();
-  clipRegion(0);
-  drawSingleImage(0);
-  ctx.restore();
-
-  ctx.save();
-  clipRegion(1);
-  drawSingleImage(1);
-  ctx.restore();
-}
-
-/**
- * Clipping region for image index
- */
-function clipRegion(index) {
-  const { x, y, w, h } = getRegionBounds(index);
-  ctx.beginPath();
-  ctx.rect(x, y, w, h);
-  ctx.closePath();
-  ctx.clip();
-}
-
-/**
- * Draw one image with x,y,scale,angle
- */
-function drawSingleImage(i) {
-  const data = images[i];
-  if (!data.img) return;
-
-  ctx.save();
-  ctx.translate(data.x, data.y);
-  ctx.rotate(data.angle * Math.PI / 180);
-  ctx.scale(data.scale, data.scale);
-  ctx.drawImage(data.img, 0, 0);
-  ctx.restore();
-}
-
-/* =========================================
-   DRAG & ZOOM ON PREVIEW
-========================================= */
-canvas.addEventListener('mousedown', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-
-  // from top-most image down
-  for (let i = images.length - 1; i >= 0; i--) {
-    const { img, x, y, scale, angle } = images[i];
-    if (!img) continue;
-
-    // Convert mouse to unrotated/unscaled coords
-    const cosA = Math.cos(angle * Math.PI / 180);
-    const sinA = Math.sin(angle * Math.PI / 180);
-    const dx = mouseX - x;
-    const dy = mouseY - y;
-    let rx = dx * cosA + dy * sinA;
-    let ry = -dx * sinA + dy * cosA;
-    rx /= scale;
-    ry /= scale;
-
-    if (rx >= 0 && rx <= img.width && ry >= 0 && ry <= img.height) {
-      dragging = true;
-      dragIndex = i;
-      offsetX = dx;
-      offsetY = dy;
-      break;
+    function getRegionBounds(index) {
+      const w = canvas.width;
+      const h = canvas.height;
+      const lineWidth = 5;
+      const mid = w / 2;
+      return index === 0
+        ? { x: 0, y: 0, w: mid - lineWidth / 2, h }
+        : { x: mid + lineWidth / 2, y: 0, w: w - (mid + lineWidth / 2), h };
     }
-  }
-});
 
-canvas.addEventListener('mousemove', (e) => {
-  if (!dragging) return;
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
+    function autoFitImage(index) {
+      const imgData = images[index];
+      const img = imgData.img;
+      if (!img) return;
 
-  const imgData = images[dragIndex];
-  imgData.x = mouseX - offsetX;
-  imgData.y = mouseY - offsetY;
-  draw();
-});
+      const savedAngle = imgData.angle;
+      imgData.angle = 0;
 
-canvas.addEventListener('mouseup', () => {
-  dragging = false;
-  dragIndex = null;
-});
+      const region = getRegionBounds(index);
+      const iw = img.width;
+      const ih = img.height;
+      const regionW = region.w;
+      const regionH = region.h;
 
-// Scroll => zoom
-canvas.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
+      const scaleX = regionW / iw;
+      const scaleY = regionH / ih;
+      imgData.scale = Math.min(scaleX, scaleY);
 
-  for (let i = images.length - 1; i >= 0; i--) {
-    const data = images[i];
-    const { img, x, y, scale, angle } = data;
-    if (!img) continue;
+      const scaledW = iw * imgData.scale;
+      const scaledH = ih * imgData.scale;
+      imgData.x = region.x + (regionW - scaledW) / 2;
+      imgData.y = region.y + (regionH - scaledH) / 2;
 
-    const cosA = Math.cos(angle * Math.PI / 180);
-    const sinA = Math.sin(angle * Math.PI / 180);
-    const dx = mouseX - x;
-    const dy = mouseY - y;
-    
-    let rx = dx * cosA + dy * sinA;
-    let ry = -dx * sinA + dy * cosA;
-    rx /= scale;
-    ry /= scale;
-
-    if (rx >= 0 && rx <= img.width && ry >= 0 && ry <= img.height) {
-      const zoomFactor = e.deltaY > 0 ? 0.95 : 1.05;
-      const oldScale = data.scale;
-      data.scale = Math.max(0.05, Math.min(10, data.scale * zoomFactor));
-
-      const factor = data.scale / oldScale;
-      data.x = mouseX - factor * (mouseX - data.x);
-      data.y = mouseY - factor * (mouseY - data.y);
-
+      imgData.angle = savedAngle;
       draw();
-      break;
     }
-  }
-}, { passive: false });
 
-/* =========================================
-   BUTTON HANDLERS
-========================================= */
-rotateImg1Btn.addEventListener('click', () => {
-  images[0].angle = (images[0].angle + 90) % 360;
-  // Re-center after rotation
-  reCenterImage(0);
-  draw();
-});
-rotateImg2Btn.addEventListener('click', () => {
-  images[1].angle = (images[1].angle + 90) % 360;
-  // Re-center after rotation
-  reCenterImage(1);
-  draw();
-});
+    function reCenterImage(index) {
+      const data = images[index];
+      if (!data.img) return;
 
-file1.addEventListener('change', () => handleFile(file1, 0));
-file2.addEventListener('change', () => handleFile(file2, 1));
+      const region = getRegionBounds(index);
+      const angleRad = data.angle * Math.PI / 180;
+      const cosA = Math.abs(Math.cos(angleRad));
+      const sinA = Math.abs(Math.sin(angleRad));
+      const w = data.img.width * data.scale;
+      const h = data.img.height * data.scale;
+      const boundingW = w * cosA + h * sinA;
+      const boundingH = w * sinA + h * cosA;
 
-/**
- * Clicking "Export Combined Image" => create a large
- * offscreen canvas replicating user transformations
- * then download a PNG.
- */
-saveBtn.addEventListener('click', () => {
-  const offscreen = document.createElement('canvas');
-  const ctx2 = offscreen.getContext('2d');
+      data.x = region.x + (region.w - boundingW) / 2;
+      data.y = region.y + (region.h - boundingH) / 2;
+      draw();
+    }
 
-  // A helper function to get bounding box (width, height) after rotation
-  function rotatedBoundingBox(w, h, angleDeg) {
-    const r = angleDeg * Math.PI / 180;
-    const cosA = Math.abs(Math.cos(r));
-    const sinA = Math.abs(Math.sin(r));
-    return {
-      w: w * cosA + h * sinA,
-      h: w * sinA + h * cosA
-    };
-  }
+    function handleFile(input, index) {
+      if (!input.files || !input.files[0]) return;
 
-  // Gather final info for each image
-  function getFinalInfo(i) {
-    const { img, x, y, scale, angle } = images[i];
-    if (!img) return null;
-    const box = rotatedBoundingBox(img.width * scale, img.height * scale, angle);
-    return {
-      angle,
-      scale,
-      width: img.width,
-      height: img.height,
-      boundingW: box.w,
-      boundingH: box.h,
-      previewX: x,
-      previewY: y
-    };
-  }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          images[index].img = img;
+          images[index].angle = 0;
+          images[index].scale = 1;
+          autoFitImage(index);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
 
-  const info0 = getFinalInfo(0);
-  const info1 = getFinalInfo(1);
+    function draw() {
+      ctx.fillStyle = '#ffff00'; // Bright yellow background
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  if (!info0 && !info1) {
-    alert("No images to export!");
-    return;
-  }
+      ctx.save();
+      ctx.fillStyle = 'white';
+      const mid = canvas.width / 2;
+      ctx.fillRect(mid - 2.5, 0, 5, canvas.height);
+      ctx.restore();
 
-  // Always vertical split => place image0 on the left, image1 on the right,
-  // plus a 5px gap for the line
-  let offW = 0;
-  let offH = 0;
+      images.forEach((_, i) => {
+        ctx.save();
+        clipRegion(i);
+        drawSingleImage(i);
+        ctx.restore();
+      });
+    }
 
-  // total width = boundingW0 + boundingW1 + 5
-  // total height = max(boundingH0, boundingH1)
-  offW = (info0 ? info0.boundingW : 0) + (info1 ? info1.boundingW : 0) + 5;
-  offH = Math.max(info0 ? info0.boundingH : 0, info1 ? info1.boundingH : 0);
+    function clipRegion(index) {
+      const { x, y, w, h } = getRegionBounds(index);
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+      ctx.clip();
+    }
 
-  offscreen.width = Math.ceil(offW);
-  offscreen.height = Math.ceil(offH);
+    function drawSingleImage(i) {
+      const data = images[i];
+      if (!data.img) return;
 
-  // Fill background
-  ctx2.fillStyle = "#ffffff";
-  ctx2.fillRect(0, 0, offscreen.width, offscreen.height);
+      ctx.save();
+      ctx.translate(data.x, data.y);
+      ctx.rotate(data.angle * Math.PI / 180);
+      ctx.scale(data.scale, data.scale);
+      ctx.drawImage(data.img, 0, 0);
+      ctx.restore();
+    }
 
-  // Draw the vertical line
-  ctx2.save();
-  ctx2.fillStyle = 'white';
-  const splitX = info0 ? info0.boundingW : 0;
-  ctx2.fillRect(splitX, 0, 5, offscreen.height);
-  ctx2.restore();
+    // Drag and Drop
+    function setupDropZone(index) {
+      const dropZone = canvas;
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const region = getRegionBounds(index);
+        if (mouseX >= region.x && mouseX <= region.x + region.w) {
+          dropZone.classList.add('dragover');
+        }
+      });
 
-  // Helper to draw one image into ctx2 at “full resolution” 
-  function drawImageFull(i, offsetX, offsetY) {
-    const { img, x, y, scale, angle } = images[i];
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+      });
 
-    // We replicate the relative position from preview:
-    // ratioX = offscreen.totalWidth / previewWidth
-    // ratioY = offscreen.totalHeight / previewHeight
-    // But we only need it horizontally because we’re placing side-by-side,
-    // and we keep the vertical ratio as well.
-    const previewW = canvas.width;
-    const previewH = canvas.height;
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const region = getRegionBounds(index);
+        if (mouseX >= region.x && mouseX <= region.x + region.w) {
+          const file = e.dataTransfer.files[0];
+          if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              const img = new Image();
+              img.onload = () => {
+                images[index].img = img;
+                images[index].angle = 0;
+                images[index].scale = 1;
+                autoFitImage(index);
+              };
+              img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        }
+      });
+    }
 
-    const ratioX = offscreen.width / previewW;
-    const ratioY = offscreen.height / previewH;
+    setupDropZone(0);
+    setupDropZone(1);
 
-    const finalX = offsetX + x * ratioX;
-    const finalY = offsetY + y * ratioY;
+    // Mouse Drag
+    canvas.addEventListener('mousedown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
 
-    ctx2.save();
-    ctx2.translate(finalX, finalY);
-    ctx2.rotate(angle * Math.PI / 180);
+      for (let i = images.length - 1; i >= 0; i--) {
+        const { img, x, y, scale, angle } = images[i];
+        if (!img) continue;
 
-    const finalScaleX = scale * ratioX;
-    const finalScaleY = scale * ratioY;
+        const cosA = Math.cos(angle * Math.PI / 180);
+        const sinA = Math.sin(angle * Math.PI / 180);
+        const dx = mouseX - x;
+        const dy = mouseY - y;
+        let rx = dx * cosA + dy * sinA;
+        let ry = -dx * sinA + dy * cosA;
+        rx /= scale;
+        ry /= scale;
 
-    ctx2.scale(finalScaleX, finalScaleY);
-    ctx2.drawImage(img, 0, 0);
-    ctx2.restore();
-  }
+        if (rx >= 0 && rx <= img.width && ry >= 0 && ry <= img.height) {
+          dragging = true;
+          dragIndex = i;
+          offsetX = dx;
+          offsetY = dy;
+          break;
+        }
+      }
+    });
 
-  // Draw both images
-  if (info0) {
-    drawImageFull(0, 0, 0);
-  }
-  if (info1) {
-    drawImageFull(1, (info0 ? info0.boundingW : 0) + 5, 0);
-  }
+    canvas.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
 
-  // Export
-  const dataURL = offscreen.toDataURL('image/png');
-  const link = document.createElement('a');
-  link.download = 'combined.png';
-  link.href = dataURL;
-  link.click();
-});
+      const imgData = images[dragIndex];
+      imgData.x = mouseX - offsetX;
+      imgData.y = mouseY - offsetY;
+      draw();
+    });
 
-/* =========================================
-   INITIAL DRAW
-========================================= */
-draw();
-</script>
+    canvas.addEventListener('mouseup', () => {
+      dragging = false;
+      dragIndex = null;
+    });
+
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      for (let i = images.length - 1; i >= 0; i--) {
+        const data = images[i];
+        if (!data.img) continue;
+
+        const cosA = Math.cos(data.angle * Math.PI / 180);
+        const sinA = Math.sin(data.angle * Math.PI / 180);
+        const dx = mouseX - data.x;
+        const dy = mouseY - data.y;
+        let rx = dx * cosA + dy * sinA;
+        let ry = -dx * sinA + dy * cosA;
+        rx /= data.scale;
+        ry /= data.scale;
+
+        if (rx >= 0 && rx <= data.img.width && ry >= 0 && ry <= data.img.height) {
+          const zoomFactor = e.deltaY > 0 ? 0.95 : 1.05;
+          const oldScale = data.scale;
+          data.scale = Math.max(0.05, Math.min(10, data.scale * zoomFactor));
+
+          const factor = data.scale / oldScale;
+          data.x = mouseX - factor * (mouseX - data.x);
+          data.y = mouseY - factor * (mouseY - data.y);
+          draw();
+          break;
+        }
+      }
+    }, { passive: false });
+
+    rotateImg1Btn.addEventListener('click', () => {
+      images[0].angle = (images[0].angle + 90) % 360;
+      reCenterImage(0);
+    });
+
+    rotateImg2Btn.addEventListener('click', () => {
+      images[1].angle = (images[1].angle + 90) % 360;
+      reCenterImage(1);
+    });
+
+    file1.addEventListener('change', () => handleFile(file1, 0));
+    file2.addEventListener('change', () => handleFile(file2, 1));
+
+    saveBtn.addEventListener('click', () => {
+      const offscreen = document.createElement('canvas');
+      const ctx2 = offscreen.getContext('2d');
+
+      function rotatedBoundingBox(w, h, angleDeg) {
+        const r = angleDeg * Math.PI / 180;
+        const cosA = Math.abs(Math.cos(r));
+        const sinA = Math.abs(Math.sin(r));
+        return {
+          w: w * cosA + h * sinA,
+          h: w * sinA + h * cosA
+        };
+      }
+
+      function getFinalInfo(i) {
+        const { img, x, y, scale, angle } = images[i];
+        if (!img) return null;
+        const box = rotatedBoundingBox(img.width * scale, img.height * scale, angle);
+        return {
+          angle,
+          scale,
+          width: img.width,
+          height: img.height,
+          boundingW: box.w,
+          boundingH: box.h,
+          previewX: x,
+          previewY: y
+        };
+      }
+
+      const info0 = getFinalInfo(0);
+      const info1 = getFinalInfo(1);
+
+      if (!info0 && !info1) {
+        alert("No images to export!");
+        return;
+      }
+
+      const offW = (info0 ? info0.boundingW : 0) + (info1 ? info1.boundingW : 0) + 5;
+      const offH = Math.max(info0 ? info0.boundingH : 0, info1 ? info1.boundingH : 0);
+
+      offscreen.width = Math.ceil(offW);
+      offscreen.height = Math.ceil(offH);
+
+      ctx2.fillStyle = '#ffffff';
+      ctx2.fillRect(0, 0, offscreen.width, offscreen.height);
+
+      ctx2.fillStyle = 'white';
+      const splitX = info0 ? info0.boundingW : 0;
+      ctx2.fillRect(splitX, 0, 5, offscreen.height);
+
+      function drawImageFull(i, offsetX, offsetY) {
+        const { img, x, y, scale, angle } = images[i];
+        const region = getRegionBounds(i);
+        const ratioX = offscreen.width / canvas.width;
+        const ratioY = offscreen.height / canvas.height;
+
+        const finalX = offsetX + (x - region.x) * ratioX;
+        const finalY = offsetY + (y - region.y) * ratioY;
+
+        ctx2.save();
+        ctx2.translate(finalX, finalY);
+        ctx2.rotate(angle * Math.PI / 180);
+        ctx2.scale(scale * ratioX, scale * ratioY);
+        ctx2.drawImage(img, 0, 0);
+        ctx2.restore();
+      }
+
+      if (info0) drawImageFull(0, 0, 0);
+      if (info1) drawImageFull(1, (info0 ? info0.boundingW : 0) + 5, 0);
+
+      const dataURL = offscreen.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = 'combined.png';
+      link.href = dataURL;
+      link.click();
+    });
+
+    draw();
+  </script>
 </body>
 </html>
