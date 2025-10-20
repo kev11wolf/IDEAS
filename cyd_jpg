@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Resizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .drop-zone {
+      transition: all 0.3s ease;
+    }
+    .drop-zone.dragover {
+      background-color: #e5e7eb;
+      border-color: #3b82f6;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+    <h1 class="text-2xl font-bold text-gray-800 mb-4 text-center">Image Resizer</h1>
+    <p class="text-gray-600 mb-4 text-center">Drag & drop a JPG or PNG to resize to 300x240</p>
+    <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center drop-zone mb-4">
+      <p class="text-gray-500">Drop image here or click to select</p>
+      <input type="file" id="fileInput" accept="image/jpeg,image/png" class="hidden">
+    </div>
+    <div id="preview" class="hidden mb-4">
+      <p class="text-gray-600 mb-2">Preview:</p>
+      <img id="previewImage" class="max-w-full h-auto mx-auto rounded">
+    </div>
+    <button id="downloadBtn" class="hidden w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400" disabled>Download Resized Image</button>
+  </div>
+
+  <script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    const previewImage = document.getElementById('previewImage');
+    const downloadBtn = document.getElementById('downloadBtn');
+    let resizedImageUrl = null;
+
+    // Drag and drop event listeners
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      handleFile(file);
+    });
+
+    // Click to select file
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      handleFile(file);
+    });
+
+    function handleFile(file) {
+      if (file && (file.type === 'image/jpeg' || file.type === 'image/png')) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.src = reader.result;
+          img.onload = () => {
+            // Create canvas
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 300;
+            canvas.height = 240;
+
+            // Calculate cropping to center
+            const aspectRatio = img.width / img.height;
+            const targetRatio = 300 / 240;
+            let sx, sy, sWidth, sHeight;
+
+            if (aspectRatio > targetRatio) {
+              // Image is wider than target, crop width
+              sHeight = img.height;
+              sWidth = img.height * targetRatio;
+              sx = (img.width - sWidth) / 2;
+              sy = 0;
+            } else {
+              // Image is taller than target, crop height
+              sWidth = img.width;
+              sHeight = img.width / targetRatio;
+              sx = 0;
+              sy = (img.height - sHeight) / 2;
+            }
+
+            // Draw resized and cropped image
+            ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, 300, 240);
+
+            // Update preview
+            previewImage.src = canvas.toDataURL('image/jpeg', 0.8);
+            preview.classList.remove('hidden');
+
+            // Enable download button
+            resizedImageUrl = canvas.toDataURL('image/jpeg', 0.8);
+            downloadBtn.classList.remove('hidden');
+            downloadBtn.disabled = false;
+          };
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert('Please upload a valid JPG or PNG image.');
+      }
+    }
+
+    // Download button
+    downloadBtn.addEventListener('click', () => {
+      if (resizedImageUrl) {
+        const link = document.createElement('a');
+        link.href = resizedImageUrl;
+        link.download = 'resized_image.jpg';
+        link.click();
+      }
+    });
+  </script>
+</body>
+</html>
