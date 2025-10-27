@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P6 Dataset Histogram Tool</title>
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Moment.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        .container {
+            max-width: 1400px;
+            margin-top: 40px;
+            margin-bottom: 40px;
+        }
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .card-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e9ecef;
+            padding: 1rem;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+        .form-select, .form-control {
+            border-radius: 6px;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .input-group {
+            border-radius: 6px;
+        }
+        #histogramChart {
+            height: 800px !important;
+            width: 100%;
+        }
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #loadingOverlay .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: #0d6efd;
+        }
+        .btn-icon {
+            margin-right: 0.4rem;
+        }
+        .form-label {
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+        }
+        .mt-3 {
+            margin-top: 1rem !important;
+        }
+        .mt-4 {
+            margin-top: 1.25rem !important;
+        }
+        .mb-3 {
+            margin-bottom: 0.75rem !important;
+        }
+        .row.g-4 {
+            row-gap: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingOverlay">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+    <div class="container">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2 class="mb-0 fs-5">P6 Dataset Histogram Tool</h2>
+            </div>
+            <div class="card-body p-3">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="csvFile" class="form-label">Upload CSV File</label>
+                        <input type="file" class="form-control" id="csvFile" accept=".csv">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="startColumn" class="form-label">Start Date Column</label>
+                        <select class="form-select" id="startColumn">
+                            <option value="Start">Start</option>
+                            <option value="Early Start">Early Start</option>
+                            <option value="Actual Start">Actual Start</option>
+                            <option value="Late Start">Late Start</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="finishColumn" class="form-label">Finish Date Column</label>
+                        <select class="form-select" id="finishColumn">
+                            <option value="Finish">Finish</option>
+                            <option value="Early Finish">Early Finish</option>
+                            <option value="Actual Finish">Actual Finish</option>
+                            <option value="Late Finish">Late Finish</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-3">
+                        <label for="binSize" class="form-label">Bin Size</label>
+                        <select class="form-select" id="binSize">
+                            <option value="daily">Daily</option>
+                            <option value="weekly" selected>Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="mode" class="form-label">Histogram Mode</label>
+                        <select class="form-select" id="mode">
+                            <option value="active" selected>Active</option>
+                            <option value="starts">Starts</option>
+                            <option value="finishes">Finishes</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="filtersContainer" class="mt-3">
+                    <h5 class="mb-2 fs-6">Filters (AND Logic)</h5>
+                    <div id="filters"></div>
+                    <button class="btn btn-secondary mt-2" id="addFilter"><i class="bi bi-plus-circle btn-icon"></i>Add Filter</button>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-primary me-1" id="generateChart" disabled><i class="bi bi-bar-chart btn-icon"></i>Generate</button>
+                    <button class="btn btn-secondary me-1" id="exportCSV" disabled><i class="bi bi-file-earmark-arrow-down btn-icon"></i>CSV</button>
+                    <button class="btn btn-secondary me-1" id="exportChartImage" disabled><i class="bi bi-image btn-icon"></i>PNG</button>
+                    <button class="btn btn-secondary" id="exportChartPDF" disabled><i class="bi bi-file-pdf btn-icon"></i>PDF</button>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-body p-0">
+                <canvas id="histogramChart"></canvas>
+            </div>
+        </div>
+        <div class="card mt-4" id="activityTableCard" style="display: none;">
+            <div class="card-header">
+                <h5 class="mb-0 fs-6">Activities in Selected Bin</h5>
+            </div>
+            <div class="card-body p-3">
+                <table class="table table-striped table-sm" id="activityTable">
+                    <thead>
+                        <tr>
+                            <th>Activity ID</th>
+                            <th>Activity Name</th>
+                            <th>Start</th>
+                            <th>Finish</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const csvFileInput = document.getElementById('csvFile');
+        const startColumnSelect = document.getElementById('startColumn');
+        const finishColumnSelect = document.getElementById('finishColumn');
+        const binSizeSelect = document.getElementById('binSize');
+        const modeSelect = document.getElementById('mode');
+        const addFilterBtn = document.getElementById('addFilter');
+        const filtersDiv = document.getElementById('filters');
+        const generateChartBtn = document.getElementById('generateChart');
+        const exportCSVBtn = document.getElementById('exportCSV');
+        const exportChartImageBtn = document.getElementById('exportChartImage');
+        const exportChartPDFBtn = document.getElementById('exportChartPDF');
+        const chartCanvas = document.getElementById('histogramChart');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const activityTableCard = document.getElementById('activityTableCard');
+        const activityTableBody = document.querySelector('#activityTable tbody');
+        let chartInstance = null;
+        let data = [];
+        let columns = [];
+        let filters = [];
+        let currentFilteredData = [];
+        let currentBins = [];
+        let currentStartCol = '';
+        let currentFinishCol = '';
+        let currentMode = '';
+
+        // Date parsing helper using Moment.js
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            // Clean suffixes: " A", "A", "*", and possible others
+            dateStr = dateStr.replace(/\s*A\s*$/g, '').replace(/\*/g, '').trim();
+            // Possible formats from P6 and Excel CSV
+            const formats = [
+                'DDMMMYY',       // 01JAN24
+                'DD-MMM-YY',     // 01-Jan-24
+                'DDMMMYYYY',     // 01JAN2024 if any
+                'DD-MMM-YYYY',   // 01-Jan-2024
+                'MM/DD/YYYY',    // 01/01/2024 US
+                'DD/MM/YYYY',    // 01/01/2024 EU
+                'YYYY-MM-DD',    // 2024-01-01 ISO
+                'M/D/YY',        // 1/1/24
+                'M/D/YYYY',      // 1/1/2024
+                'D/M/YY',        // 1/1/24
+                'D/M/YYYY',      // 1/1/2024
+                'MM/DD/YY HH:mm', // with time
+                'DD/MM/YY HH:mm',
+                'MM/DD/YYYY HH:mm:ss A', // with AM/PM
+                'DD/MM/YYYY HH:mm:ss A',
+                'YYYY-MM-DDTHH:mm:ss' // ISO with time
+            ];
+            const m = moment(dateStr, formats, true);
+            if (m.isValid()) {
+                return m.toDate();
+            }
+            return null;
+        }
+
+        // Parse CSV
+        function parseCSV(csvText) {
+            const lines = csvText.split(/\r?\n/);
+            columns = lines[0].split(',').map(col => col.trim());
+            data = [];
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const row = lines[i].split(',').map(cell => cell.trim());
+                const rowObj = {};
+                columns.forEach((col, idx) => {
+                    rowObj[col] = row[idx];
+                });
+                // Parse dates
+                const dateColumns = ['Early Start', 'Early Finish', 'Start', 'Finish', 'Actual Start', 'Actual Finish', 'Late Start', 'Late Finish'];
+                dateColumns.forEach(col => {
+                    if (rowObj[col]) {
+                        rowObj[col + '_parsed'] = parseDate(rowObj[col]);
+                    }
+                });
+                data.push(rowObj);
+            }
+        }
+
+        // Apply filters
+        function getFilteredData() {
+            return data.filter(row => {
+                return filters.every(filter => {
+                    const value = (row[filter.column] || '').toLowerCase();
+                    const filterValue = filter.value.toLowerCase();
+                    switch (filter.operator) {
+                        case 'contains':
+                            return value.includes(filterValue);
+                        case 'equals':
+                            return value === filterValue;
+                        case 'not_contains':
+                            return !value.includes(filterValue);
+                        case 'regex':
+                            try {
+                                const regex = new RegExp(filterValue);
+                                return regex.test(value);
+                            } catch {
+                                return false;
+                            }
+                        default:
+                            return true;
+                    }
+                });
+            });
+        }
+
+        // Generate histogram data
+        function generateHistogramData(filteredData) {
+            if (filteredData.length === 0) return { labels: [], counts: [], bins: [] };
+
+            const startCol = startColumnSelect.value + '_parsed';
+            const finishCol = finishColumnSelect.value + '_parsed';
+            const mode = modeSelect.value;
+
+            let minDate, maxDate;
+            if (mode === 'starts') {
+                minDate = new Date(Math.min(...filteredData.map(row => row[startCol] ? row[startCol].getTime() : Infinity)));
+                maxDate = new Date(Math.max(...filteredData.map(row => row[startCol] ? row[startCol].getTime() : -Infinity)));
+            } else if (mode === 'finishes') {
+                minDate = new Date(Math.min(...filteredData.map(row => row[finishCol] ? row[finishCol].getTime() : Infinity)));
+                maxDate = new Date(Math.max(...filteredData.map(row => row[finishCol] ? row[finishCol].getTime() : -Infinity)));
+            } else {
+                minDate = new Date(Math.min(...filteredData.map(row => row[startCol] ? row[startCol].getTime() : Infinity)));
+                maxDate = new Date(Math.max(...filteredData.map(row => row[finishCol] ? row[finishCol].getTime() : -Infinity)));
+            }
+
+            if (isNaN(minDate.getTime()) || isNaN(maxDate.getTime())) return { labels: [], counts: [], bins: [] };
+
+            let binSizeMs;
+            let labelFormat = 'toLocaleDateString';
+            const bins = [];
+            switch (binSizeSelect.value) {
+                case 'daily':
+                    binSizeMs = 24 * 60 * 60 * 1000;
+                    minDate.setHours(0, 0, 0, 0);
+                    break;
+                case 'weekly':
+                    binSizeMs = 7 * 24 * 60 * 60 * 1000;
+                    minDate.setDate(minDate.getDate() - minDate.getDay());
+                    break;
+                case 'monthly':
+                    binSizeMs = null; // Handle monthly differently
+                    minDate = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+                    break;
+            }
+
+            let current = new Date(minDate);
+            while (current <= maxDate) {
+                let binStart, binEnd;
+                if (binSizeSelect.value === 'monthly') {
+                    binStart = new Date(current);
+                    binEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0, 23, 59, 59, 999);
+                    current = new Date(binEnd.getTime() + 1);
+                } else {
+                    binStart = new Date(current);
+                    binEnd = new Date(current.getTime() + binSizeMs - 1);
+                    current = new Date(binEnd.getTime() + 1);
+                }
+                bins.push({ start: binStart, end: binEnd });
+            }
+
+            const counts = bins.map(bin => {
+                if (mode === 'starts') {
+                    return filteredData.filter(row => {
+                        const date = row[startCol];
+                        return date && date >= bin.start && date <= bin.end;
+                    }).length;
+                } else if (mode === 'finishes') {
+                    return filteredData.filter(row => {
+                        const date = row[finishCol];
+                        return date && date >= bin.start && date <= bin.end;
+                    }).length;
+                } else {
+                    return filteredData.filter(row => {
+                        const start = row[startCol];
+                        const finish = row[finishCol];
+                        if (!start || !finish) return false;
+                        return start <= bin.end && finish >= bin.start;
+                    }).length;
+                }
+            });
+
+            const labels = bins.map(bin => `${bin.start.toLocaleDateString()} - ${bin.end.toLocaleDateString()}`);
+
+            return { labels, counts, bins };
+        }
+
+        // Render chart
+        function renderChart(labels, counts) {
+            if (chartInstance) chartInstance.destroy();
+            const mode = modeSelect.value;
+            const datasetLabel = mode === 'starts' ? 'Activities Starting' : mode === 'finishes' ? 'Activities Finishing' : 'Active Activities';
+            chartInstance = new Chart(chartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: datasetLabel,
+                        data: counts,
+                        backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                        borderColor: 'rgba(13, 110, 253, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Count of Activities' }
+                        },
+                        x: {
+                            title: { display: true, text: 'Date Range' }
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const bin = currentBins[index];
+                            const activeActivities = currentFilteredData.filter(row => {
+                                if (currentMode === 'starts') {
+                                    const date = row[currentStartCol];
+                                    return date >= bin.start && date <= bin.end;
+                                } else if (currentMode === 'finishes') {
+                                    const date = row[currentFinishCol];
+                                    return date >= bin.start && date <= bin.end;
+                                } else {
+                                    const start = row[currentStartCol];
+                                    const finish = row[currentFinishCol];
+                                    return start <= bin.end && finish >= bin.start;
+                                }
+                            });
+                            populateActivityTable(activeActivities);
+                        }
+                    }
+                }
+            });
+        }
+
+        // Populate activity table
+        function populateActivityTable(activities) {
+            activityTableBody.innerHTML = '';
+            activities.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row['Activity ID'] || ''}</td>
+                    <td>${row['Activity Name'] || ''}</td>
+                    <td>${row[startColumnSelect.value] || ''}</td>
+                    <td>${row[finishColumnSelect.value] || ''}</td>
+                `;
+                activityTableBody.appendChild(tr);
+            });
+            activityTableCard.style.display = 'block';
+        }
+
+        // Update chart with loading
+        async function updateChart() {
+            loadingOverlay.style.display = 'flex';
+            try {
+                currentFilteredData = getFilteredData();
+                const { labels, counts, bins } = generateHistogramData(currentFilteredData);
+                currentBins = bins;
+                currentStartCol = startColumnSelect.value + '_parsed';
+                currentFinishCol = finishColumnSelect.value + '_parsed';
+                currentMode = modeSelect.value;
+                renderChart(labels, counts);
+                exportCSVBtn.disabled = false;
+                exportChartImageBtn.disabled = false;
+                exportChartPDFBtn.disabled = false;
+                activityTableCard.style.display = 'none'; // Reset table
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+
+        // Add filter UI
+        function addFilter(column = '', operator = 'contains', value = '') {
+            const filterIndex = filters.length;
+            const filterDiv = document.createElement('div');
+            filterDiv.className = 'input-group mb-2';
+            filterDiv.innerHTML = `
+                <select class="form-select filter-column">
+                    ${columns.map(col => `<option value="${col}" ${col === column ? 'selected' : ''}>${col}</option>`).join('')}
+                </select>
+                <select class="form-select filter-operator">
+                    <option value="contains" ${operator === 'contains' ? 'selected' : ''}>Contains</option>
+                    <option value="equals" ${operator === 'equals' ? 'selected' : ''}>Equals</option>
+                    <option value="not_contains" ${operator === 'not_contains' ? 'selected' : ''}>Not Contains</option>
+                    <option value="regex" ${operator === 'regex' ? 'selected' : ''}>Regex</option>
+                </select>
+                <input type="text" class="form-control filter-value" placeholder="Filter value" value="${value}">
+                <button class="btn btn-outline-danger remove-filter"><i class="bi bi-trash"></i></button>
+            `;
+            filtersDiv.appendChild(filterDiv);
+
+            const columnSelect = filterDiv.querySelector('.filter-column');
+            const operatorSelect = filterDiv.querySelector('.filter-operator');
+            const valueInput = filterDiv.querySelector('.filter-value');
+            const removeBtn = filterDiv.querySelector('.remove-filter');
+
+            filters.push({ column: columnSelect.value, operator: operatorSelect.value, value: valueInput.value });
+
+            columnSelect.addEventListener('change', () => {
+                filters[filterIndex].column = columnSelect.value;
+                updateChart();
+            });
+            operatorSelect.addEventListener('change', () => {
+                filters[filterIndex].operator = operatorSelect.value;
+                updateChart();
+            });
+            valueInput.addEventListener('input', () => {
+                filters[filterIndex].value = valueInput.value;
+                updateChart();
+            });
+            removeBtn.addEventListener('click', () => {
+                filterDiv.remove();
+                filters.splice(filterIndex, 1);
+                updateChart();
+            });
+        }
+
+        // Export filtered CSV
+        function exportCSV() {
+            const filteredData = getFilteredData();
+            if (filteredData.length === 0) return;
+            const csvContent = [columns.join(',')].concat(filteredData.map(row => columns.map(col => row[col] || '').join(','))).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'filtered_data.csv';
+            link.click();
+        }
+
+        // Export chart as PNG
+        function exportChartImage() {
+            if (!chartInstance) return;
+            const link = document.createElement('a');
+            link.href = chartCanvas.toDataURL('image/png');
+            link.download = 'histogram.png';
+            link.click();
+        }
+
+        // Export chart as PDF
+        function exportChartPDF() {
+            if (!chartInstance) return;
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            const imgData = chartCanvas.toDataURL('image/png');
+            pdf.addImage(imgData, 'PNG', 10, 10, 180, 100);
+            pdf.save('histogram.pdf');
+        }
+
+        // Event listeners
+        csvFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                parseCSV(event.target.result);
+                generateChartBtn.disabled = false;
+                addFilterBtn.disabled = false;
+                exportCSVBtn.disabled = true;
+                exportChartImageBtn.disabled = true;
+                exportChartPDFBtn.disabled = true;
+                filtersDiv.innerHTML = '';
+                filters = [];
+                addFilter(); // Add initial filter
+                updateChart();
+            };
+            reader.readAsText(file);
+        });
+
+        startColumnSelect.addEventListener('change', updateChart);
+        finishColumnSelect.addEventListener('change', updateChart);
+        binSizeSelect.addEventListener('change', updateChart);
+        modeSelect.addEventListener('change', updateChart);
+        addFilterBtn.addEventListener('click', () => addFilter());
+        generateChartBtn.addEventListener('click', updateChart);
+        exportCSVBtn.addEventListener('click', exportCSV);
+        exportChartImageBtn.addEventListener('click', exportChartImage);
+        exportChartPDFBtn.addEventListener('click', exportChartPDF);
+    </script>
+    <!-- Bootstrap 5.3 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>
