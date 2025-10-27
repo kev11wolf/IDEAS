@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>P6 S-Curve Dashboard (Live + Baseline, Forecast from Remaining Plan)</title>
+  <title>P6 S-Curve Dashboard (Data Date + Range Select)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- Bootstrap 5.3 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -10,6 +10,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/min/moment.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js"></script>
+  <!-- Annotation plugin for Data Date marker -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.1.0"></script>
   <!-- Papa Parse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
@@ -18,7 +20,8 @@
     #logArea { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: .9rem; }
     .metric-value { font-size: 1.6rem; font-weight: 700; }
     .metric-label { color: #6c757d; font-size: .9rem; }
-    .chart-container { position: relative; height: 460px; }
+    .chart-container { position: relative; height: 480px; }
+    .form-text.small { font-size: .8rem; }
   </style>
 </head>
 <body>
@@ -35,19 +38,48 @@
   <div class="container my-4">
     <!-- Uploads Row -->
     <div class="row g-3 align-items-end">
-      <div class="col-12 col-lg-5">
+      <div class="col-12 col-lg-4">
         <label for="liveCsvInput" class="form-label">Live (Current) CSV — Actual & Forecast</label>
         <input type="file" class="form-control" id="liveCsvInput" accept=".csv" />
       </div>
-      <div class="col-12 col-lg-5">
+      <div class="col-12 col-lg-4">
         <label for="baselineCsvInput" class="form-label">Baseline CSV — Early & Late</label>
         <input type="file" class="form-control" id="baselineCsvInput" accept=".csv" />
       </div>
-      <div class="col-12 col-lg-2 d-grid">
-        <button id="buildBtn" class="btn btn-primary">Build Chart</button>
+      <div class="col-12 col-lg-4">
+        <label for="dataDateInput" class="form-label">Data Date</label>
+        <div class="input-group">
+          <input type="date" class="form-control" id="dataDateInput" />
+          <button class="btn btn-outline-secondary" id="todayBtn" type="button">Today</button>
+          <button class="btn btn-primary" id="buildBtn" type="button">Build Chart</button>
+        </div>
+        <div class="form-text">Actual stops at Data Date; Forecast (planned) continues smoothly to 100%.</div>
       </div>
       <div class="col-12">
         <div id="alertArea"></div>
+      </div>
+    </div>
+
+    <!-- View Range Controls -->
+    <div class="card mt-3 shadow-sm">
+      <div class="card-body">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-4 col-lg-3">
+            <label for="viewStartInput" class="form-label mb-1">View Start</label>
+            <input type="date" class="form-control" id="viewStartInput" />
+          </div>
+          <div class="col-12 col-md-4 col-lg-3">
+            <label for="viewEndInput" class="form-label mb-1">View End</label>
+            <input type="date" class="form-control" id="viewEndInput" />
+          </div>
+          <div class="col-12 col-md-4 col-lg-3 d-grid d-md-flex gap-2 mt-2 mt-md-0">
+            <button id="rangeApplyBtn" class="btn btn-outline-primary">Apply Range</button>
+            <button id="rangeResetBtn" class="btn btn-outline-secondary">Reset Range</button>
+          </div>
+          <div class="col-12 col-lg-3">
+            <div class="form-text small">Optional: Set a date window to zoom the X-axis. Reset to see the full project range.</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -57,7 +89,7 @@
         <div class="card shadow-sm">
           <div class="card-body text-center">
             <div class="metric-value" id="metricPctComplete">—</div>
-            <div class="metric-label">% Complete (Last Actual Day)</div>
+            <div class="metric-label">Actual % (at Data Date)</div>
           </div>
         </div>
       </div>
@@ -65,7 +97,15 @@
         <div class="card shadow-sm">
           <div class="card-body text-center">
             <div class="metric-value" id="metricDone">—</div>
-            <div class="metric-label">Activities Completed (Actual Finish)</div>
+            <div class="metric-label">Activities Completed (by Data Date)</div>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card shadow-sm">
+          <div class="card-body text-center">
+            <div class="metric-value" id="metricRemaining">—</div>
+            <div class="metric-label">Remaining Activities (at Data Date)</div>
           </div>
         </div>
       </div>
@@ -73,15 +113,7 @@
         <div class="card shadow-sm">
           <div class="card-body text-center">
             <div class="metric-value" id="metricTotal">—</div>
-            <div class="metric-label">Total Activities (Task Dependent, Live)</div>
-          </div>
-        </div>
-      </div>
-      <div class="col">
-        <div class="card shadow-sm">
-          <div class="card-body text-center">
-            <div class="metric-value" id="metricBaselineTotal">—</div>
-            <div class="metric-label">Baseline Activities (Task Dependent)</div>
+            <div class="metric-label">Total Activities (Live, Task Dependent)</div>
           </div>
         </div>
       </div>
@@ -120,19 +152,29 @@ A1000,Example Task,Task Dependent,01/01/2025,01/15/2025,,01/14/2025 A,01/10/2025
   </div>
 
   <script>
+    // Register annotation plugin (Chart.js v4)
+    if (window['chartjs-plugin-annotation']) {
+      Chart.register(window['chartjs-plugin-annotation']);
+    }
+
     // ======= UI: Logging & Alerts =======
     const logArea = document.getElementById('logArea');
     const logCard = document.getElementById('logCard');
     const toggleLogBtn = document.getElementById('toggleLogBtn');
     const alertArea = document.getElementById('alertArea');
+    const dataDateInput = document.getElementById('dataDateInput');
+    const todayBtn = document.getElementById('todayBtn');
+    const viewStartInput = document.getElementById('viewStartInput');
+    const viewEndInput = document.getElementById('viewEndInput');
+    const rangeApplyBtn = document.getElementById('rangeApplyBtn');
+    const rangeResetBtn = document.getElementById('rangeResetBtn');
+
     let chart; // Chart.js
+    let lastTimeline = null; // Date[]
+    let lastMinX = null, lastMaxX = null; // global timeline bounds
 
     function ts() { return moment().format('YYYY-MM-DD HH:mm:ss'); }
-    function log(msg) {
-      logArea.value += `[${ts()}] ${msg}\n`;
-      logArea.scrollTop = logArea.scrollHeight;
-      console.log(msg);
-    }
+    function log(msg) { logArea.value += `[${ts()}] ${msg}\n`; logArea.scrollTop = logArea.scrollHeight; console.log(msg); }
     function clearLog() { logArea.value = ''; }
     function showAlert(type, message) {
       alertArea.innerHTML = `
@@ -141,10 +183,13 @@ A1000,Example Task,Task Dependent,01/01/2025,01/15/2025,,01/14/2025 A,01/10/2025
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>`;
     }
-
     toggleLogBtn.addEventListener('click', () => {
       logCard.classList.toggle('d-none');
       toggleLogBtn.textContent = logCard.classList.contains('d-none') ? 'Show Status Log' : 'Hide Status Log';
+    });
+    todayBtn.addEventListener('click', () => {
+      const today = moment().format('YYYY-MM-DD');
+      dataDateInput.value = today;
     });
 
     // ======= Parsing Helpers =======
@@ -155,18 +200,11 @@ A1000,Example Task,Task Dependent,01/01/2025,01/15/2025,,01/14/2025 A,01/10/2025
       'Late Start','Late Finish'
     ];
 
-    function normalizeHeader(h) {
-      return String(h || '').toLowerCase().replace(/[\s_/-]+/g, '');
-    }
-
+    function normalizeHeader(h) { return String(h || '').toLowerCase().replace(/[\s_/-]+/g, ''); }
     function buildHeaderMap(fields) {
-      const map = {}; // canonical -> actual header
-      const normFields = {};
+      const map = {}; const normFields = {};
       (fields || []).forEach(f => normFields[normalizeHeader(f)] = f);
-      CANONICAL_FIELDS.forEach(c => {
-        const norm = normalizeHeader(c);
-        if (normFields[norm]) map[c] = normFields[norm];
-      });
+      CANONICAL_FIELDS.forEach(c => { const norm = normalizeHeader(c); if (normFields[norm]) map[c] = normFields[norm]; });
       return map;
     }
 
@@ -181,28 +219,21 @@ A1000,Example Task,Task Dependent,01/01/2025,01/15/2025,,01/14/2025 A,01/10/2025
     function cleanP6DateStr(s) {
       if (s === null || s === undefined) return '';
       let out = String(s);
-      out = out.replace(/^"+|"+$/g, '');     // remove leading/trailing quotes
-      out = out.replace(/\sA\b/gi, '');      // remove " A"
-      out = out.replace(/\*/g, '');          // remove "*"
-      out = out.replace(/\s+/g, ' ').trim(); // normalize spaces
+      out = out.replace(/^"+|"+$/g, '');
+      out = out.replace(/\sA\b/gi, '');
+      out = out.replace(/\*/g, '');
+      out = out.replace(/\s+/g, ' ').trim();
       return out;
     }
-
     function parseP6Date(s) {
-      const cleaned = cleanP6DateStr(s);
-      if (!cleaned) return null;
-      const m = moment(cleaned, DATE_FORMATS, true);
-      if (!m.isValid()) return null;
-      return m.startOf('day').toDate(); // normalize to start of local day
+      const cleaned = cleanP6DateStr(s); if (!cleaned) return null;
+      const m = moment(cleaned, DATE_FORMATS, true); if (!m.isValid()) return null;
+      return m.startOf('day').toDate();
     }
-
-    function isTaskDependent(v) {
-      return String(v || '').trim().toLowerCase() === 'task dependent';
-    }
+    function isTaskDependent(v) { return String(v || '').trim().toLowerCase() === 'task dependent'; }
 
     function cleanAndFilterRows(parsedRows, headerMap, label) {
-      const out = [];
-      let skippedType = 0, skippedDates = 0;
+      const out = []; let skippedType = 0, skippedDates = 0;
       for (const r of parsedRows) {
         const obj = {};
         obj['Activity Type'] = headerMap['Activity Type'] ? r[headerMap['Activity Type']] : undefined;
@@ -223,23 +254,15 @@ A1000,Example Task,Task Dependent,01/01/2025,01/15/2025,,01/14/2025 A,01/10/2025
       for (const r of rows) {
         for (const f of fields) {
           const d = r[f];
-          if (d instanceof Date) {
-            if (!minDate || d < minDate) minDate = d;
-            if (!maxDate || d > maxDate) maxDate = d;
-          }
+          if (d instanceof Date) { if (!minDate || d < minDate) minDate = d; if (!maxDate || d > maxDate) maxDate = d; }
         }
       }
       return { minDate, maxDate };
     }
 
     function buildDailyTimeline(minDate, maxDate) {
-      const days = [];
-      const cur = moment(minDate).startOf('day');
-      const end = moment(maxDate).startOf('day');
-      while (cur.isSameOrBefore(end)) {
-        days.push(cur.toDate());
-        cur.add(1, 'day');
-      }
+      const days = []; const cur = moment(minDate).startOf('day'); const end = moment(maxDate).startOf('day');
+      while (cur.isSameOrBefore(end)) { days.push(cur.toDate()); cur.add(1, 'day'); }
       return days;
     }
 
@@ -247,99 +270,115 @@ A1000,Example Task,Task Dependent,01/01/2025,01/15/2025,,01/14/2025 A,01/10/2025
 
     function computeCounts(timeline, finishDates) {
       const sorted = finishDates.filter(Boolean).sort((a,b)=>a-b);
-      const counts = new Array(timeline.length).fill(0);
-      let i = 0;
-      for (let t = 0; t < timeline.length; t++) {
-        const day = timeline[t];
-        while (i < sorted.length && sorted[i] <= day) i++;
-        counts[t] = i;
-      }
+      const counts = new Array(timeline.length).fill(0); let i = 0;
+      for (let t = 0; t < timeline.length; t++) { const day = timeline[t]; while (i < sorted.length && sorted[i] <= day) i++; counts[t] = i; }
       return counts;
     }
 
     function toPercent(counts, total) {
-      return counts.map(c => {
-        if (total === 0) return 0;
-        const p = (c / total) * 100;
-        return +Math.min(100, p).toFixed(2); // clamp to 100%
-      });
+      return counts.map(c => { if (total === 0) return 0; const p = (c / total) * 100; return +Math.min(100, p).toFixed(2); });
     }
 
-    function buildForecastFromRemaining(timeline, liveRows, actualCounts, lastActualDate, totalLive) {
-      // Remaining tasks = those without an Actual Finish; use their Live 'Finish' dates
-      const remainingFinishes = liveRows
-        .filter(r => !(r['Actual Finish'] instanceof Date))
-        .map(r => r['Finish'])
-        .filter(d => d instanceof Date)
-        .sort((a,b)=>a-b);
+    // ======= Smoothed Forecast after Data Date =======
+    function computeSmoothedForecastPercent(timeline, liveRows, dataDate) {
+      const total = liveRows.length; if (total === 0) return timeline.map(_ => 0);
+      const dataDay = moment(dataDate).startOf('day');
+      const nextDay = moment(dataDay).add(1, 'day');
 
-      const remainingCounts = computeCounts(timeline, remainingFinishes);
-      log(`Forecast: remaining tasks = ${remainingFinishes.length} (using Live Finish dates).`);
+      // Completed by Data Date (Actual Finish <= Data Date)
+      const completedByData = liveRows.filter(r => r['Actual Finish'] && moment(r['Actual Finish']).isSameOrBefore(dataDay)).length;
+      const baseActualPct = +( (completedByData / total) * 100 ).toFixed(2);
 
-      // Combine: before lastActualDate -> mirror Actual; on/after -> Actual + Remaining (capped at total)
-      const outCounts = new Array(timeline.length).fill(0);
-      const cut = lastActualDate ? moment(lastActualDate).startOf('day') : null;
+      // Remaining tasks (no AF or AF > Data Date)
+      const remaining = liveRows.filter(r => !(r['Actual Finish'] && moment(r['Actual Finish']).isSameOrBefore(dataDay)));
 
+      // Forecast windows using planned Start/Finish
+      const taskWindows = remaining.map(r => {
+        const S = r['Start']; const F = r['Finish'];
+        if (!(S instanceof Date) || !(F instanceof Date)) return null;
+        let effStart = moment.max(nextDay.clone(), moment(S).startOf('day'));
+        let effFinish = moment(F).startOf('day');
+        if (effFinish.isSameOrBefore(dataDay)) { effStart = nextDay.clone(); effFinish = nextDay.clone(); }
+        if (effFinish.isBefore(effStart)) { effFinish = effStart.clone(); }
+        const durationDays = effFinish.diff(effStart, 'days') + 1; // inclusive
+        return { effStart: effStart.toDate(), effFinish: effFinish.toDate(), durationDays };
+      }).filter(Boolean);
+
+      const pct = new Array(timeline.length).fill(0);
       for (let i = 0; i < timeline.length; i++) {
-        const day = timeline[i];
-        if (cut && moment(day).isBefore(cut, 'day')) {
-          outCounts[i] = actualCounts[i];
-        } else {
-          outCounts[i] = Math.min(totalLive, actualCounts[i] + remainingCounts[i]);
+        const d = timeline[i]; const mD = moment(d).startOf('day');
+        if (mD.isSameOrBefore(dataDay)) { pct[i] = mD.isSame(dataDay) ? baseActualPct : NaN; continue; }
+        let sumFrac = 0;
+        for (const tw of taskWindows) {
+          const s = moment(tw.effStart), f = moment(tw.effFinish);
+          if (mD.isBefore(s)) sumFrac += 0;
+          else if (mD.isSameOrAfter(f)) sumFrac += 1;
+          else { const elapsed = mD.diff(s, 'days') + 1; sumFrac += Math.min(1, Math.max(0, elapsed / tw.durationDays)); }
         }
+        const pctVal = ((completedByData + sumFrac) / total) * 100; pct[i] = +Math.min(100, pctVal).toFixed(2);
       }
-      return toPercent(outCounts, totalLive);
+      return pct;
     }
 
-    function updateMetrics({ lastActualPct, completedCount, totalLive, totalBaseline }) {
-      document.getElementById('metricPctComplete').textContent = (lastActualPct ?? 0).toFixed(2) + '%';
-      document.getElementById('metricDone').textContent = completedCount ?? 0;
+    function updateMetrics({ actualPctAtData, completedByData, remainingCount, totalLive }) {
+      document.getElementById('metricPctComplete').textContent = (actualPctAtData ?? 0).toFixed(2) + '%';
+      document.getElementById('metricDone').textContent = completedByData ?? 0;
+      document.getElementById('metricRemaining').textContent = remainingCount ?? 0;
       document.getElementById('metricTotal').textContent = totalLive ?? 0;
-      document.getElementById('metricBaselineTotal').textContent = totalBaseline ?? 0;
     }
 
-    function buildXYSeries(timeline, percents) {
-      return timeline.map((d, i) => ({ x: d, y: percents[i] ?? 0 }));
+    function buildXYSeries(timeline, percents, clipBeforeDate = null) {
+      const pts = [];
+      for (let i = 0; i < timeline.length; i++) {
+        const d = timeline[i]; const y = percents[i];
+        if (clipBeforeDate && moment(d).isBefore(moment(clipBeforeDate).startOf('day'))) continue;
+        if (y === null || Number.isNaN(y)) continue;
+        pts.push({ x: d, y });
+      }
+      return pts;
     }
 
-    function renderChart(timeline, datasets) {
+    function renderChart(timeline, datasets, dataDate, viewMin = null, viewMax = null) {
       const ctx = document.getElementById('scurveChart').getContext('2d');
       if (chart) chart.destroy();
 
       const minX = timeline[0];
       const maxX = timeline[timeline.length - 1];
+      lastTimeline = timeline; lastMinX = minX; lastMaxX = maxX;
 
       chart = new Chart(ctx, {
         type: 'line',
-        data: { datasets: [
-          { label: 'Actual',   data: datasets.actual,   borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,.08)', borderWidth: 2, tension: 0, pointRadius: 0, parsing: false },
-          { label: 'Early',    data: datasets.early,    borderColor: '#198754', backgroundColor: 'rgba(25,135,84,.08)', borderWidth: 2, tension: 0, pointRadius: 0, parsing: false },
-          { label: 'Late',     data: datasets.late,     borderColor: '#fd7e14', backgroundColor: 'rgba(253,126,20,.08)', borderWidth: 2, tension: 0, pointRadius: 0, parsing: false },
-          { label: 'Forecast', data: datasets.forecast, borderColor: '#6c757d', backgroundColor: 'rgba(108,117,125,.08)', borderDash: [6, 4], borderWidth: 2, tension: 0, pointRadius: 0, parsing: false }
-        ]},
+        data: {
+          datasets: [
+            { label: 'Actual',   data: datasets.actual,   borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,.08)', borderWidth: 2, tension: 0, pointRadius: 0, parsing: false },
+            { label: 'Early',    data: datasets.early,    borderColor: '#198754', backgroundColor: 'rgba(25,135,84,.08)', borderWidth: 2, tension: 0, pointRadius: 0, parsing: false },
+            { label: 'Late',     data: datasets.late,     borderColor: '#fd7e14', backgroundColor: 'rgba(253,126,20,.08)', borderWidth: 2, tension: 0, pointRadius: 0, parsing: false },
+            { label: 'Forecast', data: datasets.forecast, borderColor: '#6c757d', backgroundColor: 'rgba(108,117,125,.08)', borderDash: [6, 4], borderWidth: 2, tension: 0, pointRadius: 0, parsing: false }
+          ]
+        },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           spanGaps: true,
           scales: {
             x: {
-              type: 'time',
-              time: { unit: 'day', tooltipFormat: 'YYYY-MM-DD' },
-              min: minX,
-              max: maxX,
-              bounds: 'ticks',
-              grid: { display: false },
+              type: 'time', time: { unit: 'day', tooltipFormat: 'YYYY-MM-DD' },
+              min: viewMin || minX, max: viewMax || maxX, bounds: 'ticks', grid: { display: false },
               ticks: { maxRotation: 0, autoSkip: true, autoSkipPadding: 16 }
             },
-            y: {
-              min: 0, max: 100,
-              ticks: { callback: v => v + '%' },
-              title: { display: true, text: 'Percent Complete' }
-            }
+            y: { min: 0, max: 100, ticks: { callback: v => v + '%' }, title: { display: true, text: 'Percent Complete' } }
           },
           plugins: {
             legend: { position: 'bottom' },
-            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(2) ?? 0}%` } }
+            tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(2) ?? 0}%` } },
+            annotation: {
+              annotations: {
+                dataDate: {
+                  type: 'line', xMin: dataDate, xMax: dataDate, borderColor: '#6f42c1', borderWidth: 2,
+                  label: { display: true, content: 'Data Date', position: 'start', backgroundColor: 'rgba(111,66,193,.1)', color: '#6f42c1' }
+                }
+              }
+            }
           },
           interaction: { mode: 'index', intersect: false }
         }
@@ -349,25 +388,19 @@ A1000,Example Task,Task Dependent,01/01/2025,01/15/2025,,01/14/2025 A,01/10/2025
     // ======= State =======
     let liveParsed = null;     // { headerMap, rows: cleaned[] }
     let baselineParsed = null; // { headerMap, rows: cleaned[] }
+    let lastDataDate = null;
 
     // ======= CSV Parsing =======
     function parseCsvFile(file, label, cb) {
       if (!file) { cb({ ok: false, error: 'No file selected.' }); return; }
       log(`${label}: CSV parse started…`);
       Papa.parse(file, {
-        header: true,
-        skipEmptyLines: 'greedy',
-        worker: false, // local compatibility
+        header: true, skipEmptyLines: 'greedy', worker: false,
         complete: (results) => {
           log(`${label}: CSV parse complete.`);
-          if (results.errors && results.errors.length) {
-            log(`${label}: Parser reported ${results.errors.length} error(s). First: ${results.errors[0].message}`);
-          }
+          if (results.errors && results.errors.length) log(`${label}: Parser error(s): ${results.errors[0].message}`);
           const rowsRaw = results.data || [];
-          if (!rowsRaw.length) {
-            cb({ ok: false, error: `${label}: No data rows found.` });
-            return;
-          }
+          if (!rowsRaw.length) { cb({ ok: false, error: `${label}: No data rows found.` }); return; }
           const fields = results.meta?.fields || Object.keys(rowsRaw[0] || {});
           const headerMap = buildHeaderMap(fields);
           const required = ['Activity Type','Start','Finish'];
@@ -384,21 +417,55 @@ A1000,Example Task,Task Dependent,01/01/2025,01/15/2025,,01/14/2025 A,01/10/2025
       });
     }
 
+    function parseDateInputValue(value) {
+      if (!value) return null;
+      const m = moment(value, ['YYYY-MM-DD'], true);
+      return m.isValid() ? m.startOf('day').toDate() : null;
+    }
+
+    function applyViewRangeFromInputs() {
+      if (!chart || !lastTimeline) { showAlert('warning', 'Build the chart first.'); return; }
+      const vStart = parseDateInputValue(viewStartInput.value);
+      const vEnd = parseDateInputValue(viewEndInput.value);
+      if (!vStart && !vEnd) { showAlert('warning', 'Enter at least one date to apply range.'); return; }
+      let minX = lastMinX, maxX = lastMaxX;
+      if (vStart) minX = vStart;
+      if (vEnd)   maxX = vEnd;
+      if (vStart && vEnd && moment(minX).isAfter(maxX)) { showAlert('danger', 'View Start must be on or before View End.'); return; }
+      // Clamp inside global bounds
+      if (moment(minX).isBefore(lastMinX)) minX = lastMinX;
+      if (moment(maxX).isAfter(lastMaxX)) maxX = lastMaxX;
+      chart.options.scales.x.min = minX;
+      chart.options.scales.x.max = maxX;
+      chart.update();
+      log(`Applied view range: ${toISO(minX)} → ${toISO(maxX)}`);
+    }
+
+    function resetViewRange() {
+      if (!chart) return;
+      chart.options.scales.x.min = lastMinX;
+      chart.options.scales.x.max = lastMaxX;
+      chart.update();
+      viewStartInput.value = '';
+      viewEndInput.value = '';
+      log('Reset view range to full project span.');
+    }
+
+    rangeApplyBtn.addEventListener('click', applyViewRangeFromInputs);
+    rangeResetBtn.addEventListener('click', resetViewRange);
+
     // ======= Event Handlers =======
     document.getElementById('liveCsvInput').addEventListener('change', e => {
       clearLog(); alertArea.innerHTML = '';
       parseCsvFile(e.target.files[0], 'Live', (res) => {
         if (!res.ok) { showAlert('danger', res.error); return; }
-        liveParsed = res;
-        showAlert('info', 'Live CSV loaded. Load Baseline (optional) and click "Build Chart".');
+        liveParsed = res; showAlert('info', 'Live CSV loaded. Optionally load Baseline CSV, set Data Date, then click "Build Chart".');
       });
     });
-
     document.getElementById('baselineCsvInput').addEventListener('change', e => {
       parseCsvFile(e.target.files[0], 'Baseline', (res) => {
         if (!res.ok) { showAlert('warning', res.error); return; }
-        baselineParsed = res;
-        showAlert('info', 'Baseline CSV loaded. Click "Build Chart" to process.');
+        baselineParsed = res; showAlert('info', 'Baseline CSV loaded. Set Data Date and click "Build Chart".');
       });
     });
 
@@ -406,81 +473,81 @@ A1000,Example Task,Task Dependent,01/01/2025,01/15/2025,,01/14/2025 A,01/10/2025
       alertArea.innerHTML = '';
       if (!liveParsed?.rows?.length) { showAlert('warning', 'Please load a Live (Current) CSV first.'); return; }
 
-      const liveRows = liveParsed.rows;
-      const baselineRows = baselineParsed?.rows || [];
-      const totalLive = liveRows.length;
-      const totalBaseline = baselineRows.length;
+      // Data Date
+      let dataDateStr = dataDateInput.value?.trim();
+      let dataDate = null;
+      if (dataDateStr) {
+        const m = moment(dataDateStr, ['YYYY-MM-DD'], true);
+        if (!m.isValid()) { showAlert('danger', 'Invalid Data Date. Use the date picker.'); return; }
+        dataDate = m.startOf('day').toDate();
+      } else {
+        const liveAF = liveParsed.rows.map(r => r['Actual Finish']).filter(Boolean).sort((a,b)=>a-b);
+        if (liveAF.length) { dataDate = moment(liveAF[liveAF.length - 1]).startOf('day').toDate(); log(`Data Date defaulted to latest Actual Finish: ${toISO(dataDate)}`); }
+        else { dataDate = moment().startOf('day').toDate(); log(`Data Date defaulted to today: ${toISO(dataDate)}`); }
+        dataDateInput.value = toISO(dataDate);
+      }
 
-      // Determine overall timeline span using Live + Baseline
-      const spanLive = getSpan(liveRows);
-      const spanBase = getSpan(baselineRows);
-      let minDate = spanLive.minDate, maxDate = spanLive.maxDate;
+      const liveRows = liveParsed.rows; const baselineRows = baselineParsed?.rows || [];
+      const totalLive = liveRows.length;
+
+      // Determine overall timeline: min across Live+Baseline+Data Date; max to project end (max Live Finish or Baseline Late Finish)
+      const spanLive = getSpan(liveRows); const spanBase = getSpan(baselineRows);
+      let minDate = spanLive.minDate; let maxDate = spanLive.maxDate;
       if (spanBase.minDate && (!minDate || spanBase.minDate < minDate)) minDate = spanBase.minDate;
       if (spanBase.maxDate && (!maxDate || spanBase.maxDate > maxDate)) maxDate = spanBase.maxDate;
+      if (dataDate && (!minDate || dataDate < minDate)) minDate = dataDate;
+      const maxLivePlannedFinish = liveRows.map(r => r['Finish']).filter(Boolean).sort((a,b)=>a-b).slice(-1)[0] || maxDate;
+      if (!maxDate || maxLivePlannedFinish > maxDate) maxDate = maxLivePlannedFinish;
 
-      if (!minDate || !maxDate) { showAlert('danger', 'Could not determine the overall date range. Check date formats.'); return; }
-      log(`Timeline span: ${toISO(minDate)} → ${toISO(maxDate)}`);
+      if (!minDate || !maxDate) { showAlert('danger', 'Could not determine overall date range. Check date formats.'); return; }
+      log(`Timeline span: ${toISO(minDate)} → ${toISO(maxDate)} (Data Date: ${toISO(dataDate)})`);
 
       const timeline = buildDailyTimeline(minDate, maxDate);
       log(`Timeline days: ${timeline.length}`);
 
-      // Finish arrays
+      // === Actual (step-like), truncated at Data Date ===
       const liveActualFinishes = liveRows.map(r => r['Actual Finish']).filter(Boolean);
-      let earlyFinishes = [];
-      let lateFinishes  = [];
+      const actualCounts = computeCounts(timeline, liveActualFinishes);
+      const actualPerc = toPercent(actualCounts, totalLive);
+      const completedByData = liveRows.filter(r => r['Actual Finish'] && moment(r['Actual Finish']).isSameOrBefore(moment(dataDate))).length;
+      const actualPctAtData = +( (completedByData / totalLive) * 100 ).toFixed(2);
 
+      const actualSeries = [];
+      for (let i = 0; i < timeline.length; i++) {
+        const d = timeline[i]; if (moment(d).isAfter(moment(dataDate))) break; actualSeries.push({ x: d, y: actualPerc[i] });
+      }
+
+      // === Early/Late (step-like) from Baseline (fallback to Live if absent) ===
+      let earlyFinishes = []; let lateFinishes = [];
       if (baselineRows.length) {
         earlyFinishes = baselineRows.map(r => r['Early Finish']).filter(Boolean);
         lateFinishes  = baselineRows.map(r => r['Late Finish']).filter(Boolean);
-        if (!earlyFinishes.length) log('Baseline: No Early Finish values found. Will fallback to Live.');
-        if (!lateFinishes.length)  log('Baseline: No Late Finish values found. Will fallback to Live.');
       }
+      if (!earlyFinishes.length) { const liveEarly = liveRows.map(r => r['Early Finish']).filter(Boolean); if (liveEarly.length) { earlyFinishes = liveEarly; showAlert('warning', 'Baseline Early Finish not found; using Live Early Finish as fallback.'); } }
+      if (!lateFinishes.length)  { const liveLate  = liveRows.map(r => r['Late Finish']).filter(Boolean);  if (liveLate.length)  { lateFinishes  = liveLate;  showAlert('warning', 'Baseline Late Finish not found; using Live Late Finish as fallback.'); } }
 
-      // Fallback to Live Early/Late if Baseline lacks them
-      if (!earlyFinishes.length) {
-        const liveEarly = liveRows.map(r => r['Early Finish']).filter(Boolean);
-        if (liveEarly.length) { earlyFinishes = liveEarly; showAlert('warning', 'Baseline Early Finish missing; using Live Early Finish.'); }
-        else { showAlert('warning', 'No Early Finish values in Baseline or Live.'); }
-      }
-      if (!lateFinishes.length) {
-        const liveLate = liveRows.map(r => r['Late Finish']).filter(Boolean);
-        if (liveLate.length) { lateFinishes = liveLate; showAlert('warning', 'Baseline Late Finish missing; using Live Late Finish.'); }
-        else { showAlert('warning', 'No Late Finish values in Baseline or Live.'); }
-      }
+      const earlyPerc  = toPercent(computeCounts(timeline, earlyFinishes), totalLive);
+      const latePerc   = toPercent(computeCounts(timeline, lateFinishes),  totalLive);
+      const earlySeries = buildXYSeries(timeline, earlyPerc);
+      const lateSeries  = buildXYSeries(timeline, latePerc);
 
-      // Compute counts (step-like)
-      const actualCounts = computeCounts(timeline, liveActualFinishes);
-      const earlyCounts  = computeCounts(timeline, earlyFinishes);
-      const lateCounts   = computeCounts(timeline, lateFinishes);
-
-      const actualPerc = toPercent(actualCounts, totalLive);
-      const earlyPerc  = toPercent(earlyCounts,  totalLive);
-      const latePerc   = toPercent(lateCounts,   totalLive);
-
-      // Forecast based on remaining tasks' planned finishes (Live 'Finish'), mirroring Actual before last actual date
-      const lastActualDate = liveActualFinishes.filter(Boolean).sort((a,b)=>a-b).slice(-1)[0] || null;
-      if (lastActualDate) log(`Last Actual Finish (Live): ${toISO(lastActualDate)}`); else log('No Actual Finish dates in Live. Forecast will be fully planned.');
-
-      const forecastPerc = buildForecastFromRemaining(timeline, liveRows, actualCounts, lastActualDate, totalLive);
+      // === Forecast (smoothed using planned Start/Finish for remaining tasks) ===
+      const forecastPerc = computeSmoothedForecastPercent(timeline, liveRows, dataDate);
+      const forecastSeries = buildXYSeries(timeline, forecastPerc, dataDate);
 
       // Metrics
-      let lastActualPct = 0;
-      if (lastActualDate) {
-        const labelsISO = timeline.map(toISO);
-        const idx = labelsISO.findIndex(d => d === toISO(lastActualDate));
-        lastActualPct = idx >= 0 ? actualPerc[idx] : actualPerc[actualPerc.length - 1];
-      }
+      const remainingCount = totalLive - completedByData;
+      updateMetrics({ actualPctAtData, completedByData, remainingCount, totalLive });
 
-      updateMetrics({ lastActualPct, completedCount: liveActualFinishes.length, totalLive, totalBaseline });
-
-      // Build XY series and render
-      log('Rendering chart…');
+      // Render (respect any current view inputs)
+      const viewMin = parseDateInputValue(viewStartInput.value);
+      const viewMax = parseDateInputValue(viewEndInput.value);
       renderChart(timeline, {
-        actual:   buildXYSeries(timeline, actualPerc),
-        early:    buildXYSeries(timeline, earlyPerc),
-        late:     buildXYSeries(timeline, latePerc),
-        forecast: buildXYSeries(timeline, forecastPerc)
-      });
+        actual: actualSeries,
+        early: earlySeries,
+        late: lateSeries,
+        forecast: forecastSeries
+      }, dataDate, viewMin, viewMax);
       log('Done.');
     });
   </script>
