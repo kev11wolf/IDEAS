@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Character set -->
+  <meta charset="UTF-8" />
+  <!-- Page Title -->
+  <title>Advanced Gantt Chart</title>
+  <!-- Bootstrap 5 CSS via CDN -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+  />
+  <style>
+    /* Remove default body margin, set font */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Navbar: no extra margin */
+    .navbar {
+      margin-bottom: 0;
+    }
+
+    /*
+      Main container for the Gantt layout:
+      - We do NOT place big top margin on .gantt-container itself,
+        so the timescale can "stick" at the top properly.
+      - Instead, we shift only the "sidebar" down to align with the first row.
+    */
+    .gantt-container {
+      display: flex;       /* side-by-side: left sidebar + right chart */
+      flex-direction: row;
+      gap: 1rem;
+      margin: 0 1rem;      /* some horizontal margin */
+      position: relative;  /* so we can position the sidebar or editor absolutely if needed */
+    }
+
+    /*
+      Left sidebar is pushed down by ~60px so its first line item
+      lines up better with the first row of bars (which is under the timescale).
+      Adjust this if you need a different alignment.
+    */
+    .sidebar {
+      margin-top: 60px;    /* SHIFT the first line item below the timescale header */
+      min-width: 240px;
+      border-right: 1px solid #dee2e6;
+    }
+
+    /* Each line item row in the sidebar */
+    .line-item-row {
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #dee2e6;
+      height: 40px;
+      position: relative;
+    }
+
+    /* Button "X" to remove a line */
+    .remove-line-btn {
+      background: none;
+      border: none;
+      color: #dc3545; /* red */
+      font-weight: bold;
+      margin: 0 6px 0 0;
+      cursor: pointer;
+    }
+
+    /* Editable text input for line item name */
+    .line-item-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background-color: transparent;
+      font-weight: 500;
+    }
+    .line-item-input:focus {
+      outline: 1px solid #ccc;
+    }
+
+    /*
+      The chart area to the right:
+      Contains the pinned timescale at top,
+      then the rows with bars below.
+      We allow horizontal scrolling in one place (.chart-area).
+    */
+    .chart-area {
+      position: relative;
+      flex: 1;
+      border-bottom: 1px solid #dee2e6;
+      overflow-x: auto; /* horizontal scroll for both timescale and rows */
+    }
+
+    /*
+      The timescale container is sticky at the top
+      and will remain visible as you scroll vertically,
+      but it will scroll horizontally in sync with the chart.
+    */
+    .timescale-container {
+      position: sticky;
+      top: 0;                  /* pinned to top */
+      z-index: 10;             /* above rows */
+      background-color: #f8f9fa; 
+      border-bottom: 1px solid #dee2e6;
+      overflow: hidden;        /* hide overflow; horizontal scroll is handled by chart-area */
+      white-space: nowrap;     /* keep cells on one line */
+    }
+
+    /* The row of timescale cells */
+    .timescale {
+      display: flex;       /* horizontal row of cells */
+      white-space: nowrap; 
+    }
+
+    /*
+      Each timescale cell is 150px wide
+      so that it matches the chart columns below.
+    */
+    .timescale-cell {
+      width: 150px;               /* match chart column width */
+      text-align: center;
+      font-size: 0.9rem;
+      background-color: #e9ecef;
+      border-right: 1px solid #dee2e6;
+      padding: 4px 8px;
+      box-sizing: border-box;
+    }
+
+    /* Container holding all chart rows with bar grids */
+    #chartRowsContainer {
+      position: relative;
+      /* Grid lines of 150px wide columns, 40px tall rows. */
+      background-image: 
+        linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
+      background-size: 150px 40px;
+    }
+
+    /* Each row in the chart for bars. Height = 40px to match sidebar. */
+    .chart-line-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      position: relative;
+      height: 40px;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    /* 
+      Absolute container inside each row, sized to total chart width.
+      Bars are absolutely placed inside here.
+    */
+    .chart-row {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+    }
+
+    /* Each bar rectangle */
+    .bar {
+      position: absolute;
+      height: 30px;
+      border-radius: 4px;
+      color: #fff;
+      text-align: center;
+      line-height: 30px;
+      cursor: move;
+      user-select: none;
+      opacity: 0.7;
+    }
+    .bar.selected {
+      outline: 2px solid #ffc107;
+    }
+
+    /* Handles on left/right edges for resizing */
+    .bar-handle {
+      position: absolute;
+      top: 0;
+      width: 6px;
+      height: 30px;
+      cursor: col-resize;
+      background-color: rgba(255,255,255,0.4);
+      z-index: 2;
+    }
+    .bar-handle.left {
+      left: 0;
+      border-radius: 4px 0 0 4px;
+    }
+    .bar-handle.right {
+      right: 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /*
+      A small overlay editor (text input + color input) that appears
+      when user double-clicks a bar and hides when clicking away or pressing 'OK'.
+    */
+    #barEditor {
+      position: absolute;       /* so we can place it near the bar or click location */
+      display: none;           /* hidden by default, shown on bar dblclick */
+      background: #fff;        /* white background */
+      border: 1px solid #ccc;  /* subtle border */
+      padding: 8px;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      z-index: 999;            /* above everything else */
+    }
+    #barEditor input {
+      margin-bottom: 6px;
+      width: 100%;
+    }
+    #barEditorActions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    /* 
+      Basic responsiveness: stack sidebar above chart for narrow screens 
+    */
+    @media (max-width: 768px) {
+      .gantt-container {
+        flex-direction: column;
+      }
+      .sidebar {
+        margin-top: 10px; /* smaller shift on mobile */
+        min-width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+      }
+      .timescale-container {
+        top: 0; /* pinned to top of screen still */
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 
+    Bootstrap Navbar with Gantt configuration controls 
+  -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Gantt Planner</a>
+      <button class="navbar-toggler" 
+              type="button" 
+              data-bs-toggle="collapse" 
+              data-bs-target="#navbarSupportedContent"
+              aria-controls="navbarSupportedContent" 
+              aria-expanded="false"
+              aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon">☰</span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <!-- Timescale input form (year/week range) -->
+        <form class="d-flex align-items-center gap-2">
+          <label for="startYearInput" class="form-label m-0">Start Y:</label>
+          <input
+            id="startYearInput"
+            type="number"
+            class="form-control form-control-sm"
+            value="2023"
+            style="width:72px;"
+          />
+          <label for="startWeekInput" class="form-label m-0">Wk:</label>
+          <input
+            id="startWeekInput"
+            type="number"
+            class="form-control form-control-sm"
+            value="1"
+            style="width:50px;"
+          />
+          <label for="endYearInput" class="form-label m-0">End Y:</label>
+          <input
+            id="endYearInput"
+            type="number"
+            class="form-control form-control-sm"
+            value="2023"
+            style="width:72px;"
+          />
+          <label for="endWeekInput" class="form-label m-0">Wk:</label>
+          <input
+            id="endWeekInput"
+            type="number"
+            class="form-control form-control-sm"
+            value="52"
+            style="width:50px;"
+          />
+          <button id="applyTimescaleBtn" type="button" class="btn btn-secondary btn-sm">
+            Apply
+          </button>
+        </form>
+
+        <!-- Controls: Add lines/bars, color picker, import/export -->
+        <div class="d-flex ms-auto gap-2">
+          <button id="addLineItemBtn" class="btn btn-primary btn-sm">Add Line</button>
+          <button id="addBarBtn" class="btn btn-secondary btn-sm">Add Bar</button>
+
+          <input
+            id="barColorInput"
+            type="color"
+            class="form-control form-control-color form-control-sm"
+            value="#0d6efd"
+            title="Bar Color"
+            style="width:48px;"
+            disabled
+          />
+          <button id="importJsonBtn" class="btn btn-outline-success btn-sm">Import JSON</button>
+          <button id="exportJsonBtn" class="btn btn-outline-info btn-sm">Export JSON</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 
+    The main two-column Gantt layout:
+    Left = line items, Right = chart with timescale pinned at top
+  -->
+  <div class="gantt-container">
+    <!-- Sidebar (Line items) -->
+    <div class="sidebar" id="lineItemsContainer">
+      <!-- line item rows filled dynamically -->
+    </div>
+
+    <!-- Right chart area with pinned timescale at top -->
+    <div class="chart-area">
+      <!-- pinned timescale container -->
+      <div class="timescale-container">
+        <div class="timescale" id="timescale"></div>
+      </div>
+      <!-- chart rows container (bars) -->
+      <div id="chartRowsContainer"></div>
+    </div>
+  </div>
+
+  <!-- A hidden overlay editor for double-click on bar -->
+  <div id="barEditor">
+    <input type="text" id="barTextInput" placeholder="Bar text..." />
+    <input type="color" id="barColorPicker" />
+    <div id="barEditorActions">
+      <button id="barEditorOkBtn" class="btn btn-sm btn-primary">OK</button>
+    </div>
+  </div>
+
+  <!-- Modal for Import JSON -->
+  <div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Import Data (JSON)</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" 
+                  aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <textarea id="importJsonTextarea" 
+                    placeholder="Paste your JSON data here..." 
+                    style="width:100%; height:300px;"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+          </button>
+          <button id="importDataBtn" type="button" class="btn btn-primary">
+            Import
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Export JSON -->
+  <div class="modal fade" id="exportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Export Data (JSON)</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" 
+                  aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <textarea id="exportJsonTextarea" readonly style="width:100%; height:300px;"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Close
+          </button>
+          <button id="downloadJsonBtn" type="button" class="btn btn-success">
+            Download
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS bundle (for modal, etc.) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    /* 
+      Data Model:
+      lines: [
+        {
+          id: number,
+          name: string,
+          bars: [
+            {
+              id: number,
+              text: string,
+              startAbsWeek: number,   // absolute start index
+              length: number,        // number of weeks
+              color: string,
+              selected: boolean
+            }, ...
+          ]
+        },
+        ...
+      ]
+      Also store startYear, startWeek, endYear, endWeek
+      plus counters for new line/bar IDs.
+    */
+
+    // Sample data
+    let lines = [
+      {
+        id: 1,
+        name: "Line Item 1",
+        bars: [
+          {
+            id: 101,
+            text: "Bar A",
+            startAbsWeek: toAbsoluteWeek(2023, 2),
+            length: 4,
+            color: "#0d6efd",
+            selected: false,
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: "Line Item 2",
+        bars: [
+          {
+            id: 102,
+            text: "Bar B",
+            startAbsWeek: toAbsoluteWeek(2023, 10),
+            length: 7,
+            color: "#dc3545",
+            selected: false,
+          },
+        ],
+      },
+    ];
+
+    // Default timescale
+    let startYear = 2023;
+    let startWeek = 1;
+    let endYear = 2023;
+    let endWeek = 52;
+
+    // ID counters
+    let lineCounter = 2;
+    let barCounter = 102;
+
+    // Grab references to key DOM elements
+    const lineItemsContainer = document.getElementById("lineItemsContainer");
+    const chartRowsContainer = document.getElementById("chartRowsContainer");
+    const timescaleDiv = document.getElementById("timescale");
+    const addLineItemBtn = document.getElementById("addLineItemBtn");
+    const addBarBtn = document.getElementById("addBarBtn");
+    const barColorInput = document.getElementById("barColorInput");
+    const importJsonBtn = document.getElementById("importJsonBtn");
+    const exportJsonBtn = document.getElementById("exportJsonBtn");
+    const importModal = new bootstrap.Modal(document.getElementById("importModal"));
+    const exportModal = new bootstrap.Modal(document.getElementById("exportModal"));
+    const importJsonTextarea = document.getElementById("importJsonTextarea");
+    const exportJsonTextarea = document.getElementById("exportJsonTextarea");
+    const importDataBtn = document.getElementById("importDataBtn");
+    const downloadJsonBtn = document.getElementById("downloadJsonBtn");
+    const startYearInput = document.getElementById("startYearInput");
+    const startWeekInput = document.getElementById("startWeekInput");
+    const endYearInput = document.getElementById("endYearInput");
+    const endWeekInput = document.getElementById("endWeekInput");
+    const applyTimescaleBtn = document.getElementById("applyTimescaleBtn");
+
+    // The small editor overlay for double-click
+    const barEditor = document.getElementById("barEditor");
+    const barTextInput = document.getElementById("barTextInput");
+    const barColorPicker = document.getElementById("barColorPicker");
+    const barEditorOkBtn = document.getElementById("barEditorOkBtn");
+
+    // Keep track of which bar is currently being edited (double-click)
+    let currentEditorBar = null;
+
+    // Convert (year,week) to absolute index (52 weeks/year approach)
+    function toAbsoluteWeek(year, week) {
+      return year * 52 + (week - 1);
+    }
+
+    // Convert absolute index back to (year,week)
+    function fromAbsoluteWeek(absWeek) {
+      const y = Math.floor(absWeek / 52);
+      const w = absWeek % 52 + 1;
+      return { year: y, week: w };
+    }
+
+    // Save chart state to localStorage
+    function saveToLocalStorage() {
+      const chartData = {
+        lines,
+        startYear, startWeek, endYear, endWeek,
+        lineCounter, barCounter
+      };
+      localStorage.setItem("ganttChartData", JSON.stringify(chartData));
+    }
+
+    // Load chart state from localStorage (if exists)
+    function loadFromLocalStorage() {
+      const stored = localStorage.getItem("ganttChartData");
+      if (!stored) return;
+      try {
+        const parsed = JSON.parse(stored);
+        lines = parsed.lines || [];
+        startYear = parsed.startYear || 2023;
+        startWeek = parsed.startWeek || 1;
+        endYear = parsed.endYear || 2023;
+        endWeek = parsed.endWeek || 52;
+        lineCounter = parsed.lineCounter || 0;
+        barCounter = parsed.barCounter || 0;
+      } catch (err) {
+        console.warn("Invalid localStorage data, ignoring.");
+      }
+    }
+
+    // Return all bars that are selected
+    function getSelectedBars() {
+      const selected = [];
+      lines.forEach(line => {
+        line.bars.forEach(bar => {
+          if (bar.selected) selected.push(bar);
+        });
+      });
+      return selected;
+    }
+
+    // Unselect all bars
+    function unselectAllBars() {
+      lines.forEach(line => {
+        line.bars.forEach(bar => bar.selected = false);
+      });
+    }
+
+    // Multi-select logic
+    function handleBarClickSelect(bar, event) {
+      const isMulti = event.shiftKey || event.ctrlKey || event.metaKey;
+      if (!isMulti) {
+        unselectAllBars();
+        bar.selected = true;
+      } else {
+        bar.selected = !bar.selected;
+      }
+    }
+
+    // Update color input enabling/disabling
+    function updateColorPickerState() {
+      const sel = getSelectedBars();
+      if (sel.length == 0) {
+        barColorInput.disabled = true;
+      } else {
+        barColorInput.disabled = false;
+        barColorInput.value = sel[0].color || "#0d6efd";
+      }
+    }
+
+    // Compute displayStart, displayEnd in absolute weeks, handling reversed inputs
+    function getDisplayRange() {
+      let ds = toAbsoluteWeek(startYear, startWeek);
+      let de = toAbsoluteWeek(endYear, endWeek);
+      if (ds > de) {
+        [ds, de] = [de, ds]; // swap if reversed
+      }
+      return { displayStart: ds, displayEnd: de };
+    }
+
+    // Render the timescale
+    function renderTimescale() {
+      timescaleDiv.innerHTML = "";
+      const { displayStart, displayEnd } = getDisplayRange();
+      const totalWeeks = displayEnd - displayStart + 1;
+      if (totalWeeks < 1) {
+        timescaleDiv.style.width = "0px";
+        return;
+      }
+      for (let i = 0; i < totalWeeks; i++) {
+        const currentAbs = displayStart + i;
+        const { year, week } = fromAbsoluteWeek(currentAbs);
+        const cell = document.createElement("div");
+        cell.className = "timescale-cell";
+        cell.textContent = `${year}-W${week}`;
+        timescaleDiv.appendChild(cell);
+      }
+      // set total width
+      timescaleDiv.style.width = (totalWeeks * 150) + "px";
+    }
+
+    // Render lines and bars
+    function renderLines() {
+      lineItemsContainer.innerHTML = "";
+      chartRowsContainer.innerHTML = "";
+
+      const { displayStart, displayEnd } = getDisplayRange();
+      const totalWeeks = displayEnd - displayStart + 1;
+      if (totalWeeks < 1) {
+        chartRowsContainer.style.width = "0px";
+        return;
+      }
+      chartRowsContainer.style.width = (totalWeeks * 150) + "px";
+
+      lines.forEach(line => {
+        // left label row
+        const labelRow = document.createElement("div");
+        labelRow.className = "line-item-row";
+
+        // remove line btn
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "remove-line-btn";
+        removeBtn.innerHTML = "×";
+        removeBtn.title = "Remove this line";
+        removeBtn.addEventListener("click", () => {
+          removeLineItem(line.id);
+        });
+        labelRow.appendChild(removeBtn);
+
+        // name input
+        const nameInput = document.createElement("input");
+        nameInput.className = "line-item-input";
+        nameInput.value = line.name;
+        nameInput.addEventListener("click", e => e.stopPropagation());
+        nameInput.addEventListener("change", () => {
+          line.name = nameInput.value;
+          saveToLocalStorage();
+        });
+        labelRow.appendChild(nameInput);
+
+        lineItemsContainer.appendChild(labelRow);
+
+        // right chart row
+        const chartLineRow = document.createElement("div");
+        chartLineRow.className = "chart-line-row";
+
+        const chartRowInner = document.createElement("div");
+        chartRowInner.className = "chart-row";
+        chartRowInner.style.width = (totalWeeks * 150) + "px";
+
+        // each bar
+        line.bars.forEach(bar => {
+          const barStart = bar.startAbsWeek;
+          const barEnd = barStart + bar.length;
+          // clip to [displayStart, displayEnd]
+          const overlapStart = Math.max(displayStart, barStart);
+          const overlapEnd = Math.min(displayEnd, barEnd);
+          const overlapLen = overlapEnd - overlapStart;
+          if (overlapLen <= 0) return;
+
+          const barLeft = (overlapStart - displayStart) * 150;
+          const barWidth = overlapLen * 150;
+          const barDiv = document.createElement("div");
+          barDiv.classList.add("bar");
+          if (bar.selected) barDiv.classList.add("selected");
+          barDiv.style.left = barLeft + "px";
+          barDiv.style.width = barWidth + "px";
+          barDiv.style.backgroundColor = bar.color || "#0d6efd";
+          barDiv.textContent = bar.text;
+
+          // handles
+          const leftHandle = document.createElement("div");
+          leftHandle.classList.add("bar-handle", "left");
+          barDiv.appendChild(leftHandle);
+
+          const rightHandle = document.createElement("div");
+          rightHandle.classList.add("bar-handle", "right");
+          barDiv.appendChild(rightHandle);
+
+          // single-click => selection
+          barDiv.addEventListener("click", e => {
+            e.stopPropagation();
+            handleBarClickSelect(bar, e);
+            renderLines();
+            updateColorPickerState();
+            saveToLocalStorage();
+          });
+
+          // double-click => open overlay editor
+          barDiv.addEventListener("dblclick", e => {
+            e.stopPropagation();
+            showBarEditor(bar, e.clientX, e.clientY);
+          });
+
+          // drag/resize mouse down
+          barDiv.addEventListener("mousedown", e => onBarMouseDown(e, line, bar));
+
+          chartRowInner.appendChild(barDiv);
+        });
+
+        chartLineRow.appendChild(chartRowInner);
+        chartRowsContainer.appendChild(chartLineRow);
+      });
+
+      updateColorPickerState();
+    }
+
+    // Remove a line
+    function removeLineItem(id) {
+      lines = lines.filter(l => l.id !== id);
+      renderTimescale();
+      renderLines();
+      saveToLocalStorage();
+    }
+
+    // Dragging logic
+    let dragging = false;
+    let dragType = null;  // "move", "resize-left", or "resize-right"
+    let dragStartX = 0;
+    let initialStartAbs = 0;
+    let initialLength = 0;
+    let currentBar = null;
+
+    // On mouse down on bar
+    function onBarMouseDown(e, line, bar) {
+      if (e.target.classList.contains("bar-handle")) {
+        if (e.target.classList.contains("left")) {
+          dragType = "resize-left";
+        } else {
+          dragType = "resize-right";
+        }
+      } else {
+        dragType = "move";
+      }
+      dragging = true;
+      currentBar = bar;
+      dragStartX = e.clientX;
+      initialStartAbs = bar.startAbsWeek;
+      initialLength = bar.length;
+      e.preventDefault();
+    }
+
+    // On mouse move
+    document.addEventListener("mousemove", e => {
+      if (!dragging || !currentBar) return;
+      const dx = e.clientX - dragStartX;
+      const dWeeks = dx / 150;
+      if (dragType === "move") {
+        let newStart = initialStartAbs + dWeeks;
+        currentBar.startAbsWeek = Math.max(0, Math.round(newStart));
+      } else if (dragType === "resize-left") {
+        let newStart = initialStartAbs + dWeeks;
+        newStart = Math.round(newStart);
+        let oldEnd = initialStartAbs + initialLength;
+        let newLength = oldEnd - newStart;
+        if (newLength < 1) {
+          newLength = 1;
+          newStart = oldEnd - 1;
+        }
+        if (newStart < 0) {
+          newStart = 0;
+          newLength = oldEnd;
+        }
+        currentBar.startAbsWeek = newStart;
+        currentBar.length = newLength;
+      } else if (dragType === "resize-right") {
+        let newEnd = initialStartAbs + initialLength + dWeeks;
+        newEnd = Math.round(newEnd);
+        if (newEnd < initialStartAbs + 1) {
+          newEnd = initialStartAbs + 1;
+        }
+        currentBar.length = newEnd - initialStartAbs;
+      }
+      renderLines();
+    });
+
+    // On mouse up: stop dragging
+    document.addEventListener("mouseup", () => {
+      if (dragging) {
+        dragging = false;
+        dragType = null;
+        currentBar = null;
+        saveToLocalStorage();
+      }
+    });
+
+    // Click outside bars => unselect
+    document.addEventListener("click", () => {
+      if (!dragging) {
+        unselectAllBars();
+        renderLines();
+        saveToLocalStorage();
+      }
+    });
+
+    // Keyboard shortcuts: arrow keys
+    document.addEventListener("keydown", e => {
+      const selected = getSelectedBars();
+      if (!selected.length) return;
+
+      if (e.key === "ArrowLeft") {
+        selected.forEach(b => {
+          b.startAbsWeek = Math.max(0, b.startAbsWeek - 1);
+        });
+        renderLines();
+        saveToLocalStorage();
+        e.preventDefault();
+      } else if (e.key === "ArrowRight") {
+        selected.forEach(b => {
+          b.startAbsWeek = Math.max(0, b.startAbsWeek + 1);
+        });
+        renderLines();
+        saveToLocalStorage();
+        e.preventDefault();
+      } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        lines.forEach((line, index) => {
+          const barsToMove = line.bars.filter(b => b.selected);
+          if (!barsToMove.length) return;
+          if (e.key === "ArrowUp" && index > 0) {
+            lines[index].bars = line.bars.filter(b => !b.selected);
+            lines[index - 1].bars.push(...barsToMove);
+          } else if (e.key === "ArrowDown" && index < lines.length - 1) {
+            lines[index].bars = line.bars.filter(b => !b.selected);
+            lines[index + 1].bars.push(...barsToMove);
+          }
+        });
+        renderLines();
+        saveToLocalStorage();
+        e.preventDefault();
+      }
+    });
+
+    // Add line item
+    addLineItemBtn.addEventListener("click", () => {
+      lineCounter++;
+      lines.push({
+        id: lineCounter,
+        name: "Line Item " + lineCounter,
+        bars: [],
+      });
+      renderTimescale();
+      renderLines();
+      saveToLocalStorage();
+    });
+
+    // Add bar
+    addBarBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      barCounter++;
+      const { displayStart } = getDisplayRange();
+      const newBar = {
+        id: barCounter,
+        text: "New Bar " + barCounter,
+        startAbsWeek: displayStart,
+        length: 4,
+        color: "#0d6efd",
+        selected: false,
+      };
+      if (!lines.length) {
+        lineCounter = 1;
+        lines.push({ id: 1, name: "Line Item 1", bars: [] });
+      }
+      lines[lines.length - 1].bars.push(newBar);
+      renderTimescale();
+      renderLines();
+      saveToLocalStorage();
+    });
+
+    // Color input -> update color of all selected bars
+    barColorInput.addEventListener("change", e => {
+      const selected = getSelectedBars();
+      if (!selected.length) return;
+      selected.forEach(bar => {
+        bar.color = e.target.value;
+      });
+      renderLines();
+      saveToLocalStorage();
+    });
+
+    // Import/Export
+    importJsonBtn.addEventListener("click", () => {
+      importJsonTextarea.value = "";
+      importModal.show();
+    });
+    exportJsonBtn.addEventListener("click", () => {
+      const dataStr = JSON.stringify({
+        lines,
+        startYear, startWeek, endYear, endWeek,
+        lineCounter, barCounter
+      }, null, 2);
+      exportJsonTextarea.value = dataStr;
+      exportModal.show();
+    });
+    importDataBtn.addEventListener("click", () => {
+      const txt = importJsonTextarea.value.trim();
+      if (!txt) return;
+      try {
+        const imported = JSON.parse(txt);
+        lines = imported.lines || [];
+        startYear = imported.startYear || 2023;
+        startWeek = imported.startWeek || 1;
+        endYear = imported.endYear || 2023;
+        endWeek = imported.endWeek || 52;
+        lineCounter = imported.lineCounter || 0;
+        barCounter = imported.barCounter || 0;
+        renderTimescale();
+        renderLines();
+        saveToLocalStorage();
+        importModal.hide();
+      } catch (err) {
+        alert("Invalid JSON");
+      }
+    });
+    downloadJsonBtn.addEventListener("click", () => {
+      const dataStr = exportJsonTextarea.value;
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.download = "gantt-data.json";
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Apply timescale
+    applyTimescaleBtn.addEventListener("click", () => {
+      const sy = parseInt(startYearInput.value, 10);
+      const sw = parseInt(startWeekInput.value, 10);
+      const ey = parseInt(endYearInput.value, 10);
+      const ew = parseInt(endWeekInput.value, 10);
+      if (isNaN(sy) || sy < 1) {
+        alert("Invalid start year");
+        return;
+      }
+      if (isNaN(sw) || sw < 1 || sw > 52) {
+        alert("Invalid start week (1-52)");
+        return;
+      }
+      if (isNaN(ey) || ey < 1) {
+        alert("Invalid end year");
+        return;
+      }
+      if (isNaN(ew) || ew < 1 || ew > 52) {
+        alert("Invalid end week (1-52)");
+        return;
+      }
+      startYear = sy;
+      startWeek = sw;
+      endYear = ey;
+      endWeek = ew;
+      renderTimescale();
+      renderLines();
+      saveToLocalStorage();
+    });
+
+    // Show the bar editor overlay at a certain (x, y) with the bar's data
+    function showBarEditor(bar, x, y) {
+      currentEditorBar = bar;
+      // fill the fields
+      barTextInput.value = bar.text;
+      barColorPicker.value = bar.color;
+      // position near the mouse click
+      barEditor.style.display = "block";
+      barEditor.style.left = (x + window.scrollX) + "px";
+      barEditor.style.top = (y + window.scrollY) + "px";
+    }
+
+    // When user clicks "OK" in the bar editor
+    barEditorOkBtn.addEventListener("click", () => {
+      if (currentEditorBar) {
+        // update bar with new text/color
+        currentEditorBar.text = barTextInput.value;
+        currentEditorBar.color = barColorPicker.value;
+        // hide editor
+        barEditor.style.display = "none";
+        currentEditorBar = null;
+        renderLines();
+        saveToLocalStorage();
+      }
+    });
+
+    // If user clicks anywhere outside the barEditor, hide it
+    document.addEventListener("mousedown", e => {
+      if (barEditor.style.display === "block") {
+        const editorRect = barEditor.getBoundingClientRect();
+        const inside =
+          e.clientX >= editorRect.left &&
+          e.clientX <= editorRect.right &&
+          e.clientY >= editorRect.top &&
+          e.clientY <= editorRect.bottom;
+        if (!inside && currentEditorBar) {
+          // apply changes
+          currentEditorBar.text = barTextInput.value;
+          currentEditorBar.color = barColorPicker.value;
+          barEditor.style.display = "none";
+          currentEditorBar = null;
+          renderLines();
+          saveToLocalStorage();
+        }
+      }
+    });
+
+    // Sync horizontal scroll of timescale with the chart area
+    const chartArea = document.querySelector(".chart-area");
+    chartArea.addEventListener("scroll", () => {
+      // we move the timescale container's scrollLeft too
+      timescaleDiv.parentElement.scrollLeft = chartArea.scrollLeft;
+    });
+
+    // Load from localStorage & initial render
+    loadFromLocalStorage();
+    renderTimescale();
+    renderLines();
+  </script>
+</body>
+</html>
