@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <!-- Page Title: Shown in browser tab -->
   <title>Advanced Gantt Chart</title>
-  <!-- Bootstrap 5 CSS via CDN: Loads grid, navbar, modals, buttons. Tweak: Change version for updates -->
+  <!-- Bootstrap 5 CSS via CDN: Loads grid, navbar, modals, buttons -->
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
@@ -17,59 +17,94 @@
       font-family: Arial, sans-serif;
     }
 
-    /* Navbar: no extra margin: Removes space under navbar so timescale sticks cleanly */
+    /* Navbar: Sticky at top, always visible */
     .navbar {
-      margin-bottom: 0;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background-color: #f8f9fa;
     }
 
-    /*
-      Main container for the Gantt layout:
-      - Flex row for sidebar + chart
-      - gap:1rem adds spacing
-      - margin:0 1rem for horizontal padding
-      - position:relative for absolute children (e.g., editor)
-      Debug: If columns collapse, check flex-direction
-    */
+    /* Main container: Full width */
     .gantt-container {
-      display: flex;       /* side-by-side: left sidebar + right chart */
-      flex-direction: row;
-      gap: 1rem;
-      margin: 0 1rem;      /* some horizontal margin */
-      position: relative;  /* so we can position the sidebar or editor absolutely if needed */
-    }
-
-    /*
-      Left sidebar is pushed down by ~40px so its first line item
-      lines up better with the first row of bars (which is under the timescale).
-      Adjust this if you need a different alignment.
-      Tweak: Change 60px if header height changes
-    */
-    .sidebar {
-      margin-top: 40px;    /* SHIFT the first line item below the timescale header */
-      min-width: 240px;
-      border-right: 1px solid #dee2e6;
-    }
-
-    /* Each line item row in the sidebar: Fixed height 40px, flex for alignment */
-    .line-item-row {
-      display: flex;
-      align-items: center;
-      border-bottom: 1px solid #dee2e6;
-      height: 40px;
+      margin: 0 1rem;
       position: relative;
     }
 
-    /* Button "X" to remove a line: Red × button, hover cursor pointer */
+    /* Cohesive table: Native HTML table for perfect alignment */
+    #ganttTable {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed; /* Ensures column widths consistent */
+    }
+
+    /* Header row: Sticky top */
+    #ganttTable thead th {
+      position: sticky;
+      top: 0px; /* Below navbar */
+      background-color: #f8f9fa;
+      z-index: 10;
+      border-bottom: 1px solid #dee2e6;
+      text-align: center;
+      font-size: 0.9rem;
+      padding: 4px 8px;
+      box-sizing: border-box;
+    }
+
+    /* Name header: Fixed width, left-aligned */
+    #nameHeader {
+      width: 240px;
+      text-align: center;
+      font-weight: bold;
+      background-color: #f8f9fa;
+      border-right: 1px solid #dee2e6;
+      z-index: 11;
+    }
+
+    /* Timescale headers: Dynamic width */
+    .timescale-header {
+      background-color: #e9ecef;
+      border-right: 1px solid #dee2e6;
+      min-width: 50px;
+    }
+
+    /* Table body: Scrollable */
+    #ganttTable tbody {
+      background-image: 
+        linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
+      background-size: var(--cell-width) 40px;
+    }
+
+    /* Row: Fixed height */
+    .gantt-row {
+      height: 40px;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    /* Name cell: Sticky left, contains input + remove */
+    .name-cell {
+      position: sticky;
+      left: 0;
+      background: white;
+      z-index: 9;
+      width: 240px;
+      border-right: 1px solid #dee2e6;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Remove line button: Red × */
     .remove-line-btn {
       background: none;
       border: none;
-      color: #dc3545; /* red */
+      color: #dc3545;
       font-weight: bold;
       margin: 0 6px 0 0;
       cursor: pointer;
     }
 
-    /* Editable text input for line item name: Transparent, focus outline */
+    /* Line item input: Transparent, editable */
     .line-item-input {
       flex: 1;
       border: none;
@@ -81,104 +116,47 @@
       outline: 1px solid #ccc;
     }
 
-    /*
-      The chart area to the right:
-      Contains the pinned timescale at top,
-      then the rows with bars below.
-      overflow-x:auto enables horizontal scrolling for both timescale and rows
-    */
-    .chart-area {
+    /* Bar container cell: Relative for absolute bars */
+    .bar-cell {
       position: relative;
-      flex: 1;
-      border-bottom: 1px solid #dee2e6;
-      overflow-x: auto; /* horizontal scroll for both timescale and rows */
-    }
-
-    /*
-      The timescale container is sticky at the top
-      and will remain visible as you scroll vertically,
-      but it will scroll horizontally in sync with the chart.
-      z-index:10 keeps it above rows
-    */
-    .timescale-container {
-      position: sticky;
-      top: 0;                  /* pinned to top */
-      z-index: 10;             /* above rows */
-      background-color: #f8f9fa; 
-      border-bottom: 1px solid #dee2e6;
-      /* overflow: hidden;        /* hide overflow; horizontal scroll is handled by chart-area */
-      white-space: nowrap;     /* keep cells on one line */
-    }
-
-    /* The row of timescale cells: Flex horizontal layout */
-    .timescale {
-      display: flex;       /* horizontal row of cells */
-      white-space: nowrap; 
-    }
-
-    /*
-      Each timescale cell is 150px wide
-      so that it matches the chart columns below.
-      Matches column grid width
-    */
-    .timescale-cell {
-      width: 150px;               /* match chart column width */
-      text-align: center;
-      font-size: 0.9rem;
-      background-color: #e9ecef;
       border-right: 1px solid #dee2e6;
-      padding: 4px 8px;
-      box-sizing: border-box;
     }
 
-    /* Container holding all chart rows with bar grids: Background grid via linear-gradient (150px × 40px) */
-    #chartRowsContainer {
+    /* Full row bar container: Spans all timescale columns */
+    .bar-row-container {
       position: relative;
-      /* Grid lines of 150px wide columns, 40px tall rows. */
-      background-image: 
-        linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
-      background-size: 150px 40px;
-    }
-
-    /* Each row in the chart for bars. Height = 40px to match sidebar. */
-    .chart-line-row {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      position: relative;
-      height: 40px;
-      border-bottom: 1px solid #dee2e6;
-    }
-
-    /* 
-      Absolute container inside each row, sized to total chart width.
-      Bars are absolutely placed inside here.
-    */
-    .chart-row {
-      position: absolute;
-      top: 0;
-      left: 0;
+      width: 100%;
       height: 100%;
     }
 
-    /* Each bar rectangle: Draggable, rounded, opacity 0.7, cursor:move */
+    /* Bar: Relative, rounded */
     .bar {
-      position: absolute;
+      position: Relative;
       height: 30px;
+      top: 5px;
       border-radius: 4px;
       color: #fff;
-      text-align: center;
-      line-height: 30px;
       cursor: move;
       user-select: none;
       opacity: 0.7;
+      overflow: hidden;
     }
     .bar.selected {
       outline: 2px solid #ffc107;
     }
 
-    /* Handles on left/right edges for resizing: 6px wide grips, col-resize cursor */
+    /* Bar text: Centered in visible portion */
+    .bar-text {
+      position: absolute;
+      top: 0;
+      height: 30px;
+      line-height: 30px;
+      white-space: nowrap;
+      pointer-events: none;
+      font-weight: 500;
+    }
+
+    /* Resize handles */
     .bar-handle {
       position: absolute;
       top: 0;
@@ -197,60 +175,130 @@
       border-radius: 0 4px 4px 0;
     }
 
-    /*
-      A small overlay editor (text input + color input) that appears
-      when user double-clicks a bar and hides when clicking away or pressing 'OK'.
-      Absolute positioned, high z-index
-    */
-    #barEditor {
-      position: absolute;       /* so we can place it near the bar or click location */
-      display: none;           /* hidden by default, shown on bar dblclick */
-      background: #fff;        /* white background */
-      border: 1px solid #ccc;  /* subtle border */
-      padding: 8px;
-      border-radius: 4px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-      z-index: 999;            /* above everything else */
+    /* Today line: Red vertical across table */
+    .today-line {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      background-color: #dc3545;
+      height: 100%;
+      z-index: 5;
+      pointer-events: none;
     }
-    #barEditor input {
-      margin-bottom: 6px;
+
+    /* Scrollable area: Enables horizontal/vertical scroll */
+    .table-wrapper {
+      overflow: auto;
+      max-height: calc(100vh - 96px);
+    }
+
+    /* Editor overlay */
+    #barEditor {
+      position: absolute;
+      display: none;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 12px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 999;
+      min-width: 280px;
+    }
+    #barEditor label {
+      display: block;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+    #barEditor input, #barEditor select {
+      margin-top: 4px;
       width: 100%;
     }
     #barEditorActions {
       display: flex;
       justify-content: flex-end;
-      gap: 6px;
+      gap: 8px;
+      margin-top: 12px;
     }
 
-    /* 
-      Basic responsiveness: stack sidebar above chart for narrow screens 
-    */
+    /* Zoom slider */
+    #zoomSlider {
+      width: 120px;
+      margin: 0 8px;
+    }
+
+    /* Print button */
+    #printBtn {
+      margin-left: 8px;
+    }
+
+    /* Legend */
+    #statusLegend {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-size: 0.85rem;
+      margin-left: 1rem;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .legend-swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+    }
+
+    /* Responsive */
     @media (max-width: 768px) {
-      .gantt-container {
-        flex-direction: column;
+      #nameHeader, .name-cell {
+        width: 180px;
       }
-      .sidebar {
-        margin-top: 10px; /* smaller shift on mobile */
-        min-width: 100%;
-        border-right: none;
-        border-bottom: 1px solid #dee2e6;
-      }
-      .timescale-container {
-        top: 0; /* pinned to top of screen still */
+      #zoomSlider {
+        width: 100px;
       }
     }
 
-    /* Hidden file input for import: Triggered by button click to open file explorer */
+    /* Hidden import */
     #importFileInput {
       display: none;
+    }
+
+    /* Help button */
+    #helpBtn {
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    #helpBtn:hover {
+      transform: scale(1.1);
+    }
+
+    /* Stats */
+    #statsDisplay {
+      font-size: 0.9rem;
+      color: #555;
+      margin-right: 1rem;
+    }
+
+    /* Print styles: Hide navbar, show full */
+    @media print {
+      .navbar, #barEditor {
+        display: none !important;
+      }
+      .table-wrapper {
+        overflow: visible;
+        max-height: none;
+      }
+      #ganttTable {
+        font-size: 10pt;
+      }
     }
   </style>
 </head>
 
 <body>
-  <!-- 
-    Bootstrap Navbar with Gantt configuration controls: Brand, toggler, timescale inputs, add buttons, color picker, import/export
-  -->
+  <!-- Sticky navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
       <a class="navbar-brand" href="#">Gantt Planner</a>
@@ -258,129 +306,121 @@
               type="button" 
               data-bs-toggle="collapse" 
               data-bs-target="#navbarSupportedContent"
-              aria-controls="navbarSupportedContent" 
+              aria-controls="navbarSupportedContent"
               aria-expanded="false"
               aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon">☰</span>
+        <span class="navbar-toggler-icon"></span>
       </button>
 
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <!-- Timescale input form (year/week range): Inputs for start/end year/week + Apply button -->
+        <!-- Timescale inputs -->
         <form class="d-flex align-items-center gap-2">
           <label for="startYearInput" class="form-label m-0">Start Y:</label>
-          <input
-            id="startYearInput"
-            type="number"
-            class="form-control form-control-sm"
-            value="2025"
-            style="width:72px;"
-          />
+          <input id="startYearInput" type="number" class="form-control form-control-sm" value="2025" style="width:72px;" />
           <label for="startWeekInput" class="form-label m-0">Wk:</label>
-          <input
-            id="startWeekInput"
-            type="number"
-            class="form-control form-control-sm"
-            value="1"
-            style="width:50px;"
-          />
+          <input id="startWeekInput" type="number" class="form-control form-control-sm" value="1" style="width:50px;" />
           <label for="endYearInput" class="form-label m-0">End Y:</label>
-          <input
-            id="endYearInput"
-            type="number"
-            class="form-control form-control-sm"
-            value="2025"
-            style="width:72px;"
-          />
+          <input id="endYearInput" type="number" class="form-control form-control-sm" value="2025" style="width:72px;" />
           <label for="endWeekInput" class="form-label m-0">Wk:</label>
-          <input
-            id="endWeekInput"
-            type="number"
-            class="form-control form-control-sm"
-            value="52"
-            style="width:50px;"
-          />
-          <button id="applyTimescaleBtn" type="button" class="btn btn-secondary btn-sm">
-            Apply
-          </button>
+          <input id="endWeekInput" type="number" class="form-control form-control-sm" value="52" style="width:50px;" />
+          <button id="applyTimescaleBtn" type="button" class="btn btn-secondary btn-sm">Apply</button>
         </form>
 
-        <!-- Controls: Add lines/bars, color picker, import/export -->
-        <div class="d-flex ms-auto gap-2">
+        <!-- Stats -->
+        <div id="statsDisplay" class="d-flex align-items-center ms-3">
+          Lines: <span id="lineCount">0</span> | Bars: <span id="barCount">0</span>
+        </div>
+
+        <!-- Legend -->
+        <div id="statusLegend" class="d-flex align-items-center">
+          <div class="legend-item"><div class="legend-swatch" style="background:#28a745;"></div><span>Secured</span></div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#fd7e14;"></div><span>Proposed</span></div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#dc3545;"></div><span>Opportunity</span></div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#6f42c1;"></div><span>Future</span></div>
+        </div>
+
+        <!-- Zoom slider -->
+        <div class="d-flex align-items-center ms-3">
+          <label for="zoomSlider" class="form-label m-0 me-2">Zoom:</label>
+          <input type="range" class="form-range" id="zoomSlider" min="50" max="300" value="150" step="10">
+        </div>
+
+        <!-- Controls -->
+        <div class="d-flex ms-auto gap-2 align-items-center">
           <button id="addLineItemBtn" class="btn btn-primary btn-sm">Add Line</button>
           <button id="addBarBtn" class="btn btn-secondary btn-sm">Add Bar</button>
-
-          <input
-            id="barColorInput"
-            type="color"
-            class="form-control form-control-color form-control-sm"
-            value="#0d6efd"
-            title="Bar Color"
-            style="width:48px;"
-            disabled
-          />
-          <!-- Import JSON: Now triggers hidden file input (opens file explorer) -->
-          <button id="importJsonBtn" class="btn btn-outline-success btn-sm">Import JSON</button>
-          <!-- Export JSON: Now triggers immediate download (no modal) -->
+          <button id="importJsonBtn" class="btn btn-outline-success btn-sm">Import JSON/CSV</button>
           <button id="exportJsonBtn" class="btn btn-outline-info btn-sm">Export JSON</button>
+          <button id="downloadCsvBtn" class="btn btn-outline-secondary btn-sm">Download CSV</button>
+          <button id="printBtn" class="btn btn-outline-dark btn-sm">Print/PDF</button>
+          <svg id="helpBtn" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 14.5v.5h-2v-1c0-1.11.45-2.11 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" fill="#0d6efd"/>
+          </svg>
         </div>
       </div>
     </div>
   </nav>
 
-  <!-- 
-    The main two-column Gantt layout:
-    Left = line items, Right = chart with timescale pinned at top
-  -->
+  <!-- Main cohesive table -->
   <div class="gantt-container">
-    <!-- Sidebar (Line items): Dynamically filled with task rows -->
-    <div class="sidebar" id="lineItemsContainer">
-      <!-- line item rows filled dynamically -->
-    </div>
-
-    <!-- Right chart area with pinned timescale at top -->
-    <div class="chart-area">
-      <!-- pinned timescale container: Sticky week headers -->
-      <div class="timescale-container">
-        <div class="timescale" id="timescale"></div>
-      </div>
-      <!-- chart rows container (bars): Where bar rows are injected -->
-      <div id="chartRowsContainer"></div>
+    <div class="table-wrapper">
+      <table id="ganttTable">
+        <thead>
+          <tr id="headerRow">
+            <th id="nameHeader">Tasks</th>
+            <!-- Timescale headers injected here -->
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- Rows injected here -->
+        </tbody>
+      </table>
+      <div id="todayLineContainer"></div> <!-- For today line overlay -->
     </div>
   </div>
 
-  <!-- A hidden overlay editor for double-click on bar: Text + color inputs, OK button -->
+  <!-- Bar editor -->
   <div id="barEditor">
+    <label for="barTextInput">Bar Text:</label>
     <input type="text" id="barTextInput" placeholder="Bar text..." />
-    <input type="color" id="barColorPicker" />
+    <label for="barStatusSelect">Status:</label>
+    <select id="barStatusSelect">
+      <option value="secured">Secured</option>
+      <option value="proposed">Proposed</option>
+      <option value="opportunity">Opportunity</option>
+      <option value="future">Future</option>
+    </select>
+    <label for="startYearSelect">Start Year:</label>
+    <select id="startYearSelect"></select>
+    <label for="startWeekSelect">Start Week:</label>
+    <select id="startWeekSelect"></select>
+    <label for="endYearSelect">End Year:</label>
+    <select id="endYearSelect"></select>
+    <label for="endWeekSelect">End Week:</label>
+    <select id="endWeekSelect"></select>
     <div id="barEditorActions">
+      <button id="barDeleteBtn" class="btn btn-sm btn-danger">Delete Bar</button>
       <button id="barEditorOkBtn" class="btn btn-sm btn-primary">OK</button>
+      <button id="barEditorCancelBtn" class="btn btn-sm btn-secondary">Cancel</button>
     </div>
   </div>
 
-  <!-- Hidden file input for Import JSON: accept=".json" restricts to JSON files, triggers file selection dialog -->
-  <input type="file" id="importFileInput" accept=".json" />
+  <!-- Hidden import -->
+  <input type="file" id="importFileInput" accept=".json,.csv" />
 
-  <!-- Bootstrap JS bundle (for modal, etc.): Enables modals, collapse, etc. (modals removed but kept for future) -->
+  <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    /* 
-      Data Model:
-      lines: array of line objects
-        - id: unique number
-        - name: string
-        - bars: array of bar objects
-          - id: unique number
-          - text: string
-          - startAbsWeek: absolute week index (year*52 + week-1)
-          - length: weeks duration
-          - color: hex string
-          - selected: boolean
-      Global: startYear, startWeek, endYear, endWeek for timescale
-      Counters: lineCounter, barCounter for new IDs
-    */
+    // Status colors: Map status to hex
+    const statusColors = {
+      secured: "#28a745",
+      proposed: "#fd7e14",
+      opportunity: "#dc3545",
+      future: "#6f42c1"
+    };
 
-    // Sample data: Initial two lines with bars
+    // Sample data: Initial lines and bars
     let lines = [
       {
         id: 1,
@@ -389,9 +429,9 @@
           {
             id: 101,
             text: "Bar A",
-            startAbsWeek: toAbsoluteWeek(2023, 2),
+            status: "secured",
+            startAbsWeek: toAbsoluteWeek(2025, 2),
             length: 4,
-            color: "#0d6efd",
             selected: false,
           },
         ],
@@ -403,109 +443,178 @@
           {
             id: 102,
             text: "Bar B",
-            startAbsWeek: toAbsoluteWeek(2023, 10),
+            status: "proposed",
+            startAbsWeek: toAbsoluteWeek(2025, 10),
             length: 7,
-            color: "#dc3545",
             selected: false,
           },
         ],
       },
     ];
 
-    // Default timescale: Full year 2023
-    let startYear = 2023;
+    // Timescale defaults
+    let startYear = 2025;
     let startWeek = 1;
-    let endYear = 2023;
+    let endYear = 2025;
     let endWeek = 52;
 
-    // ID counters: Start after sample data
+    // Counters for unique IDs
     let lineCounter = 2;
     let barCounter = 102;
 
-    // Grab references to key DOM elements: Cache for performance
-    const lineItemsContainer = document.getElementById("lineItemsContainer");
-    const chartRowsContainer = document.getElementById("chartRowsContainer");
-    const timescaleDiv = document.getElementById("timescale");
+    // Zoom: Column width in px
+    let cellWidth = 150;
+
+    // Clipboard for copy/paste
+    let clipboard = [];
+
+    // DOM elements
+    const ganttTable = document.getElementById("ganttTable");
+    const headerRow = document.getElementById("headerRow");
+    const tableBody = document.getElementById("tableBody");
+    const todayLineContainer = document.getElementById("todayLineContainer");
     const addLineItemBtn = document.getElementById("addLineItemBtn");
     const addBarBtn = document.getElementById("addBarBtn");
-    const barColorInput = document.getElementById("barColorInput");
     const importJsonBtn = document.getElementById("importJsonBtn");
     const exportJsonBtn = document.getElementById("exportJsonBtn");
-    const importFileInput = document.getElementById("importFileInput"); // New: Hidden file input
+    const downloadCsvBtn = document.getElementById("downloadCsvBtn");
+    const printBtn = document.getElementById("printBtn");
+    const helpBtn = document.getElementById("helpBtn");
+    const importFileInput = document.getElementById("importFileInput");
     const startYearInput = document.getElementById("startYearInput");
     const startWeekInput = document.getElementById("startWeekInput");
     const endYearInput = document.getElementById("endYearInput");
     const endWeekInput = document.getElementById("endWeekInput");
     const applyTimescaleBtn = document.getElementById("applyTimescaleBtn");
+    const lineCountSpan = document.getElementById("lineCount");
+    const barCountSpan = document.getElementById("barCount");
+    const zoomSlider = document.getElementById("zoomSlider");
 
-    // The small editor overlay for double-click: References to inputs/buttons
+    // Editor elements
     const barEditor = document.getElementById("barEditor");
     const barTextInput = document.getElementById("barTextInput");
-    const barColorPicker = document.getElementById("barColorPicker");
+    const barStatusSelect = document.getElementById("barStatusSelect");
+    const startYearSelect = document.getElementById("startYearSelect");
+    const startWeekSelect = document.getElementById("startWeekSelect");
+    const endYearSelect = document.getElementById("endYearSelect");
+    const endWeekSelect = document.getElementById("endWeekSelect");
     const barEditorOkBtn = document.getElementById("barEditorOkBtn");
+    const barEditorCancelBtn = document.getElementById("barEditorCancelBtn");
+    const barDeleteBtn = document.getElementById("barDeleteBtn");
 
-    // Keep track of which bar is currently being edited (double-click)
+    // Editor state
     let currentEditorBar = null;
+    let currentEditorLine = null;
 
-    // Convert (year,week) to absolute index (52 weeks/year approach): year*52 + (week-1)
+    // Drag state
+    let dragging = false;
+    let dragType = null;
+    let dragStartX = 0;
+    let initialStartAbs = 0;
+    let initialLength = 0;
+    let currentBar = null;
+    let currentLine = null;
+
+    // Absolute week conversion: Year*52 + (week-1)
     function toAbsoluteWeek(year, week) {
       return year * 52 + (week - 1);
     }
 
-    // Convert absolute index back to (year,week): Floor divide by 52, modulo for week
+    // From absolute to {year, week}
     function fromAbsoluteWeek(absWeek) {
       const y = Math.floor(absWeek / 52);
-      const w = absWeek % 52 + 1;
+      const w = (absWeek % 52) + 1;
       return { year: y, week: w };
     }
 
-    // Save chart state to localStorage: Persists lines, timescale, counters
+    // Get color from status
+    function getColorFromStatus(status) {
+      return statusColors[status] || "#fd7e14";
+    }
+
+    // Populate year/week selects in editor
+    function populateDateSelects() {
+      [startYearSelect, endYearSelect].forEach(sel => {
+        sel.innerHTML = "";
+        for (let y = 2010; y <= 2030; y++) {
+          const opt = document.createElement("option");
+          opt.value = y;
+          opt.textContent = y;
+          sel.appendChild(opt);
+        }
+      });
+      [startWeekSelect, endWeekSelect].forEach(sel => {
+        sel.innerHTML = "";
+        for (let w = 1; w <= 52; w++) {
+          const opt = document.createElement("option");
+          opt.value = w;
+          opt.textContent = w;
+          sel.appendChild(opt);
+        }
+      });
+    }
+
+    // Set global cell width (zoom)
+    function setCellWidth(width) {
+      cellWidth = width;
+      document.documentElement.style.setProperty('--cell-width', width + 'px');
+      ganttTable.style.setProperty('--cell-width', width + 'px');
+      renderTable();
+    }
+
+    // Save to localStorage
     function saveToLocalStorage() {
-      const chartData = {
-        lines,
-        startYear, startWeek, endYear, endWeek,
-        lineCounter, barCounter
-      };
+      const chartData = { lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth };
       localStorage.setItem("ganttChartData", JSON.stringify(chartData));
     }
 
-    // Load chart state from localStorage (if exists): Restores on page load
+    // Load from localStorage
     function loadFromLocalStorage() {
       const stored = localStorage.getItem("ganttChartData");
       if (!stored) return;
       try {
         const parsed = JSON.parse(stored);
         lines = parsed.lines || [];
-        startYear = parsed.startYear || 2023;
+        lines.forEach(line => line.bars.forEach(bar => { if (!bar.status) bar.status = "proposed"; }));
+        startYear = parsed.startYear || 2025;
         startWeek = parsed.startWeek || 1;
-        endYear = parsed.endYear || 2023;
+        endYear = parsed.endYear || 2025;
         endWeek = parsed.endWeek || 52;
         lineCounter = parsed.lineCounter || 0;
         barCounter = parsed.barCounter || 0;
+        cellWidth = parsed.cellWidth || 150;
       } catch (err) {
-        console.warn("Invalid localStorage data, ignoring.");
+        console.warn("Invalid localStorage data");
       }
     }
 
-    // Return all bars that are selected: Flattens across lines
+    // Get selected bars
     function getSelectedBars() {
       const selected = [];
-      lines.forEach(line => {
-        line.bars.forEach(bar => {
-          if (bar.selected) selected.push(bar);
-        });
-      });
+      lines.forEach(line => line.bars.forEach(bar => { if (bar.selected) selected.push({ bar, line }); }));
       return selected;
     }
 
-    // Unselect all bars: Clears selection state
-    function unselectAllBars() {
-      lines.forEach(line => {
-        line.bars.forEach(bar => bar.selected = false);
+    // Delete selected bars
+    function deleteBars(barsToDelete) {
+      barsToDelete.forEach(({ bar, line }) => {
+        line.bars = line.bars.filter(b => b.id !== bar.id);
       });
+      renderTable();
+      saveToLocalStorage();
     }
 
-    // Multi-select logic: Shift/Ctrl for toggle, else single select
+    // Count total bars
+    function getTotalBars() {
+      return lines.reduce((count, line) => count + line.bars.length, 0);
+    }
+
+    // Unselect all bars
+    function unselectAllBars() {
+      lines.forEach(line => line.bars.forEach(bar => bar.selected = false));
+    }
+
+    // Handle bar select (click/shift)
     function handleBarClickSelect(bar, event) {
       const isMulti = event.shiftKey || event.ctrlKey || event.metaKey;
       if (!isMulti) {
@@ -516,77 +625,115 @@
       }
     }
 
-    // Update color input enabling/disabling: Enable only if bars selected, sync first bar color
-    function updateColorPickerState() {
-      const sel = getSelectedBars();
-      if (sel.length == 0) {
-        barColorInput.disabled = true;
-      } else {
-        barColorInput.disabled = false;
-        barColorInput.value = sel[0].color || "#0d6efd";
-      }
-    }
-
-    // Compute displayStart, displayEnd in absolute weeks, handling reversed inputs: Swaps if needed
+    // Get display range (absolute weeks)
     function getDisplayRange() {
       let ds = toAbsoluteWeek(startYear, startWeek);
       let de = toAbsoluteWeek(endYear, endWeek);
-      if (ds > de) {
-        [ds, de] = [de, ds]; // swap if reversed
-      }
+      if (ds > de) [ds, de] = [de, ds];
       return { displayStart: ds, displayEnd: de };
     }
 
-    // Render the timescale: Clears and builds week cells (150px each)
-    function renderTimescale() {
-      timescaleDiv.innerHTML = "";
-      const { displayStart, displayEnd } = getDisplayRange();
-      const totalWeeks = displayEnd - displayStart + 1;
-      if (totalWeeks < 1) {
-        timescaleDiv.style.width = "0px";
-        return;
-      }
-      for (let i = 0; i < totalWeeks; i++) {
-        const currentAbs = displayStart + i;
-        const { year, week } = fromAbsoluteWeek(currentAbs);
-        const cell = document.createElement("div");
-        cell.className = "timescale-cell";
-        cell.textContent = `${year}-W${week}`;
-        timescaleDiv.appendChild(cell);
-      }
-      // set total width
-      timescaleDiv.style.width = (totalWeeks * 150) + "px";
+    // Today absolute week (Nov 3, 2025 = week 45 of 2025)
+    function getTodayAbsWeek() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const jan1 = new Date(year, 0, 1);
+      const dayOfYear = Math.floor((today - jan1) / 86400000) + 1;
+      const week = Math.ceil(dayOfYear / 7);
+      return toAbsoluteWeek(year, week);
     }
 
-    // Render lines and bars: Rebuilds sidebar and chart rows, clips bars to visible range
-    function renderLines() {
-      lineItemsContainer.innerHTML = "";
-      chartRowsContainer.innerHTML = "";
+    // Update bar text centering in visible area
+    function updateBarTextPositions() {
+      const wrapper = document.querySelector(".table-wrapper");
+      const scrollLeft = wrapper.scrollLeft - 240; // Offset for name column
+      const viewportWidth = wrapper.clientWidth;
+      document.querySelectorAll(".bar-text").forEach(textEl => {
+        const barEl = textEl.parentElement;
+        const barLeft = parseFloat(barEl.style.left);
+        const barWidth = parseFloat(barEl.style.width);
+        const barRight = barLeft + barWidth;
+
+        const visibleLeft = Math.max(barLeft, scrollLeft);
+        const visibleRight = Math.min(barRight, scrollLeft + viewportWidth);
+        const visibleWidth = visibleRight - visibleLeft;
+
+        if (visibleWidth <= 0) {
+          textEl.style.opacity = "0";
+          return;
+        }
+
+        textEl.style.opacity = "1";
+        const textWidth = textEl.offsetWidth;
+        let textLeft = visibleLeft - barLeft + (visibleWidth - textWidth) / 2;
+        if (textLeft < 5) textLeft = 5;
+        if (textLeft + textWidth > barWidth - 5) textLeft = barWidth - textWidth - 5;
+        textEl.style.left = textLeft + "px";
+      });
+    }
+
+    // Render header and timescale
+    function renderHeader() {
+      // Clear existing timescale headers
+      while (headerRow.children.length > 1) {
+        headerRow.removeChild(headerRow.lastChild);
+      }
 
       const { displayStart, displayEnd } = getDisplayRange();
       const totalWeeks = displayEnd - displayStart + 1;
-      if (totalWeeks < 1) {
-        chartRowsContainer.style.width = "0px";
-        return;
+      if (totalWeeks < 1) return;
+
+      for (let i = 0; i < totalWeeks; i++) {
+        const abs = displayStart + i;
+        const { year, week } = fromAbsoluteWeek(abs);
+        const th = document.createElement("th");
+        th.className = "timescale-header";
+        th.textContent = `${year}-W${week}`;
+        th.style.width = cellWidth + "px";
+        headerRow.appendChild(th);
       }
-      chartRowsContainer.style.width = (totalWeeks * 150) + "px";
+
+      // Today line
+      todayLineContainer.innerHTML = "";
+      const todayAbs = getTodayAbsWeek();
+      if (todayAbs >= displayStart && todayAbs <= displayEnd) {
+        const offset = (todayAbs - displayStart) * cellWidth + 240; // + name width
+        const todayLine = document.createElement("div");
+        todayLine.className = "today-line";
+        todayLine.style.left = offset + "px";
+        todayLine.style.height = (lines.length * 40 + 40) + "px"; // + header
+        todayLineContainer.appendChild(todayLine);
+      }
+    }
+
+    // Update stats display
+    function updateStats() {
+      lineCountSpan.textContent = lines.length;
+      barCountSpan.textContent = getTotalBars();
+    }
+
+    // Full table render
+    function renderTable() {
+      renderHeader();
+      tableBody.innerHTML = "";
+
+      const { displayStart, displayEnd } = getDisplayRange();
+      const totalWeeks = displayEnd - displayStart + 1;
+      if (totalWeeks < 1) return;
 
       lines.forEach(line => {
-        // left label row
-        const labelRow = document.createElement("div");
-        labelRow.className = "line-item-row";
+        const tr = document.createElement("tr");
+        tr.className = "gantt-row";
 
-        // remove line btn
+        // Name cell
+        const nameTd = document.createElement("td");
+        nameTd.className = "name-cell";
         const removeBtn = document.createElement("button");
         removeBtn.className = "remove-line-btn";
         removeBtn.innerHTML = "×";
         removeBtn.title = "Remove this line";
-        removeBtn.addEventListener("click", () => {
-          removeLineItem(line.id);
-        });
-        labelRow.appendChild(removeBtn);
-
-        // name input
+        removeBtn.addEventListener("click", () => removeLineItem(line.id));
+        nameTd.appendChild(removeBtn);
         const nameInput = document.createElement("input");
         nameInput.className = "line-item-input";
         nameInput.value = line.name;
@@ -595,224 +742,222 @@
           line.name = nameInput.value;
           saveToLocalStorage();
         });
-        labelRow.appendChild(nameInput);
+        nameTd.appendChild(nameInput);
+        tr.appendChild(nameTd);
 
-        lineItemsContainer.appendChild(labelRow);
+        // Bar row: Single td spanning all weeks
+        const barTd = document.createElement("td");
+        barTd.colSpan = totalWeeks;
+        barTd.className = "bar-cell";
+        const barContainer = document.createElement("div");
+        barContainer.className = "bar-row-container";
 
-        // right chart row
-        const chartLineRow = document.createElement("div");
-        chartLineRow.className = "chart-line-row";
-
-        const chartRowInner = document.createElement("div");
-        chartRowInner.className = "chart-row";
-        chartRowInner.style.width = (totalWeeks * 150) + "px";
-
-        // each bar
         line.bars.forEach(bar => {
           const barStart = bar.startAbsWeek;
           const barEnd = barStart + bar.length;
-          // clip to [displayStart, displayEnd]
           const overlapStart = Math.max(displayStart, barStart);
-          const overlapEnd = Math.min(displayEnd, barEnd);
+          const overlapEnd = Math.min(displayEnd + 1, barEnd);
           const overlapLen = overlapEnd - overlapStart;
           if (overlapLen <= 0) return;
 
-          const barLeft = (overlapStart - displayStart) * 150;
-          const barWidth = overlapLen * 150;
+          const barLeft = (overlapStart - displayStart) * cellWidth;
+          const barWidth = overlapLen * cellWidth;
+
           const barDiv = document.createElement("div");
           barDiv.classList.add("bar");
           if (bar.selected) barDiv.classList.add("selected");
           barDiv.style.left = barLeft + "px";
           barDiv.style.width = barWidth + "px";
-          barDiv.style.backgroundColor = bar.color || "#0d6efd";
-          barDiv.textContent = bar.text;
+          barDiv.style.backgroundColor = getColorFromStatus(bar.status);
 
-          // handles
+          // Text
+          const textSpan = document.createElement("span");
+          textSpan.className = "bar-text";
+          textSpan.textContent = bar.text;
+          barDiv.appendChild(textSpan);
+
+          // Handles
           const leftHandle = document.createElement("div");
           leftHandle.classList.add("bar-handle", "left");
           barDiv.appendChild(leftHandle);
-
           const rightHandle = document.createElement("div");
           rightHandle.classList.add("bar-handle", "right");
           barDiv.appendChild(rightHandle);
 
-          // single-click => selection
+          // Events
           barDiv.addEventListener("click", e => {
             e.stopPropagation();
             handleBarClickSelect(bar, e);
-            renderLines();
-            updateColorPickerState();
+            renderTable();
             saveToLocalStorage();
           });
-
-          // double-click => open overlay editor
           barDiv.addEventListener("dblclick", e => {
             e.stopPropagation();
-            showBarEditor(bar, e.clientX, e.clientY);
+            showBarEditor(bar, line, e.clientX, e.clientY);
           });
-
-          // drag/resize mouse down
           barDiv.addEventListener("mousedown", e => onBarMouseDown(e, line, bar));
 
-          chartRowInner.appendChild(barDiv);
+          barContainer.appendChild(barDiv);
         });
 
-        chartLineRow.appendChild(chartRowInner);
-        chartRowsContainer.appendChild(chartLineRow);
+        barTd.appendChild(barContainer);
+        tr.appendChild(barTd);
+        tableBody.appendChild(tr);
       });
 
-      updateColorPickerState();
+      updateStats();
+      updateBarTextPositions();
     }
 
-    // Remove a line: Filter out by ID, re-render, save
+    // Remove line item
     function removeLineItem(id) {
       lines = lines.filter(l => l.id !== id);
-      renderTimescale();
-      renderLines();
+      renderTable();
       saveToLocalStorage();
     }
 
-    // Dragging logic: Global flags for move/resize
-    let dragging = false;
-    let dragType = null;  // "move", "resize-left", or "resize-right"
-    let dragStartX = 0;
-    let initialStartAbs = 0;
-    let initialLength = 0;
-    let currentBar = null;
-
-    // On mouse down on bar: Detect handle vs body, set dragType, store initials
+    // Bar mouse down (drag/resize)
     function onBarMouseDown(e, line, bar) {
       if (e.target.classList.contains("bar-handle")) {
-        if (e.target.classList.contains("left")) {
-          dragType = "resize-left";
-        } else {
-          dragType = "resize-right";
-        }
+        dragType = e.target.classList.contains("left") ? "resize-left" : "resize-right";
       } else {
         dragType = "move";
       }
       dragging = true;
       currentBar = bar;
+      currentLine = line;
       dragStartX = e.clientX;
-      initialStartAbs = bar.startAbsWeek;
-      initialLength = bar.length;
+      initialStartAbs = currentBar.startAbsWeek;
+      initialLength = currentBar.length;
       e.preventDefault();
     }
 
-    // On mouse move: If dragging, calculate delta weeks (px/150), update bar, re-render
+    // Document mousemove (drag)
     document.addEventListener("mousemove", e => {
       if (!dragging || !currentBar) return;
       const dx = e.clientX - dragStartX;
-      const dWeeks = dx / 150;
+      const dWeeks = Math.round(dx / cellWidth);
+
       if (dragType === "move") {
-        let newStart = initialStartAbs + dWeeks;
-        currentBar.startAbsWeek = Math.max(0, Math.round(newStart));
+        currentBar.startAbsWeek = Math.max(0, initialStartAbs + dWeeks);
       } else if (dragType === "resize-left") {
         let newStart = initialStartAbs + dWeeks;
-        newStart = Math.round(newStart);
-        let oldEnd = initialStartAbs + initialLength;
-        let newLength = oldEnd - newStart;
-        if (newLength < 1) {
-          newLength = 1;
-          newStart = oldEnd - 1;
-        }
-        if (newStart < 0) {
-          newStart = 0;
-          newLength = oldEnd;
-        }
-        currentBar.startAbsWeek = newStart;
+        let newLength = initialStartAbs + initialLength - newStart;
+        if (newLength < 1) { newLength = 1; newStart = initialStartAbs + initialLength - 1; }
+        currentBar.startAbsWeek = Math.max(0, newStart);
         currentBar.length = newLength;
       } else if (dragType === "resize-right") {
-        let newEnd = initialStartAbs + initialLength + dWeeks;
-        newEnd = Math.round(newEnd);
-        if (newEnd < initialStartAbs + 1) {
-          newEnd = initialStartAbs + 1;
-        }
-        currentBar.length = newEnd - initialStartAbs;
+        let newLength = initialLength + dWeeks;
+        if (newLength < 1) newLength = 1;
+        currentBar.length = newLength;
       }
-      renderLines();
+      renderTable();
     });
 
-    // On mouse up: stop dragging: Clear flags, save
+    // Document mouseup (end drag)
     document.addEventListener("mouseup", () => {
       if (dragging) {
         dragging = false;
         dragType = null;
         currentBar = null;
+        currentLine = null;
         saveToLocalStorage();
       }
     });
 
-    // Click outside bars => unselect: Only if not dragging
+    // Click outside (unselect)
     document.addEventListener("click", () => {
       if (!dragging) {
         unselectAllBars();
-        renderLines();
+        renderTable();
         saveToLocalStorage();
       }
     });
 
-    // Keyboard shortcuts: arrow keys: Left/right shift start, up/down move bars between lines
+    // Keyboard shortcuts
     document.addEventListener("keydown", e => {
       const selected = getSelectedBars();
       if (!selected.length) return;
 
+      if ((e.key === "Delete" || e.key === "Backspace")) {
+        deleteBars(selected);
+        e.preventDefault();
+        return;
+      }
+
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key.toLowerCase() === "c") {
+          clipboard = selected.map(({ bar, line }) => ({ bar: JSON.parse(JSON.stringify(bar)), sourceLine: line }));
+          e.preventDefault();
+        }
+        if (e.key.toLowerCase() === "v") {
+          if (!clipboard.length) return;
+          let targetLine = selected.length ? selected[selected.length - 1].line : lines[lines.length - 1];
+          if (!targetLine) {
+            lineCounter++;
+            targetLine = { id: lineCounter, name: "Line Item " + lineCounter, bars: [] };
+            lines.push(targetLine);
+          }
+          clipboard.forEach(item => {
+            barCounter++;
+            const newBar = JSON.parse(JSON.stringify(item.bar));
+            newBar.id = barCounter;
+            newBar.selected = true;
+            targetLine.bars.push(newBar);
+          });
+          unselectAllBars();
+          renderTable();
+          saveToLocalStorage();
+          e.preventDefault();
+        }
+      }
+
       if (e.key === "ArrowLeft") {
-        selected.forEach(b => {
-          b.startAbsWeek = Math.max(0, b.startAbsWeek - 1);
-        });
-        renderLines();
+        selected.forEach(({ bar }) => bar.startAbsWeek = Math.max(0, bar.startAbsWeek - 1));
+        renderTable();
         saveToLocalStorage();
         e.preventDefault();
       } else if (e.key === "ArrowRight") {
-        selected.forEach(b => {
-          b.startAbsWeek = Math.max(0, b.startAbsWeek + 1);
-        });
-        renderLines();
+        selected.forEach(({ bar }) => bar.startAbsWeek = Math.max(0, bar.startAbsWeek + 1));
+        renderTable();
         saveToLocalStorage();
         e.preventDefault();
       } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-        lines.forEach((line, index) => {
-          const barsToMove = line.bars.filter(b => b.selected);
-          if (!barsToMove.length) return;
-          if (e.key === "ArrowUp" && index > 0) {
-            lines[index].bars = line.bars.filter(b => !b.selected);
-            lines[index - 1].bars.push(...barsToMove);
-          } else if (e.key === "ArrowDown" && index < lines.length - 1) {
-            lines[index].bars = line.bars.filter(b => !b.selected);
-            lines[index + 1].bars.push(...barsToMove);
+        selected.forEach(({ bar, line }) => {
+          const idx = lines.indexOf(line);
+          if (e.key === "ArrowUp" && idx > 0) {
+            line.bars = line.bars.filter(b => b.id !== bar.id);
+            lines[idx - 1].bars.push(bar);
+          } else if (e.key === "ArrowDown" && idx < lines.length - 1) {
+            line.bars = line.bars.filter(b => b.id !== bar.id);
+            lines[idx + 1].bars.push(bar);
           }
         });
-        renderLines();
+        renderTable();
         saveToLocalStorage();
         e.preventDefault();
       }
     });
 
-    // Add line item: Increment counter, push new line, re-render, save
+    // Add line button
     addLineItemBtn.addEventListener("click", () => {
       lineCounter++;
-      lines.push({
-        id: lineCounter,
-        name: "Line Item " + lineCounter,
-        bars: [],
-      });
-      renderTimescale();
-      renderLines();
+      lines.push({ id: lineCounter, name: "Line Item " + lineCounter, bars: [] });
+      renderTable();
       saveToLocalStorage();
     });
 
-    // Add bar: To last line (create if none), start at displayStart, length 4, re-render, save
+    // Add bar button
     addBarBtn.addEventListener("click", e => {
       e.stopPropagation();
       barCounter++;
       const { displayStart } = getDisplayRange();
       const newBar = {
         id: barCounter,
-        text: "New Bar " + barCounter,
+        text: "New Bar",
+        status: "proposed",
         startAbsWeek: displayStart,
         length: 4,
-        color: "#0d6efd",
         selected: false,
       };
       if (!lines.length) {
@@ -820,30 +965,13 @@
         lines.push({ id: 1, name: "Line Item 1", bars: [] });
       }
       lines[lines.length - 1].bars.push(newBar);
-      renderTimescale();
-      renderLines();
+      renderTable();
       saveToLocalStorage();
     });
 
-    // Color input -> update color of all selected bars: On change, apply to selected, re-render, save
-    barColorInput.addEventListener("change", e => {
-      const selected = getSelectedBars();
-      if (!selected.length) return;
-      selected.forEach(bar => {
-        bar.color = e.target.value;
-      });
-      renderLines();
-      saveToLocalStorage();
-    });
-
-    // === UPDATED IMPORT/EXPORT BEHAVIOR ===
-    // Export JSON: On click, generate JSON string, create Blob, trigger download directly (no modal)
+    // Export JSON
     exportJsonBtn.addEventListener("click", () => {
-      const dataStr = JSON.stringify({
-        lines,
-        startYear, startWeek, endYear, endWeek,
-        lineCounter, barCounter
-      }, null, 2);
+      const dataStr = JSON.stringify({ lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth }, null, 2);
       const blob = new Blob([dataStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -853,127 +981,238 @@
       URL.revokeObjectURL(url);
     });
 
-    // Import JSON: On button click, trigger hidden <input type="file"> to open file explorer
-    importJsonBtn.addEventListener("click", () => {
-      importFileInput.click(); // Opens native file selection dialog
+    // Export CSV
+    downloadCsvBtn.addEventListener("click", () => {
+      let csv = "Line ID,Line Name,Bar ID,Bar Text,Status,Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
+      lines.forEach(line => {
+        if (line.bars.length === 0) {
+          csv += `${line.id},"${line.name}",,,,,,\n`;
+        } else {
+          line.bars.forEach(bar => {
+            const { year: sy, week: sw } = fromAbsoluteWeek(bar.startAbsWeek);
+            const { year: ey, week: ew } = fromAbsoluteWeek(bar.startAbsWeek + bar.length - 1);
+            csv += `${line.id},"${line.name}",${bar.id},"${bar.text}","${bar.status}",${sy},${sw},${ey},${ew},${bar.length}\n`;
+          });
+        }
+      });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.download = "gantt-data.csv";
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
     });
 
-    // Import JSON: On file selected, read as text, parse JSON, update data, re-render, save
+    // Print/PDF
+    printBtn.addEventListener("click", () => {
+      window.print();
+    });
+
+    // Zoom slider
+    zoomSlider.addEventListener("input", e => {
+      const width = parseInt(e.target.value);
+      setCellWidth(width);
+      saveToLocalStorage();
+    });
+
+    // CSV parser for import
+    function parseCsv(csv) {
+      const rows = csv.trim().split('\n');
+      const header = rows[0].toLowerCase();
+      if (!header.includes('line id') || !header.includes('bar id')) throw new Error("Invalid CSV header");
+      const newLines = [];
+      let maxLineId = 0;
+      let maxBarId = 0;
+      const lineMap = {};
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i].trim();
+        if (!row) continue;
+        const parsed = [];
+        let field = '';
+        let inQuote = false;
+        for (let c of row + ',') {
+          if (c === '"') inQuote = !inQuote;
+          else if (c === ',' && !inQuote) { parsed.push(field); field = ''; }
+          else field += c;
+        }
+        if (parsed.length < 5) continue;
+        const lineId = parseInt(parsed[0]);
+        const lineName = parsed[1] || `Line ${lineId}`;
+        const barIdStr = parsed[2];
+        if (!barIdStr) {
+          if (!lineMap[lineId]) { lineMap[lineId] = { id: lineId, name: lineName, bars: [] }; newLines.push(lineMap[lineId]); maxLineId = Math.max(maxLineId, lineId); }
+          continue;
+        }
+        const barId = parseInt(barIdStr);
+        const barText = parsed[3] || '';
+        const status = (parsed[4] || "proposed").toLowerCase();
+        const sy = parseInt(parsed[5]);
+        const sw = parseInt(parsed[6]);
+        const ey = parseInt(parsed[7]);
+        const ew = parseInt(parsed[8]);
+        const duration = parseInt(parsed[9]) || 1;
+        if (isNaN(sy) || isNaN(sw)) continue;
+        const startAbs = toAbsoluteWeek(sy, sw);
+        let len = duration;
+        if (!isNaN(ey) && !isNaN(ew)) len = toAbsoluteWeek(ey, ew) - startAbs + 1;
+        if (len < 1) len = 1;
+        if (!lineMap[lineId]) { lineMap[lineId] = { id: lineId, name: lineName, bars: [] }; newLines.push(lineMap[lineId]); maxLineId = Math.max(maxLineId, lineId); }
+        lineMap[lineId].bars.push({ id: barId, text: barText, status, startAbsWeek: startAbs, length: len, selected: false });
+        maxBarId = Math.max(maxBarId, barId);
+      }
+      newLines.sort((a, b) => a.id - b.id);
+      return { lines: newLines, lineCounter: maxLineId, barCounter: maxBarId };
+    }
+
+    // Import file handler
     importFileInput.addEventListener("change", e => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = evt => {
         try {
-          const imported = JSON.parse(evt.target.result);
-          lines = imported.lines || [];
-          startYear = imported.startYear || 2023;
-          startWeek = imported.startWeek || 1;
-          endYear = imported.endYear || 2023;
-          endWeek = imported.endWeek || 52;
-          lineCounter = imported.lineCounter || 0;
-          barCounter = imported.barCounter || 0;
-          renderTimescale();
-          renderLines();
+          const ext = file.name.split('.').pop().toLowerCase();
+          let imported;
+          if (ext === 'json') {
+            imported = JSON.parse(evt.target.result);
+            lines = imported.lines || [];
+            startYear = imported.startYear || 2025;
+            startWeek = imported.startWeek || 1;
+            endYear = imported.endYear || 2025;
+            endWeek = imported.endWeek || 52;
+            lineCounter = imported.lineCounter || 0;
+            barCounter = imported.barCounter || 0;
+            cellWidth = imported.cellWidth || 150;
+          } else if (ext === 'csv') {
+            const parsed = parseCsv(evt.target.result);
+            lines = parsed.lines;
+            lineCounter = parsed.lineCounter;
+            barCounter = parsed.barCounter;
+          } else throw new Error("Unsupported file");
+          lines.forEach(line => line.bars.forEach(bar => { if (!bar.status) bar.status = "proposed"; }));
+          setCellWidth(cellWidth);
+          renderTable();
           saveToLocalStorage();
         } catch (err) {
-          alert("Invalid JSON file");
+          alert("Invalid file: " + err.message);
         }
       };
       reader.readAsText(file);
-      // Reset input so same file can be re-selected
       e.target.value = "";
     });
+    importJsonBtn.addEventListener("click", () => importFileInput.click());
 
-    // Apply timescale: Parse inputs, validate (1-52 weeks, positive years), update globals, re-render, save
+    // Apply timescale
     applyTimescaleBtn.addEventListener("click", () => {
       const sy = parseInt(startYearInput.value, 10);
       const sw = parseInt(startWeekInput.value, 10);
       const ey = parseInt(endYearInput.value, 10);
       const ew = parseInt(endWeekInput.value, 10);
-      if (isNaN(sy) || sy < 1) {
-        alert("Invalid start year");
-        return;
-      }
-      if (isNaN(sw) || sw < 1 || sw > 52) {
-        alert("Invalid start week (1-52)");
-        return;
-      }
-      if (isNaN(ey) || ey < 1) {
-        alert("Invalid end year");
-        return;
-      }
-      if (isNaN(ew) || ew < 1 || ew > 52) {
-        alert("Invalid end week (1-52)");
+      if (isNaN(sy) || sy < 1 || isNaN(sw) || sw < 1 || sw > 52 || isNaN(ey) || ey < 1 || isNaN(ew) || ew < 1 || ew > 52) {
+        alert("Invalid year/week");
         return;
       }
       startYear = sy;
       startWeek = sw;
       endYear = ey;
       endWeek = ew;
-      renderTimescale();
-      renderLines();
+      renderTable();
       saveToLocalStorage();
     });
 
-    // Show the bar editor overlay at a certain (x, y) with the bar's data: Fill inputs, position near click
-    function showBarEditor(bar, x, y) {
+    // Show bar editor
+    function showBarEditor(bar, line, x, y) {
       currentEditorBar = bar;
-      // fill the fields
+      currentEditorLine = line;
       barTextInput.value = bar.text;
-      barColorPicker.value = bar.color;
-      // position near the mouse click
+      barStatusSelect.value = bar.status;
+      const { year: sy, week: sw } = fromAbsoluteWeek(bar.startAbsWeek);
+      const { year: ey, week: ew } = fromAbsoluteWeek(bar.startAbsWeek + bar.length - 1);
+      startYearSelect.value = sy;
+      startWeekSelect.value = sw;
+      endYearSelect.value = ey;
+      endWeekSelect.value = ew;
       barEditor.style.display = "block";
-      barEditor.style.left = (x + window.scrollX) + "px";
-      barEditor.style.top = (y + window.scrollY) + "px";
+      barEditor.style.left = (x + window.scrollX + 10) + "px";
+      barEditor.style.top = (y + window.scrollY + 10) + "px";
     }
 
-    // When user clicks "OK" in the bar editor: Apply changes, hide, re-render, save
+    // Editor OK
     barEditorOkBtn.addEventListener("click", () => {
-      if (currentEditorBar) {
-        // update bar with new text/color
-        currentEditorBar.text = barTextInput.value;
-        currentEditorBar.color = barColorPicker.value;
-        // hide editor
+      if (!currentEditorBar) return;
+      currentEditorBar.text = barTextInput.value;
+      currentEditorBar.status = barStatusSelect.value;
+      const sy = parseInt(startYearSelect.value);
+      const sw = parseInt(startWeekSelect.value);
+      const ey = parseInt(endYearSelect.value);
+      const ew = parseInt(endWeekSelect.value);
+      const startAbs = toAbsoluteWeek(sy, sw);
+      const endAbs = toAbsoluteWeek(ey, ew);
+      currentEditorBar.startAbsWeek = startAbs;
+      currentEditorBar.length = endAbs - startAbs + 1;
+      if (currentEditorBar.length < 1) currentEditorBar.length = 1;
+      barEditor.style.display = "none";
+      currentEditorBar = null;
+      renderTable();
+      saveToLocalStorage();
+    });
+
+    // Editor delete
+    barDeleteBtn.addEventListener("click", () => {
+      if (currentEditorBar && currentEditorLine) {
+        deleteBars([{ bar: currentEditorBar, line: currentEditorLine }]);
         barEditor.style.display = "none";
         currentEditorBar = null;
-        renderLines();
-        saveToLocalStorage();
+        currentEditorLine = null;
       }
     });
 
-    // If user clicks anywhere outside the barEditor, hide it: Apply changes on click-out, re-render, save
+    // Editor cancel
+    barEditorCancelBtn.addEventListener("click", () => {
+      barEditor.style.display = "none";
+      currentEditorBar = null;
+    });
+
+    // Editor click outside close
     document.addEventListener("mousedown", e => {
       if (barEditor.style.display === "block") {
-        const editorRect = barEditor.getBoundingClientRect();
-        const inside =
-          e.clientX >= editorRect.left &&
-          e.clientX <= editorRect.right &&
-          e.clientY >= editorRect.top &&
-          e.clientY <= editorRect.bottom;
-        if (!inside && currentEditorBar) {
-          // apply changes
-          currentEditorBar.text = barTextInput.value;
-          currentEditorBar.color = barColorPicker.value;
+        const rect = barEditor.getBoundingClientRect();
+        const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (!inside) {
           barEditor.style.display = "none";
           currentEditorBar = null;
-          renderLines();
-          saveToLocalStorage();
         }
       }
     });
 
-    // Sync horizontal scroll of timescale with the chart area: Match scrollLeft on chart scroll
-    const chartArea = document.querySelector(".chart-area");
-    chartArea.addEventListener("scroll", () => {
-      // we move the timescale container's scrollLeft too
-      timescaleDiv.parentElement.scrollLeft = chartArea.scrollLeft;
+    // Help button
+    helpBtn.addEventListener("click", () => {
+      const helpWindow = window.open("", "GanttHelp", "width=680,height=760,scrollbars=yes,resizable=yes");
+      const helpHTML = `<!DOCTYPE html><html><head><title>Gantt Planner Help</title><style>body{font-family:Arial;padding:20px;line-height:1.6;background:#f9f9f9;}h1,h2{color:#0d6efd;}ul{margin:12px 0;}code{background:#eef;padding:2px 6px;border-radius:4px;}.tip{background:#e7f3ff;padding:10px;border-left:4px solid #0d6efd;margin:10px 0;}</style></head><body><h1>Gantt Planner Help</h1><p>Cohesive table-based Gantt chart.</p><h2>Layout</h2><p>Column 1: Task names (editable). Columns 2+: Weeks with bars.</p><h2>Zoom & Print</h2><ul><li>Zoom: Adjust week column width.</li><li>Print/PDF: Browser print (save as PDF).</li></ul><h2>Navigation</h2><ul><li>Scroll: Headers/name sticky.</li><li>Red line: Today.</li><li>Bar text centers in view.</li></ul><h2>Operations</h2><ul><li>Add Line/Bar.</li><li>Edit name, drag/resize bars.</li><li>Double-click bar for editor.</li><li>Keyboard: Arrows, Delete, Ctrl+C/V.</li></ul><h2>Import/Export</h2><ul><li>JSON/CSV support.</li></ul></body></html>`;
+      helpWindow.document.write(helpHTML);
+      helpWindow.document.close();
     });
 
-    // Load from localStorage & initial render: On page load
+    // Scroll handler: Sync text + today line
+    const tableWrapper = document.querySelector(".table-wrapper");
+    tableWrapper.addEventListener("scroll", () => {
+      updateBarTextPositions();
+    });
+
+    // Init
+    populateDateSelects();
     loadFromLocalStorage();
-    renderTimescale();
-    renderLines();
+    setCellWidth(cellWidth);
+    zoomSlider.value = cellWidth;
+    startYearInput.value = startYear;
+    startWeekInput.value = startWeek;
+    endYearInput.value = endYear;
+    endWeekInput.value = endWeek;
+    renderTable();
+
+    // Dynamic today (real date)
+    // getTodayAbsWeek now uses new Date() for real current week
   </script>
 </body>
 </html>
