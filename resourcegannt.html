@@ -1,32 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Character set -->
+  <!-- Character set: Declares UTF-8 encoding to prevent garbled text -->
   <meta charset="UTF-8" />
-  <!-- Page Title -->
+  <!-- Page Title: Shown in browser tab -->
   <title>Advanced Gantt Chart</title>
-  <!-- Bootstrap 5 CSS via CDN -->
+  <!-- Bootstrap 5 CSS via CDN: Loads grid, navbar, modals, buttons. Tweak: Change version for updates -->
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
   />
   <style>
-    /* Remove default body margin, set font */
+    /* Remove default body margin, set font: Resets margin, sets default font */
     body {
       margin: 0;
       font-family: Arial, sans-serif;
     }
 
-    /* Navbar: no extra margin */
+    /* Navbar: no extra margin: Removes space under navbar so timescale sticks cleanly */
     .navbar {
       margin-bottom: 0;
     }
 
     /*
       Main container for the Gantt layout:
-      - We do NOT place big top margin on .gantt-container itself,
-        so the timescale can "stick" at the top properly.
-      - Instead, we shift only the "sidebar" down to align with the first row.
+      - Flex row for sidebar + chart
+      - gap:1rem adds spacing
+      - margin:0 1rem for horizontal padding
+      - position:relative for absolute children (e.g., editor)
+      Debug: If columns collapse, check flex-direction
     */
     .gantt-container {
       display: flex;       /* side-by-side: left sidebar + right chart */
@@ -40,14 +42,15 @@
       Left sidebar is pushed down by ~60px so its first line item
       lines up better with the first row of bars (which is under the timescale).
       Adjust this if you need a different alignment.
+      Tweak: Change 60px if header height changes
     */
     .sidebar {
-      margin-top: 60px;    /* SHIFT the first line item below the timescale header */
+      margin-top: 30px;    /* SHIFT the first line item below the timescale header */
       min-width: 240px;
       border-right: 1px solid #dee2e6;
     }
 
-    /* Each line item row in the sidebar */
+    /* Each line item row in the sidebar: Fixed height 40px, flex for alignment */
     .line-item-row {
       display: flex;
       align-items: center;
@@ -56,7 +59,7 @@
       position: relative;
     }
 
-    /* Button "X" to remove a line */
+    /* Button "X" to remove a line: Red × button, hover cursor pointer */
     .remove-line-btn {
       background: none;
       border: none;
@@ -66,7 +69,7 @@
       cursor: pointer;
     }
 
-    /* Editable text input for line item name */
+    /* Editable text input for line item name: Transparent, focus outline */
     .line-item-input {
       flex: 1;
       border: none;
@@ -82,7 +85,7 @@
       The chart area to the right:
       Contains the pinned timescale at top,
       then the rows with bars below.
-      We allow horizontal scrolling in one place (.chart-area).
+      overflow-x:auto enables horizontal scrolling for both timescale and rows
     */
     .chart-area {
       position: relative;
@@ -95,6 +98,7 @@
       The timescale container is sticky at the top
       and will remain visible as you scroll vertically,
       but it will scroll horizontally in sync with the chart.
+      z-index:10 keeps it above rows
     */
     .timescale-container {
       position: sticky;
@@ -102,11 +106,11 @@
       z-index: 10;             /* above rows */
       background-color: #f8f9fa; 
       border-bottom: 1px solid #dee2e6;
-      overflow: hidden;        /* hide overflow; horizontal scroll is handled by chart-area */
+      /*overflow: hidden;      /* hide overflow; horizontal scroll is handled by chart-area */
       white-space: nowrap;     /* keep cells on one line */
     }
 
-    /* The row of timescale cells */
+    /* The row of timescale cells: Flex horizontal layout */
     .timescale {
       display: flex;       /* horizontal row of cells */
       white-space: nowrap; 
@@ -115,6 +119,7 @@
     /*
       Each timescale cell is 150px wide
       so that it matches the chart columns below.
+      Matches column grid width
     */
     .timescale-cell {
       width: 150px;               /* match chart column width */
@@ -126,7 +131,7 @@
       box-sizing: border-box;
     }
 
-    /* Container holding all chart rows with bar grids */
+    /* Container holding all chart rows with bar grids: Background grid via linear-gradient (150px × 40px) */
     #chartRowsContainer {
       position: relative;
       /* Grid lines of 150px wide columns, 40px tall rows. */
@@ -157,7 +162,7 @@
       height: 100%;
     }
 
-    /* Each bar rectangle */
+    /* Each bar rectangle: Draggable, rounded, opacity 0.7, cursor:move */
     .bar {
       position: absolute;
       height: 30px;
@@ -173,7 +178,7 @@
       outline: 2px solid #ffc107;
     }
 
-    /* Handles on left/right edges for resizing */
+    /* Handles on left/right edges for resizing: 6px wide grips, col-resize cursor */
     .bar-handle {
       position: absolute;
       top: 0;
@@ -195,6 +200,7 @@
     /*
       A small overlay editor (text input + color input) that appears
       when user double-clicks a bar and hides when clicking away or pressing 'OK'.
+      Absolute positioned, high z-index
     */
     #barEditor {
       position: absolute;       /* so we can place it near the bar or click location */
@@ -238,7 +244,7 @@
 
 <body>
   <!-- 
-    Bootstrap Navbar with Gantt configuration controls 
+    Bootstrap Navbar with Gantt configuration controls: Brand, toggler, timescale inputs, add buttons, color picker, import/export
   -->
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
@@ -254,7 +260,7 @@
       </button>
 
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <!-- Timescale input form (year/week range) -->
+        <!-- Timescale input form (year/week range): Inputs for start/end year/week + Apply button -->
         <form class="d-flex align-items-center gap-2">
           <label for="startYearInput" class="form-label m-0">Start Y:</label>
           <input
@@ -319,23 +325,23 @@
     Left = line items, Right = chart with timescale pinned at top
   -->
   <div class="gantt-container">
-    <!-- Sidebar (Line items) -->
+    <!-- Sidebar (Line items): Dynamically filled with task rows -->
     <div class="sidebar" id="lineItemsContainer">
       <!-- line item rows filled dynamically -->
     </div>
 
     <!-- Right chart area with pinned timescale at top -->
     <div class="chart-area">
-      <!-- pinned timescale container -->
+      <!-- pinned timescale container: Sticky week headers -->
       <div class="timescale-container">
         <div class="timescale" id="timescale"></div>
       </div>
-      <!-- chart rows container (bars) -->
+      <!-- chart rows container (bars): Where bar rows are injected -->
       <div id="chartRowsContainer"></div>
     </div>
   </div>
 
-  <!-- A hidden overlay editor for double-click on bar -->
+  <!-- A hidden overlay editor for double-click on bar: Text + color inputs, OK button -->
   <div id="barEditor">
     <input type="text" id="barTextInput" placeholder="Bar text..." />
     <input type="color" id="barColorPicker" />
@@ -344,7 +350,7 @@
     </div>
   </div>
 
-  <!-- Modal for Import JSON -->
+  <!-- Modal for Import JSON: Textarea + Import/Cancel buttons -->
   <div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
@@ -370,7 +376,7 @@
     </div>
   </div>
 
-  <!-- Modal for Export JSON -->
+  <!-- Modal for Export JSON: Read-only textarea + Close/Download buttons -->
   <div class="modal fade" id="exportModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
       <div class="modal-content">
@@ -394,34 +400,27 @@
     </div>
   </div>
 
-  <!-- Bootstrap JS bundle (for modal, etc.) -->
+  <!-- Bootstrap JS bundle (for modal, etc.): Enables modals, collapse, etc. -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
     /* 
       Data Model:
-      lines: [
-        {
-          id: number,
-          name: string,
-          bars: [
-            {
-              id: number,
-              text: string,
-              startAbsWeek: number,   // absolute start index
-              length: number,        // number of weeks
-              color: string,
-              selected: boolean
-            }, ...
-          ]
-        },
-        ...
-      ]
-      Also store startYear, startWeek, endYear, endWeek
-      plus counters for new line/bar IDs.
+      lines: array of line objects
+        - id: unique number
+        - name: string
+        - bars: array of bar objects
+          - id: unique number
+          - text: string
+          - startAbsWeek: absolute week index (year*52 + week-1)
+          - length: weeks duration
+          - color: hex string
+          - selected: boolean
+      Global: startYear, startWeek, endYear, endWeek for timescale
+      Counters: lineCounter, barCounter for new IDs
     */
 
-    // Sample data
+    // Sample data: Initial two lines with bars
     let lines = [
       {
         id: 1,
@@ -453,17 +452,17 @@
       },
     ];
 
-    // Default timescale
+    // Default timescale: Full year 2023
     let startYear = 2023;
     let startWeek = 1;
     let endYear = 2023;
     let endWeek = 52;
 
-    // ID counters
+    // ID counters: Start after sample data
     let lineCounter = 2;
     let barCounter = 102;
 
-    // Grab references to key DOM elements
+    // Grab references to key DOM elements: Cache for performance
     const lineItemsContainer = document.getElementById("lineItemsContainer");
     const chartRowsContainer = document.getElementById("chartRowsContainer");
     const timescaleDiv = document.getElementById("timescale");
@@ -484,7 +483,7 @@
     const endWeekInput = document.getElementById("endWeekInput");
     const applyTimescaleBtn = document.getElementById("applyTimescaleBtn");
 
-    // The small editor overlay for double-click
+    // The small editor overlay for double-click: References to inputs/buttons
     const barEditor = document.getElementById("barEditor");
     const barTextInput = document.getElementById("barTextInput");
     const barColorPicker = document.getElementById("barColorPicker");
@@ -493,19 +492,19 @@
     // Keep track of which bar is currently being edited (double-click)
     let currentEditorBar = null;
 
-    // Convert (year,week) to absolute index (52 weeks/year approach)
+    // Convert (year,week) to absolute index (52 weeks/year approach): year*52 + (week-1)
     function toAbsoluteWeek(year, week) {
       return year * 52 + (week - 1);
     }
 
-    // Convert absolute index back to (year,week)
+    // Convert absolute index back to (year,week): Floor divide by 52, modulo for week
     function fromAbsoluteWeek(absWeek) {
       const y = Math.floor(absWeek / 52);
       const w = absWeek % 52 + 1;
       return { year: y, week: w };
     }
 
-    // Save chart state to localStorage
+    // Save chart state to localStorage: Persists lines, timescale, counters
     function saveToLocalStorage() {
       const chartData = {
         lines,
@@ -515,7 +514,7 @@
       localStorage.setItem("ganttChartData", JSON.stringify(chartData));
     }
 
-    // Load chart state from localStorage (if exists)
+    // Load chart state from localStorage (if exists): Restores on page load
     function loadFromLocalStorage() {
       const stored = localStorage.getItem("ganttChartData");
       if (!stored) return;
@@ -533,7 +532,7 @@
       }
     }
 
-    // Return all bars that are selected
+    // Return all bars that are selected: Flattens across lines
     function getSelectedBars() {
       const selected = [];
       lines.forEach(line => {
@@ -544,14 +543,14 @@
       return selected;
     }
 
-    // Unselect all bars
+    // Unselect all bars: Clears selection state
     function unselectAllBars() {
       lines.forEach(line => {
         line.bars.forEach(bar => bar.selected = false);
       });
     }
 
-    // Multi-select logic
+    // Multi-select logic: Shift/Ctrl for toggle, else single select
     function handleBarClickSelect(bar, event) {
       const isMulti = event.shiftKey || event.ctrlKey || event.metaKey;
       if (!isMulti) {
@@ -562,7 +561,7 @@
       }
     }
 
-    // Update color input enabling/disabling
+    // Update color input enabling/disabling: Enable only if bars selected, sync first bar color
     function updateColorPickerState() {
       const sel = getSelectedBars();
       if (sel.length == 0) {
@@ -573,7 +572,7 @@
       }
     }
 
-    // Compute displayStart, displayEnd in absolute weeks, handling reversed inputs
+    // Compute displayStart, displayEnd in absolute weeks, handling reversed inputs: Swaps if needed
     function getDisplayRange() {
       let ds = toAbsoluteWeek(startYear, startWeek);
       let de = toAbsoluteWeek(endYear, endWeek);
@@ -583,7 +582,7 @@
       return { displayStart: ds, displayEnd: de };
     }
 
-    // Render the timescale
+    // Render the timescale: Clears and builds week cells (150px each)
     function renderTimescale() {
       timescaleDiv.innerHTML = "";
       const { displayStart, displayEnd } = getDisplayRange();
@@ -604,7 +603,7 @@
       timescaleDiv.style.width = (totalWeeks * 150) + "px";
     }
 
-    // Render lines and bars
+    // Render lines and bars: Rebuilds sidebar and chart rows, clips bars to visible range
     function renderLines() {
       lineItemsContainer.innerHTML = "";
       chartRowsContainer.innerHTML = "";
@@ -710,7 +709,7 @@
       updateColorPickerState();
     }
 
-    // Remove a line
+    // Remove a line: Filter out by ID, re-render, save
     function removeLineItem(id) {
       lines = lines.filter(l => l.id !== id);
       renderTimescale();
@@ -718,7 +717,7 @@
       saveToLocalStorage();
     }
 
-    // Dragging logic
+    // Dragging logic: Global flags for move/resize
     let dragging = false;
     let dragType = null;  // "move", "resize-left", or "resize-right"
     let dragStartX = 0;
@@ -726,7 +725,7 @@
     let initialLength = 0;
     let currentBar = null;
 
-    // On mouse down on bar
+    // On mouse down on bar: Detect handle vs body, set dragType, store initials
     function onBarMouseDown(e, line, bar) {
       if (e.target.classList.contains("bar-handle")) {
         if (e.target.classList.contains("left")) {
@@ -745,7 +744,7 @@
       e.preventDefault();
     }
 
-    // On mouse move
+    // On mouse move: If dragging, calculate delta weeks (px/150), update bar, re-render
     document.addEventListener("mousemove", e => {
       if (!dragging || !currentBar) return;
       const dx = e.clientX - dragStartX;
@@ -779,7 +778,7 @@
       renderLines();
     });
 
-    // On mouse up: stop dragging
+    // On mouse up: stop dragging: Clear flags, save
     document.addEventListener("mouseup", () => {
       if (dragging) {
         dragging = false;
@@ -789,7 +788,7 @@
       }
     });
 
-    // Click outside bars => unselect
+    // Click outside bars => unselect: Only if not dragging
     document.addEventListener("click", () => {
       if (!dragging) {
         unselectAllBars();
@@ -798,7 +797,7 @@
       }
     });
 
-    // Keyboard shortcuts: arrow keys
+    // Keyboard shortcuts: arrow keys: Left/right shift start, up/down move bars between lines
     document.addEventListener("keydown", e => {
       const selected = getSelectedBars();
       if (!selected.length) return;
@@ -835,7 +834,7 @@
       }
     });
 
-    // Add line item
+    // Add line item: Increment counter, push new line, re-render, save
     addLineItemBtn.addEventListener("click", () => {
       lineCounter++;
       lines.push({
@@ -848,7 +847,7 @@
       saveToLocalStorage();
     });
 
-    // Add bar
+    // Add bar: To last line (create if none), start at displayStart, length 4, re-render, save
     addBarBtn.addEventListener("click", e => {
       e.stopPropagation();
       barCounter++;
@@ -871,7 +870,7 @@
       saveToLocalStorage();
     });
 
-    // Color input -> update color of all selected bars
+    // Color input -> update color of all selected bars: On change, apply to selected, re-render, save
     barColorInput.addEventListener("change", e => {
       const selected = getSelectedBars();
       if (!selected.length) return;
@@ -882,7 +881,7 @@
       saveToLocalStorage();
     });
 
-    // Import/Export
+    // Import/Export: Show modals, handle JSON parse/stringify
     importJsonBtn.addEventListener("click", () => {
       importJsonTextarea.value = "";
       importModal.show();
@@ -927,7 +926,7 @@
       URL.revokeObjectURL(url);
     });
 
-    // Apply timescale
+    // Apply timescale: Parse inputs, validate (1-52 weeks, positive years), update globals, re-render, save
     applyTimescaleBtn.addEventListener("click", () => {
       const sy = parseInt(startYearInput.value, 10);
       const sw = parseInt(startWeekInput.value, 10);
@@ -958,7 +957,7 @@
       saveToLocalStorage();
     });
 
-    // Show the bar editor overlay at a certain (x, y) with the bar's data
+    // Show the bar editor overlay at a certain (x, y) with the bar's data: Fill inputs, position near click
     function showBarEditor(bar, x, y) {
       currentEditorBar = bar;
       // fill the fields
@@ -970,7 +969,7 @@
       barEditor.style.top = (y + window.scrollY) + "px";
     }
 
-    // When user clicks "OK" in the bar editor
+    // When user clicks "OK" in the bar editor: Apply changes, hide, re-render, save
     barEditorOkBtn.addEventListener("click", () => {
       if (currentEditorBar) {
         // update bar with new text/color
@@ -984,7 +983,7 @@
       }
     });
 
-    // If user clicks anywhere outside the barEditor, hide it
+    // If user clicks anywhere outside the barEditor, hide it: Apply changes on click-out, re-render, save
     document.addEventListener("mousedown", e => {
       if (barEditor.style.display === "block") {
         const editorRect = barEditor.getBoundingClientRect();
@@ -1005,14 +1004,14 @@
       }
     });
 
-    // Sync horizontal scroll of timescale with the chart area
+    // Sync horizontal scroll of timescale with the chart area: Match scrollLeft on chart scroll
     const chartArea = document.querySelector(".chart-area");
     chartArea.addEventListener("scroll", () => {
       // we move the timescale container's scrollLeft too
       timescaleDiv.parentElement.scrollLeft = chartArea.scrollLeft;
     });
 
-    // Load from localStorage & initial render
+    // Load from localStorage & initial render: On page load
     loadFromLocalStorage();
     renderTimescale();
     renderLines();
