@@ -53,11 +53,11 @@
       box-sizing: border-box;
     }
 
-    /* Name header: Fixed width, left-aligned, explicit background */
+    /* Name header: Fixed width, explicit background */
     #nameHeader {
       width: 240px;
       text-align: center;
-      height:100%;
+      height: 100%;
       font-weight: bold;
       background-color: #f8f9fa;
       border-right: 1px solid #dee2e6;
@@ -71,7 +71,7 @@
       min-width: 50px;
     }
 
-    /* Table body: Grid background using CSS variables for dynamic sizing */
+    /* Table body: Single clean grid using CSS variables */
     #ganttTable tbody {
       background-image: 
         linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
@@ -91,7 +91,7 @@
       background-color: #fff3cd;
     }
 
-    /* Name cell: Sticky left, explicit white background to prevent grid bleed */
+    /* Name cell: Sticky left, white background covering full row height, column flex for centering */
     .name-cell {
       position: sticky;
       left: 0;
@@ -100,11 +100,19 @@
       width: 240px;
       border-right: 1px solid #dee2e6;
       display: flex;
-      align-items: bottom;
-      justify-content: flex-start; /* Align content to left, but flex for centering if needed */
-    padding-top: calc((var(--row-height) - 1em) / 2);
-padding-bottom: calc((var(--row-height) - 1em) / 2);
+      flex-direction: column;
+      justify-content: center; /* Centers children vertically */
+      padding: 0 8px;
+      height: var(--row-height);
+      text-align: center;
       box-sizing: border-box;
+    }
+
+    /* Name cell content wrapper: Horizontal flex for button + input */
+    .name-cell-content {
+      display: flex;
+      align-items: center;
+      width: 100%;
     }
 
     /* Remove line button: Red × */
@@ -117,16 +125,14 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       cursor: pointer;
     }
 
-    /* Line item input: Transparent, editable */
+    /* Line item input: Transparent, editable, centered vertically */
     .line-item-input {
       flex: 1;
       border: none;
       outline: none;
       background-color: transparent;
       font-weight: 500;
-      height: 100%; /* Fill row height */
-      display: flex;
-      align-items: center; /* Vertically center text */
+      height: 100%;
     }
     .line-item-input:focus {
       outline: 1px solid #ccc;
@@ -136,21 +142,24 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
     .bar-cell {
       position: relative;
       border-right: 1px solid #dee2e6;
-      padding: 0; /* No padding to allow full height usage */
+      padding: 0;
     }
 
-    /* Full row bar container: Spans all timescale columns */
-.bar-row-container {
-  display: flex;
-  align-items: center; /* Centers children vertically */
-}
+    /* Full row bar container: Flex centering for perfect vertical alignment */
+    .bar-row-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center; /* Centers bars and hatches vertically */
+    }
 
-    /* Bar: Absolute positioned for overlapping, now centered vertically with calc((var(--row-height) - height)/2) */
+    /* Bar: Absolute positioned, centered via flex parent */
     .bar {
       position: absolute;
-      height: calc(var(--row-height) - 16px); /* Reduced inner height for better visual centering with margins */
-      top: calc((var(--row-height) - (var(--row-height) - 16px)) / 2); /* Dynamic vertical centering: (rowHeight - barHeight)/2 */
-      left: 0; /* Bars start from left of container */
+      height: calc(var(--row-height) - 16px);
+      top: auto;
+      left: 0;
       border-radius: 4px;
       color: #fff;
       cursor: move;
@@ -158,25 +167,27 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       opacity: 0.7;
       overflow: hidden;
       z-index: 0;
-      box-sizing: border-box; /* Include padding/border in height */
+      box-sizing: border-box;
+      margin-top: 0;
+      margin-bottom: 0;
     }
     .bar.selected {
       outline: 2px solid #ffc107;
     }
 
-    /* Bar text: Centered in visible portion, vertically centered in bar */
+    /* Bar text: Centered in visible portion, vertically centered */
     .bar-text {
       position: absolute;
       top: 0;
       height: 100%;
-      line-height: calc(var(--row-height) - 16px); /* Match bar height for vertical center */
+      line-height: calc(var(--row-height) - 16px);
       white-space: nowrap;
       pointer-events: none;
       font-weight: 500;
-      padding: 0 8px; /* Small padding for text */
+      padding: 0 8px;
     }
 
-    /* Resize handles: Scale with row height, full height of bar */
+    /* Resize handles: Full height of bar */
     .bar-handle {
       position: absolute;
       top: 0;
@@ -195,11 +206,11 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       border-radius: 0 4px 4px 0;
     }
 
-    /* Overlap hatch: Red diagonal stripes for overlaps, centered vertically like bars */
+    /* Overlap hatch: Centered vertically like bars */
     .overlap-hatch {
       position: absolute;
-      height: calc(var(--row-height) - 16px); /* Match bar height */
-      top: calc((var(--row-height) - (var(--row-height) - 16px)) / 2); /* Match bar top for perfect centering */
+      height: calc(var(--row-height) - 16px);
+      top: auto;
       background: repeating-linear-gradient(
         45deg,
         red,
@@ -210,17 +221,8 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       opacity: 0.5;
       pointer-events: none;
       z-index: 1;
-    }
-
-    /* Today line: Red vertical across table */
-    .today-line {
-      position: absolute;
-      top: 0;
-      width: 2px;
-      background-color: #dc3545;
-      height: 100%;
-      z-index: 5;
-      pointer-events: none;
+      margin-top: 0;
+      margin-bottom: 0;
     }
 
     /* Scrollable area: Enables horizontal/vertical scroll */
@@ -257,7 +259,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       margin-top: 12px;
     }
 
-    /* Zoom sliders: Enhanced visibility with shadow, thicker track/thumb */
+    /* Zoom sliders: Enhanced visibility */
     .zoom-slider {
       width: 120px;
       margin: 0 8px;
@@ -286,15 +288,9 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       border: none;
       box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
-    /* Vertical zoom slider rotated */
     #heightZoomSlider {
       transform: rotate(-90deg);
       width: 100px;
-    }
-
-    /* Print button */
-    #printBtn {
-      margin-left: 8px;
     }
 
     /* Legend */
@@ -315,7 +311,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       border-radius: 3px;
     }
 
-    /* Toolbar groups: For compartmentalized layout */
+    /* Toolbar groups */
     .toolbar-group {
       display: flex;
       align-items: center;
@@ -364,7 +360,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       color: #555;
     }
 
-    /* Print styles: Hide navbar, show full */
+    /* Print styles */
     @media print {
       .navbar, #barEditor {
         display: none !important;
@@ -422,7 +418,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
           </div>
         </div>
 
-        <!-- Group 3: Zoom controls (horizontal and vertical) -->
+        <!-- Group 3: Zoom controls -->
         <div class="toolbar-group">
           <label for="zoomSlider" class="form-label m-0 me-2">H-Zoom:</label>
           <input type="range" class="zoom-slider" id="zoomSlider" min="50" max="300" value="150" step="10">
@@ -460,7 +456,6 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
           <!-- Rows injected here -->
         </tbody>
       </table>
-      <div id="todayLineContainer"></div> <!-- For today line overlay -->
     </div>
   </div>
 
@@ -505,7 +500,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       future: "#6f42c1"
     };
 
-    // Sample data: 2 initial lines with bars
+    // Sample data: Initial lines and bars
     let lines = [
       {
         id: 1,
@@ -560,7 +555,6 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
     const ganttTable = document.getElementById("ganttTable");
     const headerRow = document.getElementById("headerRow");
     const tableBody = document.getElementById("tableBody");
-    const todayLineContainer = document.getElementById("todayLineContainer");
     const addLineItemBtn = document.getElementById("addLineItemBtn");
     const addBarBtn = document.getElementById("addBarBtn");
     const importJsonBtn = document.getElementById("importJsonBtn");
@@ -606,7 +600,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
 
     // Absolute week conversion: Year*52 + (week-1)
     function toAbsoluteWeek(year, week) {
-      // Convert year and week to absolute week number for easy calculations
+      // Convert year and week to absolute week number
       return year * 52 + (week - 1);
     }
 
@@ -626,7 +620,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
 
     // Populate year/week selects in editor
     function populateDateSelects() {
-      // Fill year and week dropdowns in the bar editor
+      // Fill year and week dropdowns
       [startYearSelect, endYearSelect].forEach(sel => {
         sel.innerHTML = "";
         for (let y = 2010; y <= 2030; y++) {
@@ -647,7 +641,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       });
     }
 
-    // Set CSS variables for dynamic grid and sizing
+    // Set CSS variables for dynamic sizing
     function updateCSSVariables() {
       // Update CSS custom properties for cell width and row height
       document.documentElement.style.setProperty('--cell-width', cellWidth + 'px');
@@ -658,14 +652,14 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
 
     // Save to localStorage
     function saveToLocalStorage() {
-      // Persist chart data to browser localStorage
+      // Persist chart data
       const chartData = { lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth, rowHeight };
       localStorage.setItem("ganttChartData", JSON.stringify(chartData));
     }
 
     // Load from localStorage
     function loadFromLocalStorage() {
-      // Retrieve and parse chart data from localStorage
+      // Retrieve and parse chart data
       const stored = localStorage.getItem("ganttChartData");
       if (!stored) return;
       try {
@@ -693,7 +687,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
 
     // Get selected bars
     function getSelectedBars() {
-      // Collect all selected bars with their parent lines
+      // Collect selected bars with parent lines
       const selected = [];
       lines.forEach(line => line.bars.forEach(bar => { if (bar.selected) selected.push({ bar, line }); }));
       return selected;
@@ -701,7 +695,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
 
     // Delete selected bars
     function deleteBars(barsToDelete) {
-      // Remove specified bars from their lines
+      // Remove specified bars
       barsToDelete.forEach(({ bar, line }) => {
         line.bars = line.bars.filter(b => b.id !== bar.id);
       });
@@ -711,19 +705,19 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
 
     // Count total bars
     function getTotalBars() {
-      // Sum all bars across lines
+      // Sum all bars
       return lines.reduce((count, line) => count + line.bars.length, 0);
     }
 
     // Unselect all bars
     function unselectAllBars() {
-      // Clear selection on all bars
+      // Clear all bar selections
       lines.forEach(line => line.bars.forEach(bar => bar.selected = false));
     }
 
-    // Handle bar select (click/shift)
+    // Handle bar select
     function handleBarClickSelect(bar, event) {
-      // Toggle or set bar selection based on modifier keys
+      // Toggle selection with modifiers
       const isMulti = event.shiftKey || event.ctrlKey || event.metaKey;
       if (!isMulti) {
         unselectAllBars();
@@ -733,31 +727,20 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       }
     }
 
-    // Get display range (absolute weeks)
+    // Get display range
     function getDisplayRange() {
-      // Calculate start and end absolute weeks for current view
+      // Calculate start/end absolute weeks
       let ds = toAbsoluteWeek(startYear, startWeek);
       let de = toAbsoluteWeek(endYear, endWeek);
       if (ds > de) [ds, de] = [de, ds];
       return { displayStart: ds, displayEnd: de };
     }
 
-    // Today absolute week using current date (November 03, 2025)
-    function getTodayAbsWeek() {
-      // Calculate current week's absolute number
-      const today = new Date();
-      const year = today.getFullYear();
-      const jan1 = new Date(year, 0, 1);
-      const dayOfYear = Math.floor((today - jan1) / 86400000) + 1;
-      const week = Math.ceil(dayOfYear / 7);
-      return toAbsoluteWeek(year, week);
-    }
-
-    // Update bar text centering in visible area
+    // Update bar text centering
     function updateBarTextPositions() {
-      // Adjust bar text position to stay centered in viewport while scrolling
+      // Center text in visible bar portion
       const wrapper = document.querySelector(".table-wrapper");
-      const scrollLeft = wrapper.scrollLeft; // No offset needed; bars now start at x=0 in container
+      const scrollLeft = wrapper.scrollLeft;
       const viewportWidth = wrapper.clientWidth;
       document.querySelectorAll(".bar-text").forEach(textEl => {
         const barEl = textEl.parentElement;
@@ -785,7 +768,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
 
     // Render header and timescale
     function renderHeader() {
-      // Clear and rebuild timescale header columns
+      // Clear and rebuild timescale headers
       while (headerRow.children.length > 1) {
         headerRow.removeChild(headerRow.lastChild);
       }
@@ -803,30 +786,18 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
         th.style.width = cellWidth + "px";
         headerRow.appendChild(th);
       }
-
-      // Today line overlay
-      todayLineContainer.innerHTML = "";
-      const todayAbs = getTodayAbsWeek();
-      if (todayAbs >= displayStart && todayAbs <= displayEnd) {
-        const offset = (todayAbs - displayStart) * cellWidth; // No name column offset
-        const todayLine = document.createElement("div");
-        todayLine.className = "today-line";
-        todayLine.style.left = offset + "px";
-        todayLine.style.height = (lines.length * rowHeight + rowHeight) + "px"; // + header
-        todayLineContainer.appendChild(todayLine);
-      }
     }
 
     // Update stats display
     function updateStats() {
-      // Refresh line and bar counts in toolbar
+      // Refresh line/bar counts
       lineCountSpan.textContent = lines.length;
       barCountSpan.textContent = getTotalBars();
     }
 
     // Full table render
     function renderTable() {
-      // Rebuild entire table: header, body, bars, hatches
+      // Rebuild header, body, bars
       renderHeader();
       tableBody.innerHTML = "";
 
@@ -839,15 +810,16 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
         tr.className = "gantt-row";
         if (line.selected) tr.classList.add("selected");
 
-        // Name cell with remove button and input
+        // Name cell with wrapper for horizontal layout
         const nameTd = document.createElement("td");
         nameTd.className = "name-cell";
+        const contentWrapper = document.createElement("div");
+        contentWrapper.className = "name-cell-content";
         const removeBtn = document.createElement("button");
         removeBtn.className = "remove-line-btn";
         removeBtn.innerHTML = "×";
         removeBtn.title = "Remove this line";
         removeBtn.addEventListener("click", () => removeLineItem(line.id));
-        nameTd.appendChild(removeBtn);
         const nameInput = document.createElement("input");
         nameInput.className = "line-item-input";
         nameInput.value = line.name;
@@ -856,8 +828,9 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
           line.name = nameInput.value;
           saveToLocalStorage();
         });
-        nameTd.appendChild(nameInput);
-        // Line selection on name cell click
+        contentWrapper.appendChild(removeBtn);
+        contentWrapper.appendChild(nameInput);
+        nameTd.appendChild(contentWrapper);
         nameTd.addEventListener("click", e => {
           e.stopPropagation();
           unselectAllBars();
@@ -867,7 +840,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
         });
         tr.appendChild(nameTd);
 
-        // Bar container cell spanning all weeks
+        // Bar container
         const barTd = document.createElement("td");
         barTd.colSpan = totalWeeks;
         barTd.className = "bar-cell";
@@ -882,7 +855,6 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
           const overlapLen = overlapEnd - overlapStart;
           if (overlapLen <= 0) return;
 
-          // Bars now start at x=0 within container (no 240px offset)
           const barLeft = (overlapStart - displayStart) * cellWidth;
           const barWidth = overlapLen * cellWidth;
 
@@ -893,13 +865,11 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
           barDiv.style.width = barWidth + "px";
           barDiv.style.backgroundColor = getColorFromStatus(bar.status);
 
-          // Bar text span
           const textSpan = document.createElement("span");
           textSpan.className = "bar-text";
           textSpan.textContent = bar.text;
           barDiv.appendChild(textSpan);
 
-          // Resize handles
           const leftHandle = document.createElement("div");
           leftHandle.classList.add("bar-handle", "left");
           barDiv.appendChild(leftHandle);
@@ -907,7 +877,6 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
           rightHandle.classList.add("bar-handle", "right");
           barDiv.appendChild(rightHandle);
 
-          // Bar events: click, dblclick, mousedown
           barDiv.addEventListener("click", e => {
             e.stopPropagation();
             handleBarClickSelect(bar, e);
@@ -923,7 +892,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
           barContainer.appendChild(barDiv);
         });
 
-        // Compute and add overlap hatches
+        // Overlap hatches
         const sortedBars = [...line.bars].sort((a, b) => a.startAbsWeek - b.startAbsWeek);
         for (let i = 0; i < sortedBars.length; i++) {
           for (let j = i + 1; j < sortedBars.length; j++) {
@@ -956,17 +925,17 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       updateBarTextPositions();
     }
 
-    // Remove line item by ID
+    // Remove line item
     function removeLineItem(id) {
-      // Filter out line by ID and re-render
+      // Filter out line
       lines = lines.filter(l => l.id !== id);
       renderTable();
       saveToLocalStorage();
     }
 
-    // Bar mouse down: Start drag or resize
+    // Bar mouse down
     function onBarMouseDown(e, line, bar) {
-      // Detect if resize handle clicked, else move
+      // Start drag or resize
       if (e.target.classList.contains("bar-handle")) {
         dragType = e.target.classList.contains("left") ? "resize-left" : "resize-right";
       } else {
@@ -981,9 +950,9 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       e.preventDefault();
     }
 
-    // Document mousemove: Handle dragging/resizing
+    // Document mousemove
     document.addEventListener("mousemove", e => {
-      // Update bar position/length during drag
+      // Handle dragging/resizing
       if (!dragging || !currentBar) return;
       const dx = e.clientX - dragStartX;
       const dWeeks = Math.round(dx / cellWidth);
@@ -1004,9 +973,9 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       renderTable();
     });
 
-    // Document mouseup: End drag
+    // Document mouseup
     document.addEventListener("mouseup", () => {
-      // Finalize drag and save
+      // End drag
       if (dragging) {
         dragging = false;
         dragType = null;
@@ -1016,9 +985,9 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       }
     });
 
-    // Click outside: Unselect bars and lines
+    // Click outside
     document.addEventListener("click", () => {
-      // Clear selections on background click
+      // Clear selections
       if (!dragging) {
         unselectAllBars();
         lines.forEach(l => l.selected = false);
@@ -1029,7 +998,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
 
     // Keyboard shortcuts
     document.addEventListener("keydown", e => {
-      // Handle delete, copy/paste, arrow keys for move/reorder
+      // Delete, copy/paste, arrows
       const selected = getSelectedBars();
       if ((e.key === "Delete" || e.key === "Backspace")) {
         if (selected.length) {
@@ -1084,7 +1053,6 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
         }
       } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
         if (selected.length) {
-          // Move selected bars to adjacent lines
           selected.forEach(({ bar, line }) => {
             const idx = lines.indexOf(line);
             if (e.key === "ArrowUp" && idx > 0) {
@@ -1099,7 +1067,6 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
           saveToLocalStorage();
           e.preventDefault();
         } else {
-          // Move selected line up/down
           const selectedLine = lines.find(l => l.selected);
           if (selectedLine) {
             const idx = lines.indexOf(selectedLine);
@@ -1118,7 +1085,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
 
     // Add line button
     addLineItemBtn.addEventListener("click", () => {
-      // Create new empty line
+      // Create new line
       lineCounter++;
       lines.push({ id: lineCounter, name: "Line Item " + lineCounter, bars: [], selected: false });
       renderTable();
@@ -1127,7 +1094,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
 
     // Add bar button
     addBarBtn.addEventListener("click", e => {
-      // Add new bar to last line
+      // Add bar to last line
       e.stopPropagation();
       barCounter++;
       const { displayStart } = getDisplayRange();
@@ -1150,7 +1117,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
 
     // Export JSON
     exportJsonBtn.addEventListener("click", () => {
-      // Download full chart state as JSON
+      // Download JSON
       const dataStr = JSON.stringify({ lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth, rowHeight }, null, 2);
       const blob = new Blob([dataStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -1163,7 +1130,7 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
 
     // Export CSV
     downloadCsvBtn.addEventListener("click", () => {
-      // Export data as CSV
+      // Download CSV
       let csv = "Line ID,Line Name,Bar ID,Bar Text,Status,Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
       lines.forEach(line => {
         if (line.bars.length === 0) {
@@ -1185,33 +1152,33 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       URL.revokeObjectURL(url);
     });
 
-    // Print/PDF button
+    // Print button
     printBtn.addEventListener("click", () => {
-      // Trigger browser print
+      // Trigger print
       window.print();
     });
 
-    // Horizontal zoom slider
+    // Horizontal zoom
     zoomSlider.addEventListener("input", e => {
-      // Adjust horizontal cell width
+      // Update cell width
       cellWidth = parseInt(e.target.value);
       updateCSSVariables();
       renderTable();
       saveToLocalStorage();
     });
 
-    // Vertical zoom slider
+    // Vertical zoom
     heightZoomSlider.addEventListener("input", e => {
-      // Adjust vertical row height
+      // Update row height
       rowHeight = parseInt(e.target.value);
       updateCSSVariables();
       renderTable();
       saveToLocalStorage();
     });
 
-    // CSV parser for import
+    // CSV parser
     function parseCsv(csv) {
-      // Parse CSV data into lines and bars
+      // Parse CSV into data
       const rows = csv.trim().split('\n');
       const header = rows[0].toLowerCase();
       if (!header.includes('line id') || !header.includes('bar id')) throw new Error("Invalid CSV header");
@@ -1259,18 +1226,17 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       return { lines: newLines, lineCounter: maxLineId, barCounter: maxBarId };
     }
 
-    // Import file handler
+    // Import handler
     importFileInput.addEventListener("change", e => {
-      // Handle JSON or CSV import
+      // Handle file import
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = evt => {
         try {
           const ext = file.name.split('.').pop().toLowerCase();
-          let imported;
           if (ext === 'json') {
-            imported = JSON.parse(evt.target.result);
+            const imported = JSON.parse(evt.target.result);
             lines = imported.lines || [];
             startYear = imported.startYear || 2025;
             startWeek = imported.startWeek || 1;
@@ -1299,9 +1265,9 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
     });
     importJsonBtn.addEventListener("click", () => importFileInput.click());
 
-    // Apply timescale button
+    // Apply timescale
     applyTimescaleBtn.addEventListener("click", () => {
-      // Update view range from inputs
+      // Update view range
       const sy = parseInt(startYearInput.value, 10);
       const sw = parseInt(startWeekInput.value, 10);
       const ey = parseInt(endYearInput.value, 10);
@@ -1318,9 +1284,9 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       saveToLocalStorage();
     });
 
-    // Show bar editor modal
+    // Show bar editor
     function showBarEditor(bar, line, x, y) {
-      // Open editor popup with bar details
+      // Open editor
       currentEditorBar = bar;
       currentEditorLine = line;
       barTextInput.value = bar.text;
@@ -1336,9 +1302,9 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       barEditor.style.top = (y + window.scrollY + 10) + "px";
     }
 
-    // Editor OK button
+    // Editor OK
     barEditorOkBtn.addEventListener("click", () => {
-      // Save changes from editor
+      // Save editor changes
       if (!currentEditorBar) return;
       currentEditorBar.text = barTextInput.value;
       currentEditorBar.status = barStatusSelect.value;
@@ -1357,9 +1323,9 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       saveToLocalStorage();
     });
 
-    // Editor delete button
+    // Editor delete
     barDeleteBtn.addEventListener("click", () => {
-      // Delete bar from editor
+      // Delete bar
       if (currentEditorBar && currentEditorLine) {
         deleteBars([{ bar: currentEditorBar, line: currentEditorLine }]);
         barEditor.style.display = "none";
@@ -1368,16 +1334,16 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       }
     });
 
-    // Editor cancel button
+    // Editor cancel
     barEditorCancelBtn.addEventListener("click", () => {
-      // Close editor without save
+      // Close editor
       barEditor.style.display = "none";
       currentEditorBar = null;
     });
 
-    // Editor click outside to close
+    // Editor click outside
     document.addEventListener("mousedown", e => {
-      // Close editor if click outside
+      // Close if outside
       if (barEditor.style.display === "block") {
         const rect = barEditor.getBoundingClientRect();
         const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
@@ -1388,76 +1354,24 @@ padding-bottom: calc((var(--row-height) - 1em) / 2);
       }
     });
 
-    // Comprehensive Help/About section
+    // Help button
     helpBtn.addEventListener("click", () => {
-      // Open help window with full documentation
+      // Open help
       const helpWindow = window.open("", "GanttHelp", "width=800,height=800,scrollbars=yes,resizable=yes");
-      const helpHTML = `<!DOCTYPE html><html><head><title>Gantt Planner - Comprehensive Help</title><style>body{font-family:Arial;padding:20px;line-height:1.6;background:#f9f9f9;}h1,h2,h3{color:#0d6efd;}ul{margin:12px 0;}code{background:#eef;padding:2px 6px;border-radius:4px;}.tip{background:#e7f3ff;padding:15px;border-left:4px solid #0d6efd;margin:15px 0;border-radius:4px;}pre{background:#eee;padding:10px;border-radius:4px;overflow:auto;}</style></head><body>
-        <h1>Gantt Planner - Full Documentation</h1>
-        <p>This is an advanced, interactive Gantt chart planner built entirely with HTML, CSS, and JavaScript. It runs locally in your browser with no server required. All data is saved automatically to your browser's localStorage, so it persists across sessions.</p>
-        
-        <h2>How It Works</h2>
-        <p>The chart uses a single cohesive HTML table for perfect alignment. The left column is sticky for task names, the top header is sticky for week labels, and the body scrolls in both directions. A subtle grid background (dynamic with zoom) provides visual structure without interfering with bars.</p>
-        <p>Time is modeled in <strong>absolute weeks</strong>: year * 52 + (week - 1). This allows seamless spanning across years.</p>
-        <p>Bars are absolutely positioned within row containers, enabling drag, resize, and precise placement. The red vertical "today" line marks the current date (Nov 3, 2025).</p>
-        
-        <h2>Key Features</h2>
-        <ul>
-          <li><strong>Dynamic Zoom</strong>: Horizontal zoom slider adjusts week column width (50-300px). New vertical zoom slider adjusts row height (30-100px). Grid, bars, and text automatically scale.</li>
-          <li><strong>Task Lines</strong>: Add/remove lines, edit names inline. Each line holds multiple bars.</li>
-          <li><strong>Bars</strong>: Create, drag to move, resize with handles, double-click to edit. Status colors: Secured (green), Proposed (orange), Opportunity (red), Future (purple).</li>
-          <li><strong>Selection & Keyboard</strong>: Click to select (Shift/Ctrl for multi). Arrows move, Up/Down shift bars between lines, Delete removes. Ctrl+C/V copy/paste bars.</li>
-          <li><strong>Timescale</strong>: Set start/end year/week, apply to focus view. Headers show YYYY-WWW.</li>
-          <li><strong>Import/Export</strong>: JSON (full state including zoom), CSV (data only). Import overwrites current chart.</li>
-          <li><strong>Print/PDF</strong>: Browser print (hides toolbar, expands view).</li>
-          <li><strong>Persistent Storage</strong>: Auto-saves to localStorage. Clear browser data to reset.</li>
-          <li><strong>Responsive</strong>: Works on desktop/mobile, with adjusted widths for small screens.</li>
-          <li><strong>Today Line</strong>: Red vertical line at current week, height matches chart.</li>
-          <li><strong>Bar Text Centering</strong>: Text stays centered in visible portion while scrolling.</li>
-        </ul>
-        
-        <h2>Toolbar Guide</h2>
-        <p>The sticky top toolbar is grouped logically:</p>
-        <ul>
-          <li><strong>Timescale</strong>: Set view range and apply.</li>
-          <li><strong>Stats & Legend</strong>: Line/bar counts and status color key.</li>
-          <li><strong>Zoom</strong>: H-Zoom (width), V-Zoom (height).</li>
-          <li><strong>Actions</strong>: Add Line/Bar, Import (JSON/CSV), Export JSON/CSV, Print/PDF, Help (?).</li>
-        </ul>
-        
-        <h2>Tips & Tricks</h2>
-        <div class="tip">
-          <strong>Precise Editing</strong>: Double-click a bar for exact start/end dates and status.<br>
-          <strong>Multi-Select</strong>: Hold Shift/Ctrl while clicking bars.<br>
-          <strong>Copy/Paste</strong>: Select bars, Ctrl+C, then Ctrl+V (pastes to last selected line or new).<br>
-          <strong>Scrolling</strong>: Use mouse wheel or touch for horizontal/vertical scroll. Headers and names stay fixed.<br>
-          <strong>Reset</strong>: Clear localStorage or reload with no data.<br>
-          <strong>Performance</strong>: Handles hundreds of bars smoothly due to efficient rendering.
-        </div>
-        
-        <h2>Known Limitations</h2>
-        <ul>
-          <li>No dependencies (arrows between bars).</li>
-          <li>No milestones or other shapes.</li>
-          <li>No resource loading or critical path.</li>
-          <li>Week-based only (no days/months).</li>
-        </ul>
-        
-        <h2>Technical Details</h2>
-        <p>Data structure: <pre>lines = [{id, name, bars: [{id, text, status, startAbsWeek, length, selected}]}]</pre></p>
-        <p>Zoom uses CSS variables <code>--cell-width</code> and <code>--row-height</code> for grid and sizing sync.</p>
-        <p>All interactions trigger <code>renderTable()</code> for updates, with localStorage save.</p>
-        
-        <p>Enjoy planning! For issues, inspect console or modify the open-source code.</p>
+      const helpHTML = `<!DOCTYPE html><html><head><title>Gantt Planner - Help</title><style>body{font-family:Arial;padding:20px;line-height:1.6;background:#f9f9f9;}h1,h2,h3{color:#0d6efd;}</style></head><body>
+        <h1>Gantt Planner</h1>
+        <p>Interactive Gantt chart with drag, resize, zoom, import/export.</p>
+        <p>Bars and task labels are perfectly centered vertically via flexbox.</p>
+        <p>Grid: Single vertical/horizontal lines, dynamic with zoom.</p>
       </body></html>`;
-      helpWindow.document.write(helpHTML);
+      helpWindow.document.write(helpHTML);am
       helpWindow.document.close();
     });
 
-    // Scroll handler: Update bar text positions and today line if needed
+    // Scroll handler
     const tableWrapper = document.querySelector(".table-wrapper");
     tableWrapper.addEventListener("scroll", () => {
-      // Reposition bar text on horizontal scroll
+      // Update text on scroll
       updateBarTextPositions();
     });
 
