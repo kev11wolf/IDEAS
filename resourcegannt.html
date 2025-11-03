@@ -20,12 +20,14 @@
     /* Navbar: Sticky at top, always visible */
     .navbar {
       position: sticky;
+      height: 150px;
       top: 0;
       z-index: 1000;
       background-color: #f8f9fa;
+      padding: 0.5rem 1rem;
     }
 
-    /* Main container: Full width */
+    /* Main container: Full width with padding */
     .gantt-container {
       margin: 0 1rem;
       position: relative;
@@ -51,10 +53,11 @@
       box-sizing: border-box;
     }
 
-    /* Name header: Fixed width, left-aligned */
+    /* Name header: Fixed width, left-aligned, explicit background */
     #nameHeader {
       width: 240px;
       text-align: center;
+      height:100%;
       font-weight: bold;
       background-color: #f8f9fa;
       border-right: 1px solid #dee2e6;
@@ -68,21 +71,22 @@
       min-width: 50px;
     }
 
-    /* Table body: Scrollable */
+    /* Table body: Grid background using CSS variables for dynamic sizing */
     #ganttTable tbody {
       background-image: 
         linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
-      background-size: var(--cell-width) 40px;
+      background-size: var(--cell-width) var(--row-height);
+      background-repeat: repeat;
     }
 
-    /* Row: Fixed height */
+    /* Row: Dynamic height via CSS variable */
     .gantt-row {
-      height: 40px;
+      height: var(--row-height);
       border-bottom: 1px solid #dee2e6;
     }
 
-    /* Name cell: Sticky left, contains input + remove */
+    /* Name cell: Sticky left, explicit white background to prevent grid bleed */
     .name-cell {
       position: sticky;
       left: 0;
@@ -131,8 +135,8 @@
 
     /* Bar: Relative, rounded */
     .bar {
-      position: Relative;
-      height: 30px;
+      position: relative; /* Changed to absolute for precise positioning */
+      height: calc(var(--row-height) - 10px); /* Dynamic height, leaving 5px top/bottom margin */
       top: 5px;
       border-radius: 4px;
       color: #fff;
@@ -149,19 +153,19 @@
     .bar-text {
       position: absolute;
       top: 0;
-      height: 30px;
-      line-height: 30px;
+      height: 100%;
+      line-height: calc(var(--row-height) - 10px);
       white-space: nowrap;
       pointer-events: none;
       font-weight: 500;
     }
 
-    /* Resize handles */
+    /* Resize handles: Scale with row height */
     .bar-handle {
       position: absolute;
       top: 0;
       width: 6px;
-      height: 30px;
+      height: 100%;
       cursor: col-resize;
       background-color: rgba(255,255,255,0.4);
       z-index: 2;
@@ -220,10 +224,39 @@
       margin-top: 12px;
     }
 
-    /* Zoom slider */
-    #zoomSlider {
+    /* Zoom sliders: Enhanced visibility with shadow, thicker track/thumb */
+    .zoom-slider {
       width: 120px;
       margin: 0 8px;
+      height: 8px;
+      border-radius: 4px;
+      background: #ced4da;
+      outline: none;
+      -webkit-appearance: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+    .zoom-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #0d6efd;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .zoom-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #0d6efd;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    /* Vertical zoom slider rotated */
+    #heightZoomSlider {
+      transform: rotate(-90deg);
+      width: 100px;
     }
 
     /* Print button */
@@ -237,7 +270,6 @@
       gap: 12px;
       align-items: center;
       font-size: 0.85rem;
-      margin-left: 1rem;
     }
     .legend-item {
       display: flex;
@@ -250,13 +282,32 @@
       border-radius: 3px;
     }
 
-    /* Responsive */
+    /* Toolbar groups: For compartmentalized layout */
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0 0.75rem;
+      border-left: 1px solid #dee2e6;
+    }
+    .toolbar-group:first-child {
+      border-left: none;
+      padding-left: 0;
+    }
+    .toolbar-group:last-child {
+      padding-right: 0;
+    }
+
+    /* Responsive adjustments */
     @media (max-width: 768px) {
       #nameHeader, .name-cell {
         width: 180px;
       }
-      #zoomSlider {
+      .zoom-slider {
         width: 100px;
+      }
+      .toolbar-group {
+        padding: 0 0.5rem;
       }
     }
 
@@ -278,7 +329,6 @@
     #statsDisplay {
       font-size: 0.9rem;
       color: #555;
-      margin-right: 1rem;
     }
 
     /* Print styles: Hide navbar, show full */
@@ -298,7 +348,7 @@
 </head>
 
 <body>
-  <!-- Sticky navbar -->
+  <!-- Sticky navbar with compartmentalized groups -->
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
       <a class="navbar-brand" href="#">Gantt Planner</a>
@@ -313,8 +363,8 @@
       </button>
 
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <!-- Timescale inputs -->
-        <form class="d-flex align-items-center gap-2">
+        <!-- Group 1: Timescale controls -->
+        <div class="toolbar-group">
           <label for="startYearInput" class="form-label m-0">Start Y:</label>
           <input id="startYearInput" type="number" class="form-control form-control-sm" value="2025" style="width:72px;" />
           <label for="startWeekInput" class="form-label m-0">Wk:</label>
@@ -322,36 +372,38 @@
           <label for="endYearInput" class="form-label m-0">End Y:</label>
           <input id="endYearInput" type="number" class="form-control form-control-sm" value="2025" style="width:72px;" />
           <label for="endWeekInput" class="form-label m-0">Wk:</label>
-          <input id="endWeekInput" type="number" class="form-control form-control-sm" value="52" style="width:50px;" />
+          <input id="endWeekInput" type="number" class="form-control form-control-sm" Leggi value="52" style="width:50px;" />
           <button id="applyTimescaleBtn" type="button" class="btn btn-secondary btn-sm">Apply</button>
-        </form>
-
-        <!-- Stats -->
-        <div id="statsDisplay" class="d-flex align-items-center ms-3">
-          Lines: <span id="lineCount">0</span> | Bars: <span id="barCount">0</span>
         </div>
 
-        <!-- Legend -->
-        <div id="statusLegend" class="d-flex align-items-center">
-          <div class="legend-item"><div class="legend-swatch" style="background:#28a745;"></div><span>Secured</span></div>
-          <div class="legend-item"><div class="legend-swatch" style="background:#fd7e14;"></div><span>Proposed</span></div>
-          <div class="legend-item"><div class="legend-swatch" style="background:#dc3545;"></div><span>Opportunity</span></div>
-          <div class="legend-item"><div class="legend-swatch" style="background:#6f42c1;"></div><span>Future</span></div>
+        <!-- Group 2: Stats and Legend -->
+        <div class="toolbar-group">
+          <div id="statsDisplay" class="d-flex align-items-center">
+            Lines: <span id="lineCount">0</span> | Bars: <span id="barCount">0</span>
+          </div>
+          <div id="statusLegend" class="d-flex align-items-center">
+            <div class="legend-item"><div class="legend-swatch" style="background:#28a745;"></div><span>Secured</span></div>
+            <div class="legend-item"><div class="legend-swatch" style="background:#fd7e14;"></div><span>Proposed</span></div>
+            <div class="legend-item"><div class="legend-swatch" style="background:#dc3545;"></div><span>Opportunity</span></div>
+            <div class="legend-item"><div class="legend-swatch" style="background:#6f42c1;"></div><span>Future</span></div>
+          </div>
         </div>
 
-        <!-- Zoom slider -->
-        <div class="d-flex align-items-center ms-3">
-          <label for="zoomSlider" class="form-label m-0 me-2">Zoom:</label>
-          <input type="range" class="form-range" id="zoomSlider" min="50" max="300" value="150" step="10">
+        <!-- Group 3: Zoom controls (horizontal and vertical) -->
+        <div class="toolbar-group">
+          <label for="zoomSlider" class="form-label m-0 me-2">H-Zoom:</label>
+          <input type="range" class="zoom-slider" id="zoomSlider" min="50" max="300" value="150" step="10">
+          <label for="heightZoomSlider" class="form-label m-0 me-2">V-Zoom:</label>
+          <input type="range" class="zoom-slider" id="heightZoomSlider" min="30" max="100" value="40" step="5">
         </div>
 
-        <!-- Controls -->
-        <div class="d-flex ms-auto gap-2 align-items-center">
+        <!-- Group 4: Action buttons and help -->
+        <div class="toolbar-group ms-auto">
           <button id="addLineItemBtn" class="btn btn-primary btn-sm">Add Line</button>
           <button id="addBarBtn" class="btn btn-secondary btn-sm">Add Bar</button>
-          <button id="importJsonBtn" class="btn btn-outline-success btn-sm">Import JSON/CSV</button>
+          <button id="importJsonBtn" class="btn btn-outline-success btn-sm">Import</button>
           <button id="exportJsonBtn" class="btn btn-outline-info btn-sm">Export JSON</button>
-          <button id="downloadCsvBtn" class="btn btn-outline-secondary btn-sm">Download CSV</button>
+          <button id="downloadCsvBtn" class="btn btn-outline-secondary btn-sm">Export CSV</button>
           <button id="printBtn" class="btn btn-outline-dark btn-sm">Print/PDF</button>
           <svg id="helpBtn" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 14.5v.5h-2v-1c0-1.11.45-2.11 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" fill="#0d6efd"/>
@@ -462,8 +514,9 @@
     let lineCounter = 2;
     let barCounter = 102;
 
-    // Zoom: Column width in px
+    // Zoom: Horizontal column width in px, vertical row height in px
     let cellWidth = 150;
+    let rowHeight = 40;
 
     // Clipboard for copy/paste
     let clipboard = [];
@@ -489,6 +542,7 @@
     const lineCountSpan = document.getElementById("lineCount");
     const barCountSpan = document.getElementById("barCount");
     const zoomSlider = document.getElementById("zoomSlider");
+    const heightZoomSlider = document.getElementById("heightZoomSlider");
 
     // Editor elements
     const barEditor = document.getElementById("barEditor");
@@ -520,7 +574,7 @@
       return year * 52 + (week - 1);
     }
 
-    // From absolute to {year, week}
+    // From absolute week to {year, week}
     function fromAbsoluteWeek(absWeek) {
       const y = Math.floor(absWeek / 52);
       const w = (absWeek % 52) + 1;
@@ -554,17 +608,17 @@
       });
     }
 
-    // Set global cell width (zoom)
-    function setCellWidth(width) {
-      cellWidth = width;
-      document.documentElement.style.setProperty('--cell-width', width + 'px');
-      ganttTable.style.setProperty('--cell-width', width + 'px');
-      renderTable();
+    // Set CSS variables for dynamic grid and sizing
+    function updateCSSVariables() {
+      document.documentElement.style.setProperty('--cell-width', cellWidth + 'px');
+      document.documentElement.style.setProperty('--row-height', rowHeight + 'px');
+      ganttTable.style.setProperty('--cell-width', cellWidth + 'px');
+      ganttTable.style.setProperty('--row-height', rowHeight + 'px');
     }
 
     // Save to localStorage
     function saveToLocalStorage() {
-      const chartData = { lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth };
+      const chartData = { lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth, rowHeight };
       localStorage.setItem("ganttChartData", JSON.stringify(chartData));
     }
 
@@ -583,6 +637,7 @@
         lineCounter = parsed.lineCounter || 0;
         barCounter = parsed.barCounter || 0;
         cellWidth = parsed.cellWidth || 150;
+        rowHeight = parsed.rowHeight || 40;
       } catch (err) {
         console.warn("Invalid localStorage data");
       }
@@ -633,7 +688,7 @@
       return { displayStart: ds, displayEnd: de };
     }
 
-    // Today absolute week (Nov 3, 2025 = week 45 of 2025)
+    // Today absolute week using current date (November 03, 2025)
     function getTodayAbsWeek() {
       const today = new Date();
       const year = today.getFullYear();
@@ -693,15 +748,15 @@
         headerRow.appendChild(th);
       }
 
-      // Today line
+      // Today line overlay
       todayLineContainer.innerHTML = "";
       const todayAbs = getTodayAbsWeek();
       if (todayAbs >= displayStart && todayAbs <= displayEnd) {
-        const offset = (todayAbs - displayStart) * cellWidth + 240; // + name width
+        const offset = (todayAbs - displayStart) * cellWidth + 240; // + name column width
         const todayLine = document.createElement("div");
         todayLine.className = "today-line";
         todayLine.style.left = offset + "px";
-        todayLine.style.height = (lines.length * 40 + 40) + "px"; // + header
+        todayLine.style.height = (lines.length * rowHeight + rowHeight) + "px"; // Header + rows
         todayLineContainer.appendChild(todayLine);
       }
     }
@@ -725,7 +780,7 @@
         const tr = document.createElement("tr");
         tr.className = "gantt-row";
 
-        // Name cell
+        // Name cell with remove button and input
         const nameTd = document.createElement("td");
         nameTd.className = "name-cell";
         const removeBtn = document.createElement("button");
@@ -745,7 +800,7 @@
         nameTd.appendChild(nameInput);
         tr.appendChild(nameTd);
 
-        // Bar row: Single td spanning all weeks
+        // Bar container cell spanning all weeks
         const barTd = document.createElement("td");
         barTd.colSpan = totalWeeks;
         barTd.className = "bar-cell";
@@ -770,13 +825,13 @@
           barDiv.style.width = barWidth + "px";
           barDiv.style.backgroundColor = getColorFromStatus(bar.status);
 
-          // Text
+          // Bar text span
           const textSpan = document.createElement("span");
           textSpan.className = "bar-text";
           textSpan.textContent = bar.text;
           barDiv.appendChild(textSpan);
 
-          // Handles
+          // Resize handles
           const leftHandle = document.createElement("div");
           leftHandle.classList.add("bar-handle", "left");
           barDiv.appendChild(leftHandle);
@@ -784,7 +839,7 @@
           rightHandle.classList.add("bar-handle", "right");
           barDiv.appendChild(rightHandle);
 
-          // Events
+          // Bar events: click, dblclick, mousedown
           barDiv.addEventListener("click", e => {
             e.stopPropagation();
             handleBarClickSelect(bar, e);
@@ -809,14 +864,14 @@
       updateBarTextPositions();
     }
 
-    // Remove line item
+    // Remove line item by ID
     function removeLineItem(id) {
       lines = lines.filter(l => l.id !== id);
       renderTable();
       saveToLocalStorage();
     }
 
-    // Bar mouse down (drag/resize)
+    // Bar mouse down: Start drag or resize
     function onBarMouseDown(e, line, bar) {
       if (e.target.classList.contains("bar-handle")) {
         dragType = e.target.classList.contains("left") ? "resize-left" : "resize-right";
@@ -832,7 +887,7 @@
       e.preventDefault();
     }
 
-    // Document mousemove (drag)
+    // Document mousemove: Handle dragging/resizing
     document.addEventListener("mousemove", e => {
       if (!dragging || !currentBar) return;
       const dx = e.clientX - dragStartX;
@@ -841,7 +896,7 @@
       if (dragType === "move") {
         currentBar.startAbsWeek = Math.max(0, initialStartAbs + dWeeks);
       } else if (dragType === "resize-left") {
-        let newStart = initialStartAbs + dWeeks;
+        let newStart = initialStartAbs + dWeeks京东;
         let newLength = initialStartAbs + initialLength - newStart;
         if (newLength < 1) { newLength = 1; newStart = initialStartAbs + initialLength - 1; }
         currentBar.startAbsWeek = Math.max(0, newStart);
@@ -854,7 +909,7 @@
       renderTable();
     });
 
-    // Document mouseup (end drag)
+    // Document mouseup: End drag
     document.addEventListener("mouseup", () => {
       if (dragging) {
         dragging = false;
@@ -865,7 +920,7 @@
       }
     });
 
-    // Click outside (unselect)
+    // Click outside: Unselect bars
     document.addEventListener("click", () => {
       if (!dragging) {
         unselectAllBars();
@@ -971,7 +1026,7 @@
 
     // Export JSON
     exportJsonBtn.addEventListener("click", () => {
-      const dataStr = JSON.stringify({ lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth }, null, 2);
+      const dataStr = JSON.stringify({ lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth, rowHeight }, null, 2);
       const blob = new Blob([dataStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -1004,15 +1059,24 @@
       URL.revokeObjectURL(url);
     });
 
-    // Print/PDF
+    // Print/PDF button
     printBtn.addEventListener("click", () => {
       window.print();
     });
 
-    // Zoom slider
+    // Horizontal zoom slider
     zoomSlider.addEventListener("input", e => {
-      const width = parseInt(e.target.value);
-      setCellWidth(width);
+      cellWidth = parseInt(e.target.value);
+      updateCSSVariables();
+      renderTable();
+      saveToLocalStorage();
+    });
+
+    // Vertical zoom slider
+    heightZoomSlider.addEventListener("input", e => {
+      rowHeight = parseInt(e.target.value);
+      updateCSSVariables();
+      renderTable();
       saveToLocalStorage();
     });
 
@@ -1084,6 +1148,7 @@
             lineCounter = imported.lineCounter || 0;
             barCounter = imported.barCounter || 0;
             cellWidth = imported.cellWidth || 150;
+            rowHeight = imported.rowHeight || 40;
           } else if (ext === 'csv') {
             const parsed = parseCsv(evt.target.result);
             lines = parsed.lines;
@@ -1091,7 +1156,7 @@
             barCounter = parsed.barCounter;
           } else throw new Error("Unsupported file");
           lines.forEach(line => line.bars.forEach(bar => { if (!bar.status) bar.status = "proposed"; }));
-          setCellWidth(cellWidth);
+          updateCSSVariables();
           renderTable();
           saveToLocalStorage();
         } catch (err) {
@@ -1103,7 +1168,7 @@
     });
     importJsonBtn.addEventListener("click", () => importFileInput.click());
 
-    // Apply timescale
+    // Apply timescale button
     applyTimescaleBtn.addEventListener("click", () => {
       const sy = parseInt(startYearInput.value, 10);
       const sw = parseInt(startWeekInput.value, 10);
@@ -1121,7 +1186,7 @@
       saveToLocalStorage();
     });
 
-    // Show bar editor
+    // Show bar editor modal
     function showBarEditor(bar, line, x, y) {
       currentEditorBar = bar;
       currentEditorLine = line;
@@ -1138,7 +1203,7 @@
       barEditor.style.top = (y + window.scrollY + 10) + "px";
     }
 
-    // Editor OK
+    // Editor OK button
     barEditorOkBtn.addEventListener("click", () => {
       if (!currentEditorBar) return;
       currentEditorBar.text = barTextInput.value;
@@ -1158,7 +1223,7 @@
       saveToLocalStorage();
     });
 
-    // Editor delete
+    // Editor delete button
     barDeleteBtn.addEventListener("click", () => {
       if (currentEditorBar && currentEditorLine) {
         deleteBars([{ bar: currentEditorBar, line: currentEditorLine }]);
@@ -1168,13 +1233,13 @@
       }
     });
 
-    // Editor cancel
+    // Editor cancel button
     barEditorCancelBtn.addEventListener("click", () => {
       barEditor.style.display = "none";
       currentEditorBar = null;
     });
 
-    // Editor click outside close
+    // Editor click outside to close
     document.addEventListener("mousedown", e => {
       if (barEditor.style.display === "block") {
         const rect = barEditor.getBoundingClientRect();
@@ -1186,33 +1251,88 @@
       }
     });
 
-    // Help button
+    // Comprehensive Help/About section
     helpBtn.addEventListener("click", () => {
-      const helpWindow = window.open("", "GanttHelp", "width=680,height=760,scrollbars=yes,resizable=yes");
-      const helpHTML = `<!DOCTYPE html><html><head><title>Gantt Planner Help</title><style>body{font-family:Arial;padding:20px;line-height:1.6;background:#f9f9f9;}h1,h2{color:#0d6efd;}ul{margin:12px 0;}code{background:#eef;padding:2px 6px;border-radius:4px;}.tip{background:#e7f3ff;padding:10px;border-left:4px solid #0d6efd;margin:10px 0;}</style></head><body><h1>Gantt Planner Help</h1><p>Cohesive table-based Gantt chart.</p><h2>Layout</h2><p>Column 1: Task names (editable). Columns 2+: Weeks with bars.</p><h2>Zoom & Print</h2><ul><li>Zoom: Adjust week column width.</li><li>Print/PDF: Browser print (save as PDF).</li></ul><h2>Navigation</h2><ul><li>Scroll: Headers/name sticky.</li><li>Red line: Today.</li><li>Bar text centers in view.</li></ul><h2>Operations</h2><ul><li>Add Line/Bar.</li><li>Edit name, drag/resize bars.</li><li>Double-click bar for editor.</li><li>Keyboard: Arrows, Delete, Ctrl+C/V.</li></ul><h2>Import/Export</h2><ul><li>JSON/CSV support.</li></ul></body></html>`;
+      const helpWindow = window.open("", "GanttHelp", "width=800,height=800,scrollbars=yes,resizable=yes");
+      const helpHTML = `<!DOCTYPE html><html><head><title>Gantt Planner - Comprehensive Help</title><style>body{font-family:Arial;padding:20px;line-height:1.6;background:#f9f9f9;}h1,h2,h3{color:#0d6efd;}ul{margin:12px 0;}code{background:#eef;padding:2px 6px;border-radius:4px;}.tip{background:#e7f3ff;padding:15px;border-left:4px solid #0d6efd;margin:15px 0;border-radius:4px;}pre{background:#eee;padding:10px;border-radius:4px;overflow:auto;}</style></head><body>
+        <h1>Gantt Planner - Full Documentation</h1>
+        <p>This is an advanced, interactive Gantt chart planner built entirely with HTML, CSS, and JavaScript. It runs locally in your browser with no server required. All data is saved automatically to your browser's localStorage, so it persists across sessions.</p>
+        
+        <h2>How It Works</h2>
+        <p>The chart uses a single cohesive HTML table for perfect alignment. The left column is sticky for task names, the top header is sticky for week labels, and the body scrolls in both directions. A subtle grid background (dynamic with zoom) provides visual structure without interfering with bars.</p>
+        <p>Time is modeled in <strong>absolute weeks</strong>: year * 52 + (week - 1). This allows seamless spanning across years.</p>
+        <p>Bars are absolutely positioned within row containers, enabling drag, resize, and precise placement. The red vertical "today" line marks the current date (Nov 3, 2025).</p>
+        
+        <h2>Key Features</h2>
+        <ul>
+          <li><strong>Dynamic Zoom</strong>: Horizontal zoom slider adjusts week column width (50-300px). New vertical zoom slider adjusts row height (30-100px). Grid, bars, and text automatically scale.</li>
+          <li><strong>Task Lines</strong>: Add/remove lines, edit names inline. Each line holds multiple bars.</li>
+          <li><strong>Bars</strong>: Create, drag to move, resize with handles, double-click to edit. Status colors: Secured (green), Proposed (orange), Opportunity (red), Future (purple).</li>
+          <li><strong>Selection & Keyboard</strong>: Click to select (Shift/Ctrl for multi). Arrows move, Up/Down shift bars between lines, Delete removes. Ctrl+C/V copy/paste bars.</li>
+          <li><strong>Timescale</strong>: Set start/end year/week, apply to focus view. Headers show YYYY-WWW.</li>
+          <li><strong>Import/Export</strong>: JSON (full state including zoom), CSV (data only). Import overwrites current chart.</li>
+          <li><strong>Print/PDF</strong>: Browser print (hides toolbar, expands view).</li>
+          <li><strong>Persistent Storage</strong>: Auto-saves to localStorage. Clear browser data to reset.</li>
+          <li><strong>Responsive</strong>: Works on desktop/mobile, with adjusted widths for small screens.</li>
+          <li><strong>Today Line</strong>: Red vertical line at current week, height matches chart.</li>
+          <li><strong>Bar Text Centering</strong>: Text stays centered in visible portion while scrolling.</li>
+        </ul>
+        
+        <h2>Toolbar Guide</h2>
+        <p>The sticky top toolbar is grouped logically:</p>
+        <ul>
+          <li><strong>Timescale</strong>: Set view range and apply.</li>
+          <li><strong>Stats & Legend</strong>: Line/bar counts and status color key.</li>
+          <li><strong>Zoom</strong>: H-Zoom (width), V-Zoom (height).</li>
+          <li><strong>Actions</strong>: Add Line/Bar, Import (JSON/CSV), Export JSON/CSV, Print/PDF, Help (?).</li>
+        </ul>
+        
+        <h2>Tips & Tricks</h2>
+        <div class="tip">
+          <strong>Precise Editing</strong>: Double-click a bar for exact start/end dates and status.<br>
+          <strong>Multi-Select</strong>: Hold Shift/Ctrl while clicking bars.<br>
+          <strong>Copy/Paste</strong>: Select bars, Ctrl+C, then Ctrl+V (pastes to last selected line or new).<br>
+          <strong>Scrolling</strong>: Use mouse wheel or touch for horizontal/vertical scroll. Headers and names stay fixed.<br>
+          <strong>Reset</strong>: Clear localStorage or reload with no data.<br>
+          <strong>Performance</strong>: Handles hundreds of bars smoothly due to efficient rendering.
+        </div>
+        
+        <h2>Known Limitations</h2>
+        <ul>
+          <li>No dependencies (arrows between bars).</li>
+          <li>No milestones or other shapes.</li>
+          <li>No resource loading or critical path.</li>
+          <li>Week-based only (no days/months).</li>
+        </ul>
+        
+        <h2>Technical Details</h2>
+        <p>Data structure: <pre>lines = [{id, name, bars: [{id, text, status, startAbsWeek, length, selected}]}]</pre></p>
+        <p>Zoom uses CSS variables <code>--cell-width</code> and <code>--row-height</code> for grid and sizing sync.</p>
+        <p>All interactions trigger <code>renderTable()</code> for updates, with localStorage save.</p>
+        
+        <p>Enjoy planning! For issues, inspect console or modify the open-source code.</p>
+      </body></html>`;
       helpWindow.document.write(helpHTML);
       helpWindow.document.close();
     });
 
-    // Scroll handler: Sync text + today line
+    // Scroll handler: Update bar text positions and today line if needed
     const tableWrapper = document.querySelector(".table-wrapper");
     tableWrapper.addEventListener("scroll", () => {
       updateBarTextPositions();
     });
 
-    // Init
+    // Initialization
     populateDateSelects();
     loadFromLocalStorage();
-    setCellWidth(cellWidth);
+    updateCSSVariables();
     zoomSlider.value = cellWidth;
+    heightZoomSlider.value = rowHeight;
     startYearInput.value = startYear;
     startWeekInput.value = startWeek;
     endYearInput.value = endYear;
     endWeekInput.value = endWeek;
     renderTable();
-
-    // Dynamic today (real date)
-    // getTodayAbsWeek now uses new Date() for real current week
   </script>
 </body>
 </html>
