@@ -86,6 +86,11 @@
       border-bottom: 1px solid #dee2e6;
     }
 
+    /* Selected row: Highlight background */
+    .gantt-row.selected {
+      background-color: #fff3cd;
+    }
+
     /* Name cell: Sticky left, explicit white background to prevent grid bleed */
     .name-cell {
       position: sticky;
@@ -95,7 +100,11 @@
       width: 240px;
       border-right: 1px solid #dee2e6;
       display: flex;
-      align-items: center;
+      align-items: bottom;
+      justify-content: flex-start; /* Align content to left, but flex for centering if needed */
+    padding-top: calc((var(--row-height) - 1em) / 2);
+padding-bottom: calc((var(--row-height) - 1em) / 2);
+      box-sizing: border-box;
     }
 
     /* Remove line button: Red × */
@@ -115,6 +124,9 @@
       outline: none;
       background-color: transparent;
       font-weight: 500;
+      height: 100%; /* Fill row height */
+      display: flex;
+      align-items: center; /* Vertically center text */
     }
     .line-item-input:focus {
       outline: 1px solid #ccc;
@@ -124,43 +136,47 @@
     .bar-cell {
       position: relative;
       border-right: 1px solid #dee2e6;
+      padding: 0; /* No padding to allow full height usage */
     }
 
     /* Full row bar container: Spans all timescale columns */
-    .bar-row-container {
-      position: relative;
-      width: 100%;
-      height: 100%;
-    }
+.bar-row-container {
+  display: flex;
+  align-items: center; /* Centers children vertically */
+}
 
-    /* Bar: Relative, rounded */
+    /* Bar: Absolute positioned for overlapping, now centered vertically with calc((var(--row-height) - height)/2) */
     .bar {
-      position: relative; /* Changed to absolute for precise positioning */
-      height: calc(var(--row-height) - 10px); /* Dynamic height, leaving 5px top/bottom margin */
-      top: 5px;
+      position: absolute;
+      height: calc(var(--row-height) - 16px); /* Reduced inner height for better visual centering with margins */
+      top: calc((var(--row-height) - (var(--row-height) - 16px)) / 2); /* Dynamic vertical centering: (rowHeight - barHeight)/2 */
+      left: 0; /* Bars start from left of container */
       border-radius: 4px;
       color: #fff;
       cursor: move;
       user-select: none;
       opacity: 0.7;
       overflow: hidden;
+      z-index: 0;
+      box-sizing: border-box; /* Include padding/border in height */
     }
     .bar.selected {
       outline: 2px solid #ffc107;
     }
 
-    /* Bar text: Centered in visible portion */
+    /* Bar text: Centered in visible portion, vertically centered in bar */
     .bar-text {
       position: absolute;
       top: 0;
       height: 100%;
-      line-height: calc(var(--row-height) - 10px);
+      line-height: calc(var(--row-height) - 16px); /* Match bar height for vertical center */
       white-space: nowrap;
       pointer-events: none;
       font-weight: 500;
+      padding: 0 8px; /* Small padding for text */
     }
 
-    /* Resize handles: Scale with row height */
+    /* Resize handles: Scale with row height, full height of bar */
     .bar-handle {
       position: absolute;
       top: 0;
@@ -177,6 +193,23 @@
     .bar-handle.right {
       right: 0;
       border-radius: 0 4px 4px 0;
+    }
+
+    /* Overlap hatch: Red diagonal stripes for overlaps, centered vertically like bars */
+    .overlap-hatch {
+      position: absolute;
+      height: calc(var(--row-height) - 16px); /* Match bar height */
+      top: calc((var(--row-height) - (var(--row-height) - 16px)) / 2); /* Match bar top for perfect centering */
+      background: repeating-linear-gradient(
+        45deg,
+        red,
+        red 2px,
+        transparent 2px,
+        transparent 4px
+      );
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 1;
     }
 
     /* Today line: Red vertical across table */
@@ -372,7 +405,7 @@
           <label for="endYearInput" class="form-label m-0">End Y:</label>
           <input id="endYearInput" type="number" class="form-control form-control-sm" value="2025" style="width:72px;" />
           <label for="endWeekInput" class="form-label m-0">Wk:</label>
-          <input id="endWeekInput" type="number" class="form-control form-control-sm" Leggi value="52" style="width:50px;" />
+          <input id="endWeekInput" type="number" class="form-control form-control-sm" value="52" style="width:50px;" />
           <button id="applyTimescaleBtn" type="button" class="btn btn-secondary btn-sm">Apply</button>
         </div>
 
@@ -472,7 +505,7 @@
       future: "#6f42c1"
     };
 
-    // Sample data: Initial lines and bars
+    // Sample data: 2 initial lines with bars
     let lines = [
       {
         id: 1,
@@ -487,6 +520,7 @@
             selected: false,
           },
         ],
+        selected: false
       },
       {
         id: 2,
@@ -501,6 +535,7 @@
             selected: false,
           },
         ],
+        selected: false
       },
     ];
 
@@ -571,11 +606,13 @@
 
     // Absolute week conversion: Year*52 + (week-1)
     function toAbsoluteWeek(year, week) {
+      // Convert year and week to absolute week number for easy calculations
       return year * 52 + (week - 1);
     }
 
     // From absolute week to {year, week}
     function fromAbsoluteWeek(absWeek) {
+      // Convert absolute week back to year and week
       const y = Math.floor(absWeek / 52);
       const w = (absWeek % 52) + 1;
       return { year: y, week: w };
@@ -583,11 +620,13 @@
 
     // Get color from status
     function getColorFromStatus(status) {
+      // Return hex color based on bar status
       return statusColors[status] || "#fd7e14";
     }
 
     // Populate year/week selects in editor
     function populateDateSelects() {
+      // Fill year and week dropdowns in the bar editor
       [startYearSelect, endYearSelect].forEach(sel => {
         sel.innerHTML = "";
         for (let y = 2010; y <= 2030; y++) {
@@ -610,6 +649,7 @@
 
     // Set CSS variables for dynamic grid and sizing
     function updateCSSVariables() {
+      // Update CSS custom properties for cell width and row height
       document.documentElement.style.setProperty('--cell-width', cellWidth + 'px');
       document.documentElement.style.setProperty('--row-height', rowHeight + 'px');
       ganttTable.style.setProperty('--cell-width', cellWidth + 'px');
@@ -618,18 +658,26 @@
 
     // Save to localStorage
     function saveToLocalStorage() {
+      // Persist chart data to browser localStorage
       const chartData = { lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth, rowHeight };
       localStorage.setItem("ganttChartData", JSON.stringify(chartData));
     }
 
     // Load from localStorage
     function loadFromLocalStorage() {
+      // Retrieve and parse chart data from localStorage
       const stored = localStorage.getItem("ganttChartData");
       if (!stored) return;
       try {
         const parsed = JSON.parse(stored);
         lines = parsed.lines || [];
-        lines.forEach(line => line.bars.forEach(bar => { if (!bar.status) bar.status = "proposed"; }));
+        lines.forEach(line => {
+          line.selected = false;
+          line.bars.forEach(bar => { 
+            if (!bar.status) bar.status = "proposed"; 
+            bar.selected = false;
+          });
+        });
         startYear = parsed.startYear || 2025;
         startWeek = parsed.startWeek || 1;
         endYear = parsed.endYear || 2025;
@@ -645,6 +693,7 @@
 
     // Get selected bars
     function getSelectedBars() {
+      // Collect all selected bars with their parent lines
       const selected = [];
       lines.forEach(line => line.bars.forEach(bar => { if (bar.selected) selected.push({ bar, line }); }));
       return selected;
@@ -652,6 +701,7 @@
 
     // Delete selected bars
     function deleteBars(barsToDelete) {
+      // Remove specified bars from their lines
       barsToDelete.forEach(({ bar, line }) => {
         line.bars = line.bars.filter(b => b.id !== bar.id);
       });
@@ -661,16 +711,19 @@
 
     // Count total bars
     function getTotalBars() {
+      // Sum all bars across lines
       return lines.reduce((count, line) => count + line.bars.length, 0);
     }
 
     // Unselect all bars
     function unselectAllBars() {
+      // Clear selection on all bars
       lines.forEach(line => line.bars.forEach(bar => bar.selected = false));
     }
 
     // Handle bar select (click/shift)
     function handleBarClickSelect(bar, event) {
+      // Toggle or set bar selection based on modifier keys
       const isMulti = event.shiftKey || event.ctrlKey || event.metaKey;
       if (!isMulti) {
         unselectAllBars();
@@ -682,6 +735,7 @@
 
     // Get display range (absolute weeks)
     function getDisplayRange() {
+      // Calculate start and end absolute weeks for current view
       let ds = toAbsoluteWeek(startYear, startWeek);
       let de = toAbsoluteWeek(endYear, endWeek);
       if (ds > de) [ds, de] = [de, ds];
@@ -690,6 +744,7 @@
 
     // Today absolute week using current date (November 03, 2025)
     function getTodayAbsWeek() {
+      // Calculate current week's absolute number
       const today = new Date();
       const year = today.getFullYear();
       const jan1 = new Date(year, 0, 1);
@@ -700,8 +755,9 @@
 
     // Update bar text centering in visible area
     function updateBarTextPositions() {
+      // Adjust bar text position to stay centered in viewport while scrolling
       const wrapper = document.querySelector(".table-wrapper");
-      const scrollLeft = wrapper.scrollLeft - 240; // Offset for name column
+      const scrollLeft = wrapper.scrollLeft; // No offset needed; bars now start at x=0 in container
       const viewportWidth = wrapper.clientWidth;
       document.querySelectorAll(".bar-text").forEach(textEl => {
         const barEl = textEl.parentElement;
@@ -729,7 +785,7 @@
 
     // Render header and timescale
     function renderHeader() {
-      // Clear existing timescale headers
+      // Clear and rebuild timescale header columns
       while (headerRow.children.length > 1) {
         headerRow.removeChild(headerRow.lastChild);
       }
@@ -752,23 +808,25 @@
       todayLineContainer.innerHTML = "";
       const todayAbs = getTodayAbsWeek();
       if (todayAbs >= displayStart && todayAbs <= displayEnd) {
-        const offset = (todayAbs - displayStart) * cellWidth + 240; // + name column width
+        const offset = (todayAbs - displayStart) * cellWidth; // No name column offset
         const todayLine = document.createElement("div");
         todayLine.className = "today-line";
         todayLine.style.left = offset + "px";
-        todayLine.style.height = (lines.length * rowHeight + rowHeight) + "px"; // Header + rows
+        todayLine.style.height = (lines.length * rowHeight + rowHeight) + "px"; // + header
         todayLineContainer.appendChild(todayLine);
       }
     }
 
     // Update stats display
     function updateStats() {
+      // Refresh line and bar counts in toolbar
       lineCountSpan.textContent = lines.length;
       barCountSpan.textContent = getTotalBars();
     }
 
     // Full table render
     function renderTable() {
+      // Rebuild entire table: header, body, bars, hatches
       renderHeader();
       tableBody.innerHTML = "";
 
@@ -779,6 +837,7 @@
       lines.forEach(line => {
         const tr = document.createElement("tr");
         tr.className = "gantt-row";
+        if (line.selected) tr.classList.add("selected");
 
         // Name cell with remove button and input
         const nameTd = document.createElement("td");
@@ -798,6 +857,14 @@
           saveToLocalStorage();
         });
         nameTd.appendChild(nameInput);
+        // Line selection on name cell click
+        nameTd.addEventListener("click", e => {
+          e.stopPropagation();
+          unselectAllBars();
+          lines.forEach(l => l.selected = false);
+          line.selected = true;
+          renderTable();
+        });
         tr.appendChild(nameTd);
 
         // Bar container cell spanning all weeks
@@ -815,6 +882,7 @@
           const overlapLen = overlapEnd - overlapStart;
           if (overlapLen <= 0) return;
 
+          // Bars now start at x=0 within container (no 240px offset)
           const barLeft = (overlapStart - displayStart) * cellWidth;
           const barWidth = overlapLen * cellWidth;
 
@@ -855,6 +923,30 @@
           barContainer.appendChild(barDiv);
         });
 
+        // Compute and add overlap hatches
+        const sortedBars = [...line.bars].sort((a, b) => a.startAbsWeek - b.startAbsWeek);
+        for (let i = 0; i < sortedBars.length; i++) {
+          for (let j = i + 1; j < sortedBars.length; j++) {
+            const bar1 = sortedBars[i];
+            const bar2 = sortedBars[j];
+            const start1 = Math.max(displayStart, bar1.startAbsWeek);
+            const end1 = Math.min(displayEnd + 1, bar1.startAbsWeek + bar1.length);
+            const start2 = Math.max(displayStart, bar2.startAbsWeek);
+            const end2 = Math.min(displayEnd + 1, bar2.startAbsWeek + bar2.length);
+            const overlapStart = Math.max(start1, start2);
+            const overlapEnd = Math.min(end1, end2);
+            if (overlapEnd > overlapStart) {
+              const left = (overlapStart - displayStart) * cellWidth;
+              const width = (overlapEnd - overlapStart) * cellWidth;
+              const hatchDiv = document.createElement("div");
+              hatchDiv.className = "overlap-hatch";
+              hatchDiv.style.left = left + "px";
+              hatchDiv.style.width = width + "px";
+              barContainer.appendChild(hatchDiv);
+            }
+          }
+        }
+
         barTd.appendChild(barContainer);
         tr.appendChild(barTd);
         tableBody.appendChild(tr);
@@ -866,6 +958,7 @@
 
     // Remove line item by ID
     function removeLineItem(id) {
+      // Filter out line by ID and re-render
       lines = lines.filter(l => l.id !== id);
       renderTable();
       saveToLocalStorage();
@@ -873,6 +966,7 @@
 
     // Bar mouse down: Start drag or resize
     function onBarMouseDown(e, line, bar) {
+      // Detect if resize handle clicked, else move
       if (e.target.classList.contains("bar-handle")) {
         dragType = e.target.classList.contains("left") ? "resize-left" : "resize-right";
       } else {
@@ -889,6 +983,7 @@
 
     // Document mousemove: Handle dragging/resizing
     document.addEventListener("mousemove", e => {
+      // Update bar position/length during drag
       if (!dragging || !currentBar) return;
       const dx = e.clientX - dragStartX;
       const dWeeks = Math.round(dx / cellWidth);
@@ -896,7 +991,7 @@
       if (dragType === "move") {
         currentBar.startAbsWeek = Math.max(0, initialStartAbs + dWeeks);
       } else if (dragType === "resize-left") {
-        let newStart = initialStartAbs + dWeeks京东;
+        let newStart = initialStartAbs + dWeeks;
         let newLength = initialStartAbs + initialLength - newStart;
         if (newLength < 1) { newLength = 1; newStart = initialStartAbs + initialLength - 1; }
         currentBar.startAbsWeek = Math.max(0, newStart);
@@ -911,6 +1006,7 @@
 
     // Document mouseup: End drag
     document.addEventListener("mouseup", () => {
+      // Finalize drag and save
       if (dragging) {
         dragging = false;
         dragType = null;
@@ -920,10 +1016,12 @@
       }
     });
 
-    // Click outside: Unselect bars
+    // Click outside: Unselect bars and lines
     document.addEventListener("click", () => {
+      // Clear selections on background click
       if (!dragging) {
         unselectAllBars();
+        lines.forEach(l => l.selected = false);
         renderTable();
         saveToLocalStorage();
       }
@@ -931,26 +1029,29 @@
 
     // Keyboard shortcuts
     document.addEventListener("keydown", e => {
+      // Handle delete, copy/paste, arrow keys for move/reorder
       const selected = getSelectedBars();
-      if (!selected.length) return;
-
       if ((e.key === "Delete" || e.key === "Backspace")) {
-        deleteBars(selected);
-        e.preventDefault();
-        return;
+        if (selected.length) {
+          deleteBars(selected);
+          e.preventDefault();
+          return;
+        }
       }
 
       if (e.ctrlKey || e.metaKey) {
         if (e.key.toLowerCase() === "c") {
-          clipboard = selected.map(({ bar, line }) => ({ bar: JSON.parse(JSON.stringify(bar)), sourceLine: line }));
-          e.preventDefault();
+          if (selected.length) {
+            clipboard = selected.map(({ bar, line }) => ({ bar: JSON.parse(JSON.stringify(bar)), sourceLine: line }));
+            e.preventDefault();
+          }
         }
         if (e.key.toLowerCase() === "v") {
           if (!clipboard.length) return;
           let targetLine = selected.length ? selected[selected.length - 1].line : lines[lines.length - 1];
           if (!targetLine) {
             lineCounter++;
-            targetLine = { id: lineCounter, name: "Line Item " + lineCounter, bars: [] };
+            targetLine = { id: lineCounter, name: "Line Item " + lineCounter, bars: [], selected: false };
             lines.push(targetLine);
           }
           clipboard.forEach(item => {
@@ -968,42 +1069,65 @@
       }
 
       if (e.key === "ArrowLeft") {
-        selected.forEach(({ bar }) => bar.startAbsWeek = Math.max(0, bar.startAbsWeek - 1));
-        renderTable();
-        saveToLocalStorage();
-        e.preventDefault();
+        if (selected.length) {
+          selected.forEach(({ bar }) => bar.startAbsWeek = Math.max(0, bar.startAbsWeek - 1));
+          renderTable();
+          saveToLocalStorage();
+          e.preventDefault();
+        }
       } else if (e.key === "ArrowRight") {
-        selected.forEach(({ bar }) => bar.startAbsWeek = Math.max(0, bar.startAbsWeek + 1));
-        renderTable();
-        saveToLocalStorage();
-        e.preventDefault();
+        if (selected.length) {
+          selected.forEach(({ bar }) => bar.startAbsWeek = Math.max(0, bar.startAbsWeek + 1));
+          renderTable();
+          saveToLocalStorage();
+          e.preventDefault();
+        }
       } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-        selected.forEach(({ bar, line }) => {
-          const idx = lines.indexOf(line);
-          if (e.key === "ArrowUp" && idx > 0) {
-            line.bars = line.bars.filter(b => b.id !== bar.id);
-            lines[idx - 1].bars.push(bar);
-          } else if (e.key === "ArrowDown" && idx < lines.length - 1) {
-            line.bars = line.bars.filter(b => b.id !== bar.id);
-            lines[idx + 1].bars.push(bar);
+        if (selected.length) {
+          // Move selected bars to adjacent lines
+          selected.forEach(({ bar, line }) => {
+            const idx = lines.indexOf(line);
+            if (e.key === "ArrowUp" && idx > 0) {
+              line.bars = line.bars.filter(b => b.id !== bar.id);
+              lines[idx - 1].bars.push(bar);
+            } else if (e.key === "ArrowDown" && idx < lines.length - 1) {
+              line.bars = line.bars.filter(b => b.id !== bar.id);
+              lines[idx + 1].bars.push(bar);
+            }
+          });
+          renderTable();
+          saveToLocalStorage();
+          e.preventDefault();
+        } else {
+          // Move selected line up/down
+          const selectedLine = lines.find(l => l.selected);
+          if (selectedLine) {
+            const idx = lines.indexOf(selectedLine);
+            if (e.key === "ArrowUp" && idx > 0) {
+              [lines[idx-1], lines[idx]] = [lines[idx], lines[idx-1]];
+            } else if (e.key === "ArrowDown" && idx < lines.length - 1) {
+              [lines[idx], lines[idx+1]] = [lines[idx+1], lines[idx]];
+            }
+            renderTable();
+            saveToLocalStorage();
+            e.preventDefault();
           }
-        });
-        renderTable();
-        saveToLocalStorage();
-        e.preventDefault();
+        }
       }
     });
 
     // Add line button
     addLineItemBtn.addEventListener("click", () => {
+      // Create new empty line
       lineCounter++;
-      lines.push({ id: lineCounter, name: "Line Item " + lineCounter, bars: [] });
+      lines.push({ id: lineCounter, name: "Line Item " + lineCounter, bars: [], selected: false });
       renderTable();
       saveToLocalStorage();
     });
 
     // Add bar button
     addBarBtn.addEventListener("click", e => {
+      // Add new bar to last line
       e.stopPropagation();
       barCounter++;
       const { displayStart } = getDisplayRange();
@@ -1017,7 +1141,7 @@
       };
       if (!lines.length) {
         lineCounter = 1;
-        lines.push({ id: 1, name: "Line Item 1", bars: [] });
+        lines.push({ id: 1, name: "Line Item 1", bars: [], selected: false });
       }
       lines[lines.length - 1].bars.push(newBar);
       renderTable();
@@ -1026,6 +1150,7 @@
 
     // Export JSON
     exportJsonBtn.addEventListener("click", () => {
+      // Download full chart state as JSON
       const dataStr = JSON.stringify({ lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth, rowHeight }, null, 2);
       const blob = new Blob([dataStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -1038,6 +1163,7 @@
 
     // Export CSV
     downloadCsvBtn.addEventListener("click", () => {
+      // Export data as CSV
       let csv = "Line ID,Line Name,Bar ID,Bar Text,Status,Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
       lines.forEach(line => {
         if (line.bars.length === 0) {
@@ -1061,11 +1187,13 @@
 
     // Print/PDF button
     printBtn.addEventListener("click", () => {
+      // Trigger browser print
       window.print();
     });
 
     // Horizontal zoom slider
     zoomSlider.addEventListener("input", e => {
+      // Adjust horizontal cell width
       cellWidth = parseInt(e.target.value);
       updateCSSVariables();
       renderTable();
@@ -1074,6 +1202,7 @@
 
     // Vertical zoom slider
     heightZoomSlider.addEventListener("input", e => {
+      // Adjust vertical row height
       rowHeight = parseInt(e.target.value);
       updateCSSVariables();
       renderTable();
@@ -1082,6 +1211,7 @@
 
     // CSV parser for import
     function parseCsv(csv) {
+      // Parse CSV data into lines and bars
       const rows = csv.trim().split('\n');
       const header = rows[0].toLowerCase();
       if (!header.includes('line id') || !header.includes('bar id')) throw new Error("Invalid CSV header");
@@ -1105,7 +1235,7 @@
         const lineName = parsed[1] || `Line ${lineId}`;
         const barIdStr = parsed[2];
         if (!barIdStr) {
-          if (!lineMap[lineId]) { lineMap[lineId] = { id: lineId, name: lineName, bars: [] }; newLines.push(lineMap[lineId]); maxLineId = Math.max(maxLineId, lineId); }
+          if (!lineMap[lineId]) { lineMap[lineId] = { id: lineId, name: lineName, bars: [], selected: false }; newLines.push(lineMap[lineId]); maxLineId = Math.max(maxLineId, lineId); }
           continue;
         }
         const barId = parseInt(barIdStr);
@@ -1121,7 +1251,7 @@
         let len = duration;
         if (!isNaN(ey) && !isNaN(ew)) len = toAbsoluteWeek(ey, ew) - startAbs + 1;
         if (len < 1) len = 1;
-        if (!lineMap[lineId]) { lineMap[lineId] = { id: lineId, name: lineName, bars: [] }; newLines.push(lineMap[lineId]); maxLineId = Math.max(maxLineId, lineId); }
+        if (!lineMap[lineId]) { lineMap[lineId] = { id: lineId, name: lineName, bars: [], selected: false }; newLines.push(lineMap[lineId]); maxLineId = Math.max(maxLineId, lineId); }
         lineMap[lineId].bars.push({ id: barId, text: barText, status, startAbsWeek: startAbs, length: len, selected: false });
         maxBarId = Math.max(maxBarId, barId);
       }
@@ -1131,6 +1261,7 @@
 
     // Import file handler
     importFileInput.addEventListener("change", e => {
+      // Handle JSON or CSV import
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
@@ -1170,6 +1301,7 @@
 
     // Apply timescale button
     applyTimescaleBtn.addEventListener("click", () => {
+      // Update view range from inputs
       const sy = parseInt(startYearInput.value, 10);
       const sw = parseInt(startWeekInput.value, 10);
       const ey = parseInt(endYearInput.value, 10);
@@ -1188,6 +1320,7 @@
 
     // Show bar editor modal
     function showBarEditor(bar, line, x, y) {
+      // Open editor popup with bar details
       currentEditorBar = bar;
       currentEditorLine = line;
       barTextInput.value = bar.text;
@@ -1205,6 +1338,7 @@
 
     // Editor OK button
     barEditorOkBtn.addEventListener("click", () => {
+      // Save changes from editor
       if (!currentEditorBar) return;
       currentEditorBar.text = barTextInput.value;
       currentEditorBar.status = barStatusSelect.value;
@@ -1225,6 +1359,7 @@
 
     // Editor delete button
     barDeleteBtn.addEventListener("click", () => {
+      // Delete bar from editor
       if (currentEditorBar && currentEditorLine) {
         deleteBars([{ bar: currentEditorBar, line: currentEditorLine }]);
         barEditor.style.display = "none";
@@ -1235,12 +1370,14 @@
 
     // Editor cancel button
     barEditorCancelBtn.addEventListener("click", () => {
+      // Close editor without save
       barEditor.style.display = "none";
       currentEditorBar = null;
     });
 
     // Editor click outside to close
     document.addEventListener("mousedown", e => {
+      // Close editor if click outside
       if (barEditor.style.display === "block") {
         const rect = barEditor.getBoundingClientRect();
         const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
@@ -1253,6 +1390,7 @@
 
     // Comprehensive Help/About section
     helpBtn.addEventListener("click", () => {
+      // Open help window with full documentation
       const helpWindow = window.open("", "GanttHelp", "width=800,height=800,scrollbars=yes,resizable=yes");
       const helpHTML = `<!DOCTYPE html><html><head><title>Gantt Planner - Comprehensive Help</title><style>body{font-family:Arial;padding:20px;line-height:1.6;background:#f9f9f9;}h1,h2,h3{color:#0d6efd;}ul{margin:12px 0;}code{background:#eef;padding:2px 6px;border-radius:4px;}.tip{background:#e7f3ff;padding:15px;border-left:4px solid #0d6efd;margin:15px 0;border-radius:4px;}pre{background:#eee;padding:10px;border-radius:4px;overflow:auto;}</style></head><body>
         <h1>Gantt Planner - Full Documentation</h1>
@@ -1319,6 +1457,7 @@
     // Scroll handler: Update bar text positions and today line if needed
     const tableWrapper = document.querySelector(".table-wrapper");
     tableWrapper.addEventListener("scroll", () => {
+      // Reposition bar text on horizontal scroll
       updateBarTextPositions();
     });
 
