@@ -37,7 +37,7 @@
     #ganttTable {
       width: 100%;
       border-collapse: collapse;
-      table-layout: fixed; /* Ensures column widths consistent */
+      table-layout: fixed; /* Ensures column widths remain consistent */
     }
 
     /* Header row: Sticky top */
@@ -90,7 +90,8 @@
       background-color: #fff3cd;
     }
 
-    /* Name cell: Sticky left, white background covering full row height, column flex for centering */
+    /* Name cell: Sticky left, white background covering full row height, 
+       use flex to center content both vertically and horizontally */
     .name-cell {
       position: sticky;
       left: 0;
@@ -100,19 +101,20 @@
       border-right: 1px solid #dee2e6;
       display: flex;
       flex-direction: column;
-      justify-content: center; /* Centers children vertically */
+      justify-content: center; /* Vertically center content */
+      align-items: center;     /* Horizontally center content */
       padding: 0 8px;
       box-sizing: border-box;
     }
 
-    /* Name cell content wrapper: Horizontal flex for button + input */
+    /* Name cell content wrapper: (we can keep if we want to further structure, or done via parent) */
     .name-cell-content {
       display: flex;
       align-items: center;
       width: 100%;
     }
 
-    /* (REMOVED) Remove line button: was the red × - now removed as requested */
+    /* (REMOVE or comment out the old remove-line-btn since we no longer use the X) */
 
     /* Line item input: Transparent, editable, centered vertically */
     .line-item-input {
@@ -573,10 +575,10 @@
 
         <!-- Group 4: UNDO/REDO buttons + Search and actions -->
         <div class="toolbar-group">
-          <!-- Undo/Redo buttons added -->
+          <!-- Undo/Redo buttons -->
           <button id="undoBtn" type="button" class="btn btn-sm btn-success">Undo</button>
           <button id="redoBtn" type="button" class="btn btn-sm btn-warning">Redo</button>
-          <!-- Search input for dynamic filtering -->
+          <!-- Search input for dynamic filter -->
           <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Filter lines/bars..." />
         </div>
 
@@ -662,7 +664,7 @@
     <label for="lineCustom3Input">Custom3:</label>
     <input type="text" id="lineCustom3Input" placeholder="Custom3..." />
     <div id="lineEditorActions">
-      <!-- New "Delete Line Item" button to avoid accidental deletes -->
+      <!-- "Delete Line Item" button to avoid accidental line deletions -->
       <button id="lineDeleteBtn" class="btn btn-sm btn-danger">Delete Line Item</button>
       <button id="lineEditorOkBtn" class="btn btn-sm btn-primary">OK</button>
       <button id="lineEditorCancelBtn" class="btn btn-sm btn-secondary">Cancel</button>
@@ -824,7 +826,6 @@
 
     // ---------------------------------------------------------------------------------------------
     // Undo/Redo stacks
-    // Each state includes lines, plus any needed top-level variables
     // ---------------------------------------------------------------------------------------------
     let undoStack = [];
     let redoStack = [];
@@ -943,7 +944,7 @@
 
     // ---------------------------------------------------------------------------------------------
     // Function: getColorFromStatus
-    // Returns the color string for a given status, falling back to '#fd7e14' if unknown
+    // Returns the color string for a given status, or fallback if unknown
     // ---------------------------------------------------------------------------------------------
     function getColorFromStatus(status) {
       return statusColors[status] || "#fd7e14";
@@ -1223,7 +1224,6 @@
       const lowerSearch = searchTerm.toLowerCase();
 
       // Filter lines by (a) advanced filters plus (b) dynamic text filter
-      // For the text filter, if ANY line attribute or ANY bar text/status contains the searchTerm, line passes
       const filteredLines = lines.filter(line => {
         // First check advanced attribute filters
         const passesAttributeFilters = Object.keys(filters).every(key => {
@@ -1232,16 +1232,14 @@
           }
           return true;
         });
-
         if (!passesAttributeFilters) return false;
 
         // Now check dynamic search
-        // If no searchTerm, automatically pass
         if (!lowerSearch) {
-          return true;
+          return true; // no search term => pass
         }
 
-        // Check line-level fields
+        // Check line-level fields for search
         const lineMatch = (
           (line.name && line.name.toLowerCase().includes(lowerSearch)) ||
           (line.client && line.client.toLowerCase().includes(lowerSearch)) ||
@@ -1252,15 +1250,14 @@
           (line.custom2 && line.custom2.toLowerCase().includes(lowerSearch)) ||
           (line.custom3 && line.custom3.toLowerCase().includes(lowerSearch))
         );
-
-        // Check bar fields (text or status)
+        // Check bar text/status for search
         const barMatch = line.bars.some(b => {
           const textLow = (b.text || "").toLowerCase();
           const statusLow = (b.status || "").toLowerCase();
           return textLow.includes(lowerSearch) || statusLow.includes(lowerSearch);
         });
 
-        // If either line-level or any bar matched, we pass
+        // Pass if any line attribute or any bar matched
         return (lineMatch || barMatch);
       });
 
@@ -1270,15 +1267,15 @@
         tr.className = "gantt-row";
         if (line.selected) tr.classList.add("selected");
 
-        // Name cell (removed the "x" button for delete as requested)
+        // Name cell - now centered both vertically & horizontally
         const nameTd = document.createElement("td");
         nameTd.className = "name-cell";
-        // Instead of the remove button, we just show the line name as clickable
+
+        // The label that is clickable to open line editor
         const nameLabel = document.createElement("span");
         nameLabel.textContent = line.name;
         nameLabel.style.flex = "1";
         nameLabel.style.cursor = "pointer";
-        // If we want to highlight partial search, we can do so, but user wants filtering instead
         nameLabel.addEventListener("click", e => {
           e.stopPropagation();
           showLineEditor(line, e.clientX, e.clientY);
@@ -1295,7 +1292,7 @@
         });
         tr.appendChild(nameTd);
 
-        // Create the spanning bar container cell
+        // Bar container cell
         const barTd = document.createElement("td");
         barTd.colSpan = totalWeeks;
         barTd.className = "bar-cell";
@@ -1317,8 +1314,7 @@
           barDiv.classList.add("bar");
           if (bar.selected) barDiv.classList.add("selected");
 
-          // If the bar text matches the searchTerm, highlight (only visual, line is already included)
-          // We'll do a class highlight if text includes search
+          // If bar text partially matches the searchTerm, we highlight
           if (lowerSearch && bar.text.toLowerCase().includes(lowerSearch)) {
             barDiv.classList.add("highlighted");
           }
@@ -1341,7 +1337,7 @@
           rightHandle.classList.add("bar-handle", "right");
           barDiv.appendChild(rightHandle);
 
-          // Event: click for (multi-)selection
+          // Click => (multi-)select
           barDiv.addEventListener("click", e => {
             e.stopPropagation();
             handleBarClickSelect(bar, e);
@@ -1349,13 +1345,13 @@
             saveToLocalStorage();
           });
 
-          // Event: dblclick to open bar editor
+          // Dblclick => open bar editor
           barDiv.addEventListener("dblclick", e => {
             e.stopPropagation();
             showBarEditor(bar, line, e.clientX, e.clientY);
           });
 
-          // Event: mousedown to start drag/resize
+          // Mousedown => start drag
           barDiv.addEventListener("mousedown", e => onBarMouseDown(e, line, bar));
 
           barContainer.appendChild(barDiv);
@@ -1396,18 +1392,18 @@
 
     // ---------------------------------------------------------------------------------------------
     // Function: removeLineItem
-    // Removes a line item (by id) from lines, triggers re-render/save
+    // Removes a line item (by ID) from lines, triggers re-render
     // ---------------------------------------------------------------------------------------------
     function removeLineItem(id) {
       lines = lines.filter(l => l.id !== id);
-      pushState(); // Save state
+      pushState();
       renderTable();
       saveToLocalStorage();
     }
 
     // ---------------------------------------------------------------------------------------------
     // Function: onBarMouseDown
-    // Sets drag info and prevents default so we can move/resize
+    // Sets drag info and prevents default for movement logic
     // ---------------------------------------------------------------------------------------------
     function onBarMouseDown(e, line, bar) {
       if (e.target.classList.contains("bar-handle")) {
@@ -1425,7 +1421,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Document mousemove: handle dragging/resizing
+    // Document mousemove => drag/resize in progress
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("mousemove", e => {
       if (!dragging || !currentBar) return;
@@ -1452,7 +1448,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Document mouseup: finalize drag/resize, save state
+    // Document mouseup => finalize drag, save state
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("mouseup", () => {
       if (dragging) {
@@ -1460,13 +1456,13 @@
         dragType = null;
         currentBar = null;
         currentLine = null;
-        pushState(); // On end of a bar move/resize, record state
+        pushState(); 
         saveToLocalStorage();
       }
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Document click: background click => unselect all bars & lines, clear clipboard
+    // Document click => unselect bars/lines if not dragging, clear clipboard
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("click", () => {
       if (!dragging) {
@@ -1479,12 +1475,10 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Keyboard shortcuts: delete, copy/paste, arrow moves, line reorder, undo/redo
+    // Keyboard shortcuts => delete, copy/paste, arrow moves, reorder lines, undo/redo
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("keydown", e => {
       const selected = getSelectedBars();
-
-      // Delete or backspace => delete selected bars
       if ((e.key === "Delete" || e.key === "Backspace")) {
         if (selected.length) {
           deleteBars(selected);
@@ -1492,8 +1486,6 @@
           return;
         }
       }
-
-      // Ctrl/Cmd combos
       if (e.ctrlKey || e.metaKey) {
         // Copy
         if (e.key.toLowerCase() === "c") {
@@ -1547,7 +1539,6 @@
           e.preventDefault();
         }
       }
-
       // Arrow keys => shift bars or reorder lines
       if (e.key === "ArrowLeft") {
         if (selected.length) {
@@ -1571,7 +1562,6 @@
         }
       } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
         if (selected.length) {
-          // Move bar to adjacent line
           selected.forEach(({ bar, line }) => {
             const idx = lines.indexOf(line);
             if (e.key === "ArrowUp" && idx > 0) {
@@ -1626,8 +1616,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Bar editor OK
-    // Saves changes to bar, hides editor
+    // Bar editor OK => saves changes, hides editor
     // ---------------------------------------------------------------------------------------------
     barEditorOkBtn.addEventListener("click", () => {
       if (!currentEditorBar) return;
@@ -1649,7 +1638,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Bar editor cancel
+    // Bar editor cancel => just close
     // ---------------------------------------------------------------------------------------------
     barEditorCancelBtn.addEventListener("click", () => {
       barEditor.style.display = "none";
@@ -1658,7 +1647,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Bar delete
+    // Bar delete => remove bar from line, close editor
     // ---------------------------------------------------------------------------------------------
     barDeleteBtn.addEventListener("click", () => {
       if (!currentEditorBar || !currentEditorLine) return;
@@ -1672,7 +1661,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Close bar editor on outside click
+    // Close bar editor if clicked outside
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("mousedown", e => {
       if (barEditor.style.display === "block") {
@@ -1706,8 +1695,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Line editor OK
-    // Saves line attributes
+    // Line editor OK => saves attributes
     // ---------------------------------------------------------------------------------------------
     lineEditorOkBtn.addEventListener("click", () => {
       if (!currentLineEditor) return;
@@ -1727,7 +1715,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Line editor cancel
+    // Line editor cancel => just close
     // ---------------------------------------------------------------------------------------------
     lineEditorCancelBtn.addEventListener("click", () => {
       lineEditor.style.display = "none";
@@ -1735,8 +1723,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // New "Delete Line Item" button in line editor
-    // Removes the line item, closes editor
+    // "Delete Line Item" => remove the line, close editor
     // ---------------------------------------------------------------------------------------------
     lineDeleteBtn.addEventListener("click", () => {
       if (!currentLineEditor) return;
@@ -1746,7 +1733,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Close line editor on outside click
+    // Close line editor if clicked outside
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("mousedown", e => {
       if (lineEditor.style.display === "block") {
@@ -1760,7 +1747,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Filter button => opens modal, loads current filter state
+    // Filter button => opens modal
     // ---------------------------------------------------------------------------------------------
     filterBtn.addEventListener("click", () => {
       filterClient.value = filters.client || "";
@@ -1774,7 +1761,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Filter apply => sets filters and re-renders
+    // Filter apply => set filters, re-render
     // ---------------------------------------------------------------------------------------------
     filterApplyBtn.addEventListener("click", () => {
       filters = {
@@ -1810,14 +1797,14 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Filter cancel => just close
+    // Filter cancel => close
     // ---------------------------------------------------------------------------------------------
     filterCancelBtn.addEventListener("click", () => {
       filterModal.style.display = "none";
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Close filter modal on outside click
+    // Close filter modal if clicked outside
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("mousedown", e => {
       if (filterModal.style.display === "block") {
@@ -1862,7 +1849,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Close settings modal on outside click
+    // Close settings modal if clicked outside
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("mousedown", e => {
       if (settingsModal.style.display === "block") {
@@ -1875,7 +1862,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Search input => dynamic filtering
+    // Search input => dynamic filter re-render
     // ---------------------------------------------------------------------------------------------
     searchInput.addEventListener("input", () => {
       searchTerm = searchInput.value.trim();
@@ -1883,7 +1870,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Add line button => creates new line
+    // Add line button => create new line
     // ---------------------------------------------------------------------------------------------
     addLineItemBtn.addEventListener("click", () => {
       lineCounter++;
@@ -1906,7 +1893,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Add bar button => appends a bar to the last line (or creates a line if none exist)
+    // Add bar button => appends bar to last line (or create line if none)
     // ---------------------------------------------------------------------------------------------
     addBarBtn.addEventListener("click", e => {
       e.stopPropagation();
@@ -1943,9 +1930,10 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Export JSON => downloads the full chart state as JSON
+    // Export JSON => uses the new naming format "Gannt_<date/time>.json"
     // ---------------------------------------------------------------------------------------------
     exportJsonBtn.addEventListener("click", () => {
+      // Prepare data for export
       const dataStr = JSON.stringify({
         lines,
         startYear,
@@ -1959,10 +1947,17 @@
         statusColors,
         currentTheme
       }, null, 2);
+
+      // Create a Blob
       const blob = new Blob([dataStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
+
+      // Create a link and set a custom filename with today's date/time
+      // Replaces characters that are invalid in filenames (e.g. ":" in time)
+      const now = new Date();
+      let dateStr = now.toISOString().replace(/[:.]/g, '-');
       const a = document.createElement("a");
-      a.download = "gantt-data.json";
+      a.download = "Gannt_" + dateStr + ".json"; // Creates the desired name format
       a.href = url;
       a.click();
       URL.revokeObjectURL(url);
@@ -2137,7 +2132,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Import file => reads JSON or CSV, merges data into chart
+    // Import file => reads JSON or CSV, merges data
     // ---------------------------------------------------------------------------------------------
     importFileInput.addEventListener("change", e => {
       const file = e.target.files[0];
@@ -2196,7 +2191,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Timescale apply => updates start/end from inputs, re-renders
+    // Timescale apply => updates start/end from inputs
     // ---------------------------------------------------------------------------------------------
     applyTimescaleBtn.addEventListener("click", () => {
       startYear = parseInt(startYearInput.value) || startYear;
@@ -2213,7 +2208,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Help button => simple alert describing usage
+    // Help button => simple alert
     // ---------------------------------------------------------------------------------------------
     helpBtn.addEventListener("click", () => {
       alert(`Gantt Planner Help:
@@ -2228,32 +2223,16 @@
 - Additional Filter button for advanced line-attribute filters.
 - Undo/Redo: Ctrl+Z / Ctrl+Y or use the toolbar buttons.
 - Theme: Settings gear for dark mode and color changes.
-- Import/Export: JSON preserves everything, CSV for data.
+- Import/Export: JSON/CSV for data. JSON includes theme.
 - Print: Use Print button for PDF/export.
 - Zoom: Sliders for horizontal/vertical scaling, saved locally.`);
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Table wrapper scroll => re-center bar text
-    // ---------------------------------------------------------------------------------------------
-    document.querySelector(".table-wrapper").addEventListener("scroll", () => {
-      updateBarTextPositions();
-    });
-
-    // ---------------------------------------------------------------------------------------------
-    // Window resize => re-center bar text
-    // ---------------------------------------------------------------------------------------------
-    window.addEventListener("resize", () => {
-      updateBarTextPositions();
-    });
-
-    // ---------------------------------------------------------------------------------------------
     // Function: pushState
-    // Saves a deep copy of the current state (lines and key variables) onto the undo stack
-    // Clears the redo stack
+    // Saves a deep copy of the current state onto the undo stack, clears redo stack
     // ---------------------------------------------------------------------------------------------
     function pushState() {
-      // Create a JSON string of relevant data, parse it back to get a fresh copy
       const stateCopy = JSON.parse(JSON.stringify({
         lines,
         startYear,
@@ -2268,13 +2247,12 @@
         currentTheme
       }));
       undoStack.push(stateCopy);
-      // Clear redo whenever a new action is taken
       redoStack = [];
     }
 
     // ---------------------------------------------------------------------------------------------
     // Function: restoreState
-    // Helper that replaces current state from a given saved state object
+    // Replaces current state from a saved state object, re-applies CSS & theme
     // ---------------------------------------------------------------------------------------------
     function restoreState(state) {
       lines = state.lines;
@@ -2288,7 +2266,6 @@
       rowHeight = state.rowHeight;
       statusColors = state.statusColors;
       currentTheme = state.currentTheme;
-      // Re-apply CSS, theme, etc.
       updateCSSVariables();
       applyTheme();
       renderTable();
@@ -2296,12 +2273,10 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: undo
-    // Pops the last state from undo stack, pushes current onto redo stack, then restores
+    // Function: undo => revert to previous state if available
     // ---------------------------------------------------------------------------------------------
     function undo() {
       if (undoStack.length < 2) return; 
-      // The top of undoStack is the current state; the one before it is what we revert to
       const current = undoStack.pop();
       redoStack.push(current);
       const prev = undoStack[undoStack.length - 1];
@@ -2309,13 +2284,11 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: redo
-    // Pops from redo stack, pushes current state onto undo stack, then restores
+    // Function: redo => apply the next state if available
     // ---------------------------------------------------------------------------------------------
     function redo() {
       if (!redoStack.length) return;
       const nextState = redoStack.pop();
-      // The current is in the top of undoStack
       const current = JSON.parse(JSON.stringify({
         lines,
         startYear,
@@ -2344,17 +2317,13 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Function: init
-    // Loads from localStorage, populates UI, sets defaults, pushes initial state
+    // Function: init => run on page load
+    // Loads from localStorage, populates UI, sets defaults, renders, pushes initial state
     // ---------------------------------------------------------------------------------------------
     function init() {
-      // Load from local storage first
       loadFromLocalStorage();
-      // Populate bar editor date selects
       populateDateSelects();
-      // Activate CSS variables
       updateCSSVariables();
-      // Set UI inputs
       startYearInput.value = startYear;
       startWeekInput.value = startWeek;
       endYearInput.value = endYear;
@@ -2366,10 +2335,8 @@
       proposedColor.value = statusColors.proposed;
       opportunityColor.value = statusColors.opportunity;
       futureColor.value = statusColors.future;
-      // Apply theme, render
       applyTheme();
       renderTable();
-      // Push the current loaded state so we can undo back to it
       pushState();
     }
 
