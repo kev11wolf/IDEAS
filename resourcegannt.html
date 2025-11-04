@@ -11,20 +11,25 @@
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
   />
   <style>
+    /* Make navbar/toolbar span the full screen width */
+    .navbar .container-fluid {
+      max-width: 100vw; /* Ensure full screen width usage */
+    }
+
     /* Remove default body margin, set font: Resets margin, sets default font */
     body {
       margin: 0;
       font-family: Arial, sans-serif;
     }
 
-    /* Navbar: Sticky at top, always visible */
+    /* Navbar: Sticky at top, always visible, full width */
     .navbar {
       position: sticky;
-      height: 150px;
       top: 0;
       z-index: 1000;
       background-color: #f8f9fa;
       padding: 0.5rem 1rem;
+      width: 100%;
     }
 
     /* Main container: Full width with padding */
@@ -71,12 +76,16 @@
       min-width: 50px;
     }
 
-    /* Table body: Single clean grid using CSS variables */
+    /* Table body: Single clean grid using CSS variables 
+       Updated to better align rows/columns by using background-position */
     #ganttTable tbody {
       background-image: 
         linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
+      /* Each line for vertical columns is spaced by var(--cell-width) horizontally,
+         Each line for horizontal rows is spaced by var(--row-height)  */
       background-size: var(--cell-width) var(--row-height);
+      background-position: 0 0; /* ensures it starts at the top left corner */
       background-repeat: repeat;
     }
 
@@ -90,8 +99,8 @@
       background-color: #fff3cd;
     }
 
-    /* Name cell: Sticky left, now has better contrast background, box-shadow, 
-       and matches row height dynamically via CSS var. Also center content. */
+    /* Name cell: Sticky left, slightly gray background, box-shadow,
+       scaled with dynamic row height, and centers content. */
     .name-cell {
       position: sticky;
       left: 0;
@@ -103,31 +112,9 @@
       display: flex;
       justify-content: center;  /* Horizontal center */
       align-items: center;      /* Vertical center */
-      height: var(--row-height);/* Match row-height for dynamic scaling */
+      height: var(--row-height);
       box-sizing: border-box;
       cursor: pointer;          /* Indicate clickable row label */
-    }
-
-    /* Optional for structuring inside the name cell, but not strictly needed */
-    .name-cell-content {
-      display: flex;
-      align-items: center;
-      width: 100%;
-    }
-
-    /* (REMOVE or comment out old remove-line-btn, no longer used) */
-
-    /* Line item input: Transparent, editable, centered vertically if used inline */
-    .line-item-input {
-      flex: 1;
-      border: none;
-      outline: none;
-      background-color: transparent;
-      font-weight: 500;
-      height: 100%;
-    }
-    .line-item-input:focus {
-      outline: 1px solid #ccc;
     }
 
     /* Bar container cell: Relative for absolute bars */
@@ -163,15 +150,19 @@
       margin-top: 0;
       margin-bottom: 0;
     }
+
+    /* Updated single-click selection => bolder, blue highlight */
     .bar.selected {
-      outline: 2px solid #ffc107;
+      outline: 3px solid #00f;
     }
+
+    /* Highlighted for search matches */
     .bar.highlighted {
       outline: 3px solid #0d6efd;
       opacity: 0.9;
     }
 
-    /* Bar text: Centered in visible portion, vertically centered */
+    /* Bar text: dynamically centered in visible portion as user scrolls */
     .bar-text {
       position: absolute;
       top: 0;
@@ -181,6 +172,7 @@
       pointer-events: none;
       font-weight: 500;
       padding: 0 8px;
+      /* We'll adjust left positioning dynamically in JS */
     }
 
     /* Resize handles: Full height of bar */
@@ -255,7 +247,7 @@
       margin-top: 12px;
     }
 
-    /* Line editor overlay (new for line attributes) */
+    /* Line editor overlay (for line attributes) */
     #lineEditor {
       position: absolute;
       display: none;
@@ -283,7 +275,7 @@
       margin-top: 12px;
     }
 
-    /* Filter modal (new for filtering) */
+    /* Filter modal (for filtering) */
     #filterModal {
       display: none;
       position: fixed;
@@ -316,7 +308,7 @@
       margin-top: 12px;
     }
 
-    /* Settings modal (new for theme) */
+    /* Settings modal (for theme customization) */
     #settingsModal {
       display: none;
       position: fixed;
@@ -366,7 +358,7 @@
       color: #f8f9fa;
     }
     body.dark-theme .name-cell {
-      background-color: #444; /* Slightly different for dark mode contrast */
+      background-color: #444; 
       color: #f8f9fa;
       box-shadow: 1px 1px 3px rgba(255,255,255,0.2);
     }
@@ -647,7 +639,7 @@
     </div>
   </div>
 
-  <!-- Line editor (new popup for line attributes) -->
+  <!-- Line editor (for line attributes) -->
   <div id="lineEditor">
     <label for="lineNameInput">Name:</label>
     <input type="text" id="lineNameInput" placeholder="Name..." />
@@ -666,14 +658,13 @@
     <label for="lineCustom3Input">Custom3:</label>
     <input type="text" id="lineCustom3Input" placeholder="Custom3..." />
     <div id="lineEditorActions">
-      <!-- "Delete Line Item" button to avoid accidental line deletions -->
       <button id="lineDeleteBtn" class="btn btn-sm btn-danger">Delete Line Item</button>
       <button id="lineEditorOkBtn" class="btn btn-sm btn-primary">OK</button>
       <button id="lineEditorCancelBtn" class="btn btn-sm btn-secondary">Cancel</button>
     </div>
   </div>
 
-  <!-- Filter modal (new for filtering) -->
+  <!-- Filter modal (for searching by line attributes) -->
   <div id="filterModal">
     <h3>Filter Lines</h3>
     <label for="filterClient">Client:</label>
@@ -697,7 +688,7 @@
     </div>
   </div>
 
-  <!-- Settings modal (new for theme customization) -->
+  <!-- Settings modal (for theme colors) -->
   <div id="settingsModal">
     <h3>Theme Settings</h3>
     <label>Theme:</label>
@@ -737,7 +728,7 @@
     };
 
     // ---------------------------------------------------------------------------------------------
-    // Sample data: Initial lines and bars with new attributes
+    // Sample data: Initial lines/bars
     // ---------------------------------------------------------------------------------------------
     let lines = [
       {
@@ -786,55 +777,50 @@
       },
     ];
 
-    // ---------------------------------------------------------------------------------------------
     // Timescale defaults
-    // ---------------------------------------------------------------------------------------------
     let startYear = 2025;
     let startWeek = 1;
     let endYear = 2025;
     let endWeek = 52;
 
-    // ---------------------------------------------------------------------------------------------
-    // Counters for unique IDs
-    // ---------------------------------------------------------------------------------------------
+    // ID counters
     let lineCounter = 2;
     let barCounter = 102;
 
-    // ---------------------------------------------------------------------------------------------
-    // Zoom: Horizontal column width in px, vertical row height in px
-    // ---------------------------------------------------------------------------------------------
+    // Zoom settings
     let cellWidth = 150;
     let rowHeight = 40;
 
-    // ---------------------------------------------------------------------------------------------
-    // Clipboard for copy/paste
-    // ---------------------------------------------------------------------------------------------
-    let clipboard = [];
-
-    // ---------------------------------------------------------------------------------------------
-    // Filter criteria (object to store active filters)
-    // ---------------------------------------------------------------------------------------------
+    // Filter criteria
     let filters = {};
 
-    // ---------------------------------------------------------------------------------------------
-    // Search term (new for dynamic filtering lines/bars)
-    // ---------------------------------------------------------------------------------------------
+    // Search term
     let searchTerm = "";
 
-    // ---------------------------------------------------------------------------------------------
-    // Theme setting (new)
-    // ---------------------------------------------------------------------------------------------
+    // Current theme
     let currentTheme = "light";
 
-    // ---------------------------------------------------------------------------------------------
     // Undo/Redo stacks
-    // ---------------------------------------------------------------------------------------------
     let undoStack = [];
     let redoStack = [];
 
-    // ---------------------------------------------------------------------------------------------
+    // Keep track of selected line (for row movement)
+    let currentlySelectedLine = null;
+
+    // Editor states
+    let currentEditorBar = null;
+    let currentEditorLine = null;
+
+    // Drag states
+    let dragging = false;
+    let dragType = null;
+    let dragStartX = 0;
+    let initialStartAbs = 0;
+    let initialLength = 0;
+    let currentBar = null;
+    let currentLine = null;
+
     // DOM elements
-    // ---------------------------------------------------------------------------------------------
     const ganttTable = document.getElementById("ganttTable");
     const headerRow = document.getElementById("headerRow");
     const tableBody = document.getElementById("tableBody");
@@ -846,8 +832,8 @@
     const downloadCsvBtn = document.getElementById("downloadCsvBtn");
     const printBtn = document.getElementById("printBtn");
     const helpBtn = document.getElementById("helpBtn");
-    const settingsBtn = document.getElementById("settingsBtn"); 
-    const searchInput = document.getElementById("searchInput"); 
+    const settingsBtn = document.getElementById("settingsBtn");
+    const searchInput = document.getElementById("searchInput");
     const importFileInput = document.getElementById("importFileInput");
     const startYearInput = document.getElementById("startYearInput");
     const startWeekInput = document.getElementById("startWeekInput");
@@ -858,7 +844,7 @@
     const barCountSpan = document.getElementById("barCount");
     const zoomSlider = document.getElementById("zoomSlider");
     const heightZoomSlider = document.getElementById("heightZoomSlider");
-    const undoBtn = document.getElementById("undoBtn"); 
+    const undoBtn = document.getElementById("undoBtn");
     const redoBtn = document.getElementById("redoBtn");
 
     // Bar editor elements
@@ -873,7 +859,7 @@
     const barEditorCancelBtn = document.getElementById("barEditorCancelBtn");
     const barDeleteBtn = document.getElementById("barDeleteBtn");
 
-    // Line editor elements (new)
+    // Line editor elements
     const lineEditor = document.getElementById("lineEditor");
     const lineNameInput = document.getElementById("lineNameInput");
     const lineClientInput = document.getElementById("lineClientInput");
@@ -887,7 +873,7 @@
     const lineEditorCancelBtn = document.getElementById("lineEditorCancelBtn");
     const lineDeleteBtn = document.getElementById("lineDeleteBtn");
 
-    // Filter modal elements (new)
+    // Filter modal elements
     const filterModal = document.getElementById("filterModal");
     const filterClient = document.getElementById("filterClient");
     const filterDiscipline = document.getElementById("filterDiscipline");
@@ -900,7 +886,7 @@
     const filterClearBtn = document.getElementById("filterClearBtn");
     const filterCancelBtn = document.getElementById("filterCancelBtn");
 
-    // Settings modal elements (new)
+    // Settings modal elements
     const settingsModal = document.getElementById("settingsModal");
     const themeSelect = document.getElementById("themeSelect");
     const securedColor = document.getElementById("securedColor");
@@ -910,34 +896,12 @@
     const settingsOkBtn = document.getElementById("settingsOkBtn");
     const settingsCancelBtn = document.getElementById("settingsCancelBtn");
 
-    // Currently selected line for up/down movement
-    let currentlySelectedLine = null;
-
-    // Editor state
-    let currentEditorBar = null;
-    let currentEditorLine = null;
-
-    // Drag state
-    let dragging = false;
-    let dragType = null;
-    let dragStartX = 0;
-    let initialStartAbs = 0;
-    let initialLength = 0;
-    let currentBar = null;
-    let currentLine = null;
-
     // ---------------------------------------------------------------------------------------------
-    // Function: toAbsoluteWeek
-    // Converts (year, week) to an absolute index (year*52 + (week-1))
+    // toAbsoluteWeek / fromAbsoluteWeek
     // ---------------------------------------------------------------------------------------------
     function toAbsoluteWeek(year, week) {
       return year * 52 + (week - 1);
     }
-
-    // ---------------------------------------------------------------------------------------------
-    // Function: fromAbsoluteWeek
-    // Converts an absolute week index back to { year, week }
-    // ---------------------------------------------------------------------------------------------
     function fromAbsoluteWeek(absWeek) {
       const y = Math.floor(absWeek / 52);
       const w = (absWeek % 52) + 1;
@@ -945,16 +909,14 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: getColorFromStatus
-    // Returns the color string for a given status, or fallback if unknown
+    // getColorFromStatus
     // ---------------------------------------------------------------------------------------------
     function getColorFromStatus(status) {
       return statusColors[status] || "#fd7e14";
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: populateDateSelects
-    // Fills the bar editor's year/week dropdowns with a range of values
+    // populateDateSelects
     // ---------------------------------------------------------------------------------------------
     function populateDateSelects() {
       [startYearSelect, endYearSelect].forEach(sel => {
@@ -978,8 +940,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: updateCSSVariables
-    // Updates CSS custom properties to reflect current widths/heights
+    // updateCSSVariables
     // ---------------------------------------------------------------------------------------------
     function updateCSSVariables() {
       document.documentElement.style.setProperty('--cell-width', cellWidth + 'px');
@@ -989,8 +950,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: applyTheme
-    // Applies light/dark theme by toggling a class on body, then re-renders
+    // applyTheme
     // ---------------------------------------------------------------------------------------------
     function applyTheme() {
       if (currentTheme === "dark") {
@@ -1009,11 +969,10 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: saveToLocalStorage
-    // Persists chart data to localStorage, including theme & statuses
+    // saveToLocalStorage
     // ---------------------------------------------------------------------------------------------
     function saveToLocalStorage() {
-      const chartData = { 
+      const chartData = {
         lines,
         startYear,
         startWeek,
@@ -1030,8 +989,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: loadFromLocalStorage
-    // Loads and parses chart data from localStorage
+    // loadFromLocalStorage
     // ---------------------------------------------------------------------------------------------
     function loadFromLocalStorage() {
       const stored = localStorage.getItem("ganttChartData");
@@ -1048,8 +1006,8 @@
           line.custom1 = line.custom1 || "";
           line.custom2 = line.custom2 || "";
           line.custom3 = line.custom3 || "";
-          line.bars.forEach(bar => { 
-            if (!bar.status) bar.status = "proposed"; 
+          line.bars.forEach(bar => {
+            if (!bar.status) bar.status = "proposed";
             bar.selected = false;
           });
         });
@@ -1069,41 +1027,41 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: getSelectedBars
-    // Collects all bars that are selected (with parent line references)
+    // getSelectedBars
     // ---------------------------------------------------------------------------------------------
     function getSelectedBars() {
       const selected = [];
-      lines.forEach(line => line.bars.forEach(bar => { 
-        if (bar.selected) selected.push({ bar, line }); 
-      }));
+      lines.forEach(line => {
+        line.bars.forEach(bar => {
+          if (bar.selected) {
+            selected.push({ bar, line });
+          }
+        });
+      });
       return selected;
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: deleteBars
-    // Removes the specified bars from their respective lines, triggers re-render/save
+    // deleteBars
     // ---------------------------------------------------------------------------------------------
     function deleteBars(barsToDelete) {
       barsToDelete.forEach(({ bar, line }) => {
         line.bars = line.bars.filter(b => b.id !== bar.id);
       });
-      pushState(); // Save state for undo
+      pushState();
       renderTable();
       saveToLocalStorage();
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: getTotalBars
-    // Counts total bars across all lines
+    // getTotalBars
     // ---------------------------------------------------------------------------------------------
     function getTotalBars() {
       return lines.reduce((count, line) => count + line.bars.length, 0);
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: unselectAllBars
-    // Sets bar.selected = false for every bar
+    // unselectAllBars
     // ---------------------------------------------------------------------------------------------
     function unselectAllBars() {
       lines.forEach(line => line.bars.forEach(bar => {
@@ -1112,16 +1070,14 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: clearHighlights
-    // Removes 'highlighted' class from all bar elements
+    // clearHighlights
     // ---------------------------------------------------------------------------------------------
     function clearHighlights() {
       document.querySelectorAll('.bar.highlighted').forEach(el => el.classList.remove('highlighted'));
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: handleBarClickSelect
-    // Handles shift/ctrl-based multi-select or single-select for bars
+    // handleBarClickSelect
     // ---------------------------------------------------------------------------------------------
     function handleBarClickSelect(bar, event) {
       const isMulti = event.shiftKey || event.ctrlKey || event.metaKey;
@@ -1134,8 +1090,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: getDisplayRange
-    // Returns the start and end absolute weeks for the current timescale
+    // getDisplayRange
     // ---------------------------------------------------------------------------------------------
     function getDisplayRange() {
       let ds = toAbsoluteWeek(startYear, startWeek);
@@ -1145,15 +1100,15 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: updateBarTextPositions
-    // Adjust bar text within the visible portion as the user scrolls
+    // updateBarTextPositions
+    // Re-centers bar text in the visible portion as user scrolls
     // ---------------------------------------------------------------------------------------------
     function updateBarTextPositions() {
       const wrapper = document.querySelector(".table-wrapper");
       const scrollLeft = wrapper.scrollLeft;
       const viewportWidth = wrapper.clientWidth;
       document.querySelectorAll(".bar-text").forEach(textEl => {
-        const barEl = textEl.parentElement;
+        const barEl = textEl.parentElement; // the .bar
         const barLeft = parseFloat(barEl.style.left);
         const barWidth = parseFloat(barEl.style.width);
         const barRight = barLeft + barWidth;
@@ -1176,8 +1131,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: renderHeader
-    // Rebuilds timescale header cells based on current start/end
+    // renderHeader
     // ---------------------------------------------------------------------------------------------
     function renderHeader() {
       while (headerRow.children.length > 1) {
@@ -1198,8 +1152,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: updateStats
-    // Refreshes line and bar counts in the toolbar
+    // updateStats
     // ---------------------------------------------------------------------------------------------
     function updateStats() {
       lineCountSpan.textContent = lines.length;
@@ -1207,27 +1160,22 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: renderTable
-    // Builds the full table based on lines/bars/filters/search
+    // renderTable
+    // Renders the entire table: lines, bars, listening for contextmenu to add new bar
     // ---------------------------------------------------------------------------------------------
     function renderTable() {
-      // Rebuild header
       renderHeader();
-      // Clear body
       tableBody.innerHTML = "";
-      // Clear highlights from previous
       clearHighlights();
 
       const { displayStart, displayEnd } = getDisplayRange();
       const totalWeeks = displayEnd - displayStart + 1;
       if (totalWeeks < 1) return;
 
-      // Lowercase for partial checks
       const lowerSearch = searchTerm.toLowerCase();
 
-      // Filter lines by attribute + dynamic text
+      // Filter lines with attribute filters + dynamic text
       const filteredLines = lines.filter(line => {
-        // Check advanced attribute filters
         const passesAttributeFilters = Object.keys(filters).every(key => {
           if (filters[key]) {
             return line[key] && line[key].toLowerCase().includes(filters[key].toLowerCase());
@@ -1236,12 +1184,9 @@
         });
         if (!passesAttributeFilters) return false;
 
-        // If no dynamic search term, pass automatically
-        if (!lowerSearch) {
-          return true;
-        }
+        if (!lowerSearch) return true;
 
-        // Check line-level fields
+        // line-level search
         const lineMatch = (
           (line.name && line.name.toLowerCase().includes(lowerSearch)) ||
           (line.client && line.client.toLowerCase().includes(lowerSearch)) ||
@@ -1253,7 +1198,7 @@
           (line.custom3 && line.custom3.toLowerCase().includes(lowerSearch))
         );
 
-        // Check bar text/status
+        // bar-level search
         const barMatch = line.bars.some(b => {
           const textLow = (b.text || "").toLowerCase();
           const statusLow = (b.status || "").toLowerCase();
@@ -1263,46 +1208,95 @@
         return (lineMatch || barMatch);
       });
 
-      // Render lines
+      // For each filtered line
       filteredLines.forEach(line => {
         const tr = document.createElement("tr");
         tr.className = "gantt-row";
         if (line.selected) tr.classList.add("selected");
 
-        // Name cell for line label
+        // Name cell
         const nameTd = document.createElement("td");
         nameTd.className = "name-cell";
-        // Single label to represent line name
+        // Single label
         const nameLabel = document.createElement("span");
         nameLabel.textContent = line.name;
         nameLabel.style.flex = "1";
-        // Double click => open line editor
+
+        // Double-click => open line attributes
         nameLabel.addEventListener("dblclick", e => {
           e.stopPropagation();
           showLineEditor(line, e.clientX, e.clientY);
         });
-        // Single click => select line so user can arrow up/down
-        // We'll store currentlySelectedLine
+
+        // Single click => select line (for up/down movement)
         nameTd.addEventListener("click", e => {
           e.stopPropagation();
           lines.forEach(l => l.selected = false);
           line.selected = true;
           currentlySelectedLine = line;
-          unselectAllBars(); // Clear bar selections
+          unselectAllBars();
           renderTable();
         });
 
         nameTd.appendChild(nameLabel);
         tr.appendChild(nameTd);
 
-        // Spanning cell for bars
+        // Bar container
         const barTd = document.createElement("td");
         barTd.colSpan = totalWeeks;
         barTd.className = "bar-cell";
         const barContainer = document.createElement("div");
         barContainer.className = "bar-row-container";
 
-        // Render bars that overlap
+        // Double-click => placeholder bar
+        barContainer.addEventListener("dblclick", e => {
+          if (!e.target.classList.contains("bar") &&
+              !e.target.classList.contains("bar-text") &&
+              !e.target.classList.contains("bar-handle")) {
+            barCounter++;
+            let offsetX = e.offsetX;
+            let weeksFromStart = Math.floor(offsetX / cellWidth);
+            const newBar = {
+              id: barCounter,
+              text: "Placeholder",
+              status: "proposed",
+              startAbsWeek: displayStart + weeksFromStart,
+              length: 8,
+              selected: false
+            };
+            line.bars.push(newBar);
+            pushState();
+            renderTable();
+            saveToLocalStorage();
+          }
+        });
+
+        // Right-click => add new bar, default 6 weeks
+        barContainer.addEventListener("contextmenu", e => {
+          e.preventDefault();
+          // If user right-clicks on empty area, add a new bar of 6 weeks
+          if (!e.target.classList.contains("bar") &&
+              !e.target.classList.contains("bar-text") &&
+              !e.target.classList.contains("bar-handle")) {
+            barCounter++;
+            let offsetX = e.offsetX;
+            let weeksFromStart = Math.floor(offsetX / cellWidth);
+            const newBar = {
+              id: barCounter,
+              text: "Right-Click Bar",
+              status: "proposed",
+              startAbsWeek: displayStart + weeksFromStart,
+              length: 6, // default 6 weeks
+              selected: false
+            };
+            line.bars.push(newBar);
+            pushState();
+            renderTable();
+            saveToLocalStorage();
+          }
+        });
+
+        // Render bars
         line.bars.forEach(bar => {
           const barStart = bar.startAbsWeek;
           const barEnd = barStart + bar.length;
@@ -1319,12 +1313,11 @@
           if (lowerSearch && bar.text.toLowerCase().includes(lowerSearch)) {
             barDiv.classList.add("highlighted");
           }
-
           barDiv.style.left = barLeft + "px";
           barDiv.style.width = barWidth + "px";
           barDiv.style.backgroundColor = getColorFromStatus(bar.status);
 
-          // Add text
+          // Bar text
           const textSpan = document.createElement("span");
           textSpan.className = "bar-text";
           textSpan.textContent = bar.text;
@@ -1338,21 +1331,19 @@
           rightHandle.classList.add("bar-handle", "right");
           barDiv.appendChild(rightHandle);
 
-          // Click => select bar
+          // Single click => select
           barDiv.addEventListener("click", e => {
             e.stopPropagation();
             handleBarClickSelect(bar, e);
             renderTable();
             saveToLocalStorage();
           });
-
           // Double click => open bar editor
           barDiv.addEventListener("dblclick", e => {
             e.stopPropagation();
             showBarEditor(bar, line, e.clientX, e.clientY);
           });
-
-          // Mousedown => start drag/resize
+          // Mousedown => drag
           barDiv.addEventListener("mousedown", e => onBarMouseDown(e, line, bar));
 
           barContainer.appendChild(barDiv);
@@ -1392,8 +1383,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: removeLineItem
-    // Removes a line item (by ID) from lines, triggers re-render
+    // removeLineItem
     // ---------------------------------------------------------------------------------------------
     function removeLineItem(id) {
       lines = lines.filter(l => l.id !== id);
@@ -1403,8 +1393,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: onBarMouseDown
-    // Sets drag info and prevents default for movement logic
+    // onBarMouseDown
     // ---------------------------------------------------------------------------------------------
     function onBarMouseDown(e, line, bar) {
       if (e.target.classList.contains("bar-handle")) {
@@ -1422,7 +1411,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Document mousemove => drag/resize in progress
+    // Document mousemove => track bar dragging/resizing
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("mousemove", e => {
       if (!dragging || !currentBar) return;
@@ -1449,7 +1438,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Document mouseup => finalize drag, save state
+    // Document mouseup => finalize bar drag
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("mouseup", () => {
       if (dragging) {
@@ -1457,18 +1446,16 @@
         dragType = null;
         currentBar = null;
         currentLine = null;
-        pushState(); 
+        pushState();
         saveToLocalStorage();
       }
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Document click => if not dragging, clicking outside => unselect bars, lines (unless we want to keep line selection for arrow up/down)
-    // We'll clear line selection if user clicks anywhere that's not a line cell.
+    // Document click => unselect lines/bars if not dragging
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("click", (evt) => {
       if (!dragging) {
-        // If click is not on a name-cell or bar, unselect
         let target = evt.target;
         const isNameCell = target.closest('.name-cell');
         const isBar = target.closest('.bar');
@@ -1483,15 +1470,14 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Keyboard shortcuts => delete, copy/paste, arrow moves, reorder lines, undo/redo
-    // Now also handle line up/down if currentlySelectedLine
+    // Keyboard shortcuts => bar moves up/down lines, reorder lines, copy/paste, undo/redo
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("keydown", e => {
-      const selected = getSelectedBars();
+      const selectedBars = getSelectedBars();
       // Delete bars
       if ((e.key === "Delete" || e.key === "Backspace")) {
-        if (selected.length) {
-          deleteBars(selected);
+        if (selectedBars.length) {
+          deleteBars(selectedBars);
           e.preventDefault();
           return;
         }
@@ -1500,18 +1486,22 @@
       if (e.ctrlKey || e.metaKey) {
         // Copy
         if (e.key.toLowerCase() === "c") {
-          if (selected.length) {
-            clipboard = selected.map(({ bar, line }) => ({ bar: JSON.parse(JSON.stringify(bar)), sourceLine: line }));
+          if (selectedBars.length) {
+            const cloned = selectedBars.map(({ bar, line }) => ({
+              bar: JSON.parse(JSON.stringify(bar)),
+              sourceLine: line
+            }));
+            clipboard = cloned;
             e.preventDefault();
           }
         }
         // Paste
         if (e.key.toLowerCase() === "v") {
           if (!clipboard.length) return;
-          let targetLine = selected.length ? selected[selected.length - 1].line : lines[lines.length - 1];
+          let targetLine = selectedBars.length ? selectedBars[selectedBars.length - 1].line : lines[lines.length - 1];
           if (!targetLine) {
             lineCounter++;
-            targetLine = { 
+            targetLine = {
               id: lineCounter,
               name: "Line Item " + lineCounter,
               client: "",
@@ -1522,7 +1512,7 @@
               custom2: "",
               custom3: "",
               bars: [],
-              selected: false 
+              selected: false
             };
             lines.push(targetLine);
           }
@@ -1539,21 +1529,22 @@
           saveToLocalStorage();
           e.preventDefault();
         }
-        // Undo (Ctrl+Z)
+        // Undo
         if (e.key.toLowerCase() === 'z') {
           undo();
           e.preventDefault();
         }
-        // Redo (Ctrl+Y)
+        // Redo
         if (e.key.toLowerCase() === 'y') {
           redo();
           e.preventDefault();
         }
       }
-      // Arrow keys => shift bars or reorder lines
+
+      // arrow left/right => shift bars
       if (e.key === "ArrowLeft") {
-        if (selected.length) {
-          selected.forEach(({ bar }) => {
+        if (selectedBars.length) {
+          selectedBars.forEach(({ bar }) => {
             bar.startAbsWeek = Math.max(0, bar.startAbsWeek - 1);
           });
           pushState();
@@ -1562,8 +1553,8 @@
           e.preventDefault();
         }
       } else if (e.key === "ArrowRight") {
-        if (selected.length) {
-          selected.forEach(({ bar }) => {
+        if (selectedBars.length) {
+          selectedBars.forEach(({ bar }) => {
             bar.startAbsWeek = Math.max(0, bar.startAbsWeek + 1);
           });
           pushState();
@@ -1571,9 +1562,28 @@
           saveToLocalStorage();
           e.preventDefault();
         }
-      } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-        // If we have a line selected, move it up or down
-        if (currentlySelectedLine) {
+      }
+      // arrow up/down => move bars up/down lines or reorder lines
+      else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        if (selectedBars.length) {
+          // Move bar(s) to adjacent lines
+          selectedBars.forEach(({ bar, line }) => {
+            const idx = lines.indexOf(line);
+            if (e.key === "ArrowUp" && idx > 0) {
+              line.bars = line.bars.filter(b => b.id !== bar.id);
+              lines[idx - 1].bars.push(bar);
+            } else if (e.key === "ArrowDown" && idx < lines.length - 1) {
+              line.bars = line.bars.filter(b => b.id !== bar.id);
+              lines[idx + 1].bars.push(bar);
+            }
+          });
+          pushState();
+          renderTable();
+          saveToLocalStorage();
+          e.preventDefault();
+        } 
+        else if (currentlySelectedLine) {
+          // Reorder lines
           const idx = lines.indexOf(currentlySelectedLine);
           if (e.key === "ArrowUp" && idx > 0) {
             [lines[idx-1], lines[idx]] = [lines[idx], lines[idx-1]];
@@ -1584,34 +1594,16 @@
           renderTable();
           saveToLocalStorage();
           e.preventDefault();
-        } else {
-          // If no line is selected, also check for bar-based approach
-          const selectedLine = lines.find(l => l.selected);
-          if (selectedLine) {
-            const idx = lines.indexOf(selectedLine);
-            if (e.key === "ArrowUp" && idx > 0) {
-              [lines[idx-1], lines[idx]] = [lines[idx], lines[idx-1]];
-            } else if (e.key === "ArrowDown" && idx < lines.length - 1) {
-              [lines[idx], lines[idx+1]] = [lines[idx+1], lines[idx]];
-            }
-            pushState();
-            renderTable();
-            saveToLocalStorage();
-            e.preventDefault();
-          }
         }
       }
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Function: showBarEditor
-    // Opens bar editing popup. Also implements "autosave" on input changes
+    // showBarEditor => open bar editing popup (autosave)
     // ---------------------------------------------------------------------------------------------
     function showBarEditor(bar, line, x, y) {
       currentEditorBar = bar;
       currentEditorLine = line;
-
-      // Populate fields
       barTextInput.value = bar.text;
       barStatusSelect.value = bar.status;
       const { year: sy, week: sw } = fromAbsoluteWeek(bar.startAbsWeek);
@@ -1621,13 +1613,11 @@
       endYearSelect.value = ey;
       endWeekSelect.value = ew;
 
-      // Position editor
       barEditor.style.display = "block";
       barEditor.style.left = (x + window.scrollX + 10) + "px";
       barEditor.style.top = (y + window.scrollY + 10) + "px";
 
-      // Add event listeners for "autosave" on each input
-      // We'll do immediate changes to the bar object
+      // Autosave
       const autosaveBar = () => {
         if (!currentEditorBar) return;
         currentEditorBar.text = barTextInput.value;
@@ -1652,7 +1642,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Bar editor OK => close editor; changes have already been saved via autosave
+    // barEditorOkBtn => close
     // ---------------------------------------------------------------------------------------------
     barEditorOkBtn.addEventListener("click", () => {
       barEditor.style.display = "none";
@@ -1662,7 +1652,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Bar editor cancel => close editor, do not revert autosaved data (user already autosaved)
+    // barEditorCancelBtn => close
     // ---------------------------------------------------------------------------------------------
     barEditorCancelBtn.addEventListener("click", () => {
       barEditor.style.display = "none";
@@ -1672,7 +1662,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Bar delete => remove bar from line, close editor
+    // barDeleteBtn => remove bar
     // ---------------------------------------------------------------------------------------------
     barDeleteBtn.addEventListener("click", () => {
       if (!currentEditorBar || !currentEditorLine) return;
@@ -1686,7 +1676,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Close bar editor if clicked outside
+    // Close bar editor if click outside
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("mousedown", e => {
       if (barEditor.style.display === "block") {
@@ -1702,13 +1692,10 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Function: showLineEditor
-    // Opens the popup for editing line attributes + autosave on input
+    // showLineEditor => open line attribute popup (autosave)
     // ---------------------------------------------------------------------------------------------
     function showLineEditor(line, x, y) {
       currentLineEditor = line;
-
-      // Populate fields
       lineNameInput.value = line.name;
       lineClientInput.value = line.client;
       lineDisciplineInput.value = line.discipline;
@@ -1722,7 +1709,7 @@
       lineEditor.style.left = (x + window.scrollX + 10) + "px";
       lineEditor.style.top = (y + window.scrollY + 10) + "px";
 
-      // Autosave on input
+      // Autosave
       const autosaveLine = () => {
         if (!currentLineEditor) return;
         currentLineEditor.name = lineNameInput.value;
@@ -1748,7 +1735,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Line editor OK => close editor, data is autosaved
+    // lineEditorOkBtn => close
     // ---------------------------------------------------------------------------------------------
     lineEditorOkBtn.addEventListener("click", () => {
       lineEditor.style.display = "none";
@@ -1757,7 +1744,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Line editor cancel => close editor, data was autosaved
+    // lineEditorCancelBtn => close
     // ---------------------------------------------------------------------------------------------
     lineEditorCancelBtn.addEventListener("click", () => {
       lineEditor.style.display = "none";
@@ -1766,7 +1753,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // "Delete Line Item" => remove the line, close editor
+    // lineDeleteBtn => remove line
     // ---------------------------------------------------------------------------------------------
     lineDeleteBtn.addEventListener("click", () => {
       if (!currentLineEditor) return;
@@ -1776,7 +1763,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Close line editor if clicked outside
+    // Close line editor if click outside
     // ---------------------------------------------------------------------------------------------
     document.addEventListener("mousedown", e => {
       if (lineEditor.style.display === "block") {
@@ -1791,7 +1778,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Filter button => opens modal
+    // Filter button => opens filter modal
     // ---------------------------------------------------------------------------------------------
     filterBtn.addEventListener("click", () => {
       filterClient.value = filters.client || "";
@@ -1805,7 +1792,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Filter apply => set filters, re-render
+    // filterApplyBtn => set filters
     // ---------------------------------------------------------------------------------------------
     filterApplyBtn.addEventListener("click", () => {
       filters = {
@@ -1825,7 +1812,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Filter clear => reset filters
+    // filterClearBtn => reset filters
     // ---------------------------------------------------------------------------------------------
     filterClearBtn.addEventListener("click", () => {
       filters = {};
@@ -1841,7 +1828,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Filter cancel => close
+    // filterCancelBtn => close
     // ---------------------------------------------------------------------------------------------
     filterCancelBtn.addEventListener("click", () => {
       filterModal.style.display = "none";
@@ -1873,7 +1860,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Settings OK => apply theme and color changes
+    // settingsOkBtn => apply theme
     // ---------------------------------------------------------------------------------------------
     settingsOkBtn.addEventListener("click", () => {
       currentTheme = themeSelect.value;
@@ -1886,7 +1873,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Settings cancel => just close
+    // settingsCancelBtn => close
     // ---------------------------------------------------------------------------------------------
     settingsCancelBtn.addEventListener("click", () => {
       settingsModal.style.display = "none";
@@ -1906,7 +1893,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Search input => dynamic filter re-render
+    // searchInput => dynamic filter
     // ---------------------------------------------------------------------------------------------
     searchInput.addEventListener("input", () => {
       searchTerm = searchInput.value.trim();
@@ -1914,22 +1901,22 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Add line button => create new line
+    // Add line => new line
     // ---------------------------------------------------------------------------------------------
     addLineItemBtn.addEventListener("click", () => {
       lineCounter++;
-      lines.push({ 
-        id: lineCounter, 
+      lines.push({
+        id: lineCounter,
         name: "Line Item " + lineCounter,
-        client: "", 
-        discipline: "", 
-        experience: "", 
-        location: "", 
-        custom1: "", 
-        custom2: "", 
-        custom3: "", 
-        bars: [], 
-        selected: false 
+        client: "",
+        discipline: "",
+        experience: "",
+        location: "",
+        custom1: "",
+        custom2: "",
+        custom3: "",
+        bars: [],
+        selected: false
       });
       pushState();
       renderTable();
@@ -1937,7 +1924,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Add bar button => appends bar to last line (or create line if none)
+    // Add bar => new bar on last line
     // ---------------------------------------------------------------------------------------------
     addBarBtn.addEventListener("click", e => {
       e.stopPropagation();
@@ -1974,7 +1961,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Export JSON => with format "Gannt_<date/time>.json"
+    // Export JSON => "Gannt_<date>.json"
     // ---------------------------------------------------------------------------------------------
     exportJsonBtn.addEventListener("click", () => {
       const dataStr = JSON.stringify({
@@ -1993,7 +1980,6 @@
       const blob = new Blob([dataStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
 
-      // Construct filename with date/time
       const now = new Date();
       let dateStr = now.toISOString().replace(/[:.]/g, '-');
       const a = document.createElement("a");
@@ -2004,7 +1990,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Export CSV => downloads data as CSV
+    // Export CSV
     // ---------------------------------------------------------------------------------------------
     downloadCsvBtn.addEventListener("click", () => {
       let csv = "Line ID,Name,Client,Discipline,Experience,Location,Custom1,Custom2,Custom3,Bar ID,Bar Text,Status,Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
@@ -2029,14 +2015,14 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Print/PDF button => triggers browser print
+    // Print => triggers print
     // ---------------------------------------------------------------------------------------------
     printBtn.addEventListener("click", () => {
       window.print();
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Horizontal zoom slider => updates cellWidth
+    // Zoom sliders => adjust cellWidth / rowHeight
     // ---------------------------------------------------------------------------------------------
     zoomSlider.addEventListener("input", e => {
       cellWidth = parseInt(e.target.value);
@@ -2045,10 +2031,6 @@
       renderTable();
       saveToLocalStorage();
     });
-
-    // ---------------------------------------------------------------------------------------------
-    // Vertical zoom slider => updates rowHeight
-    // ---------------------------------------------------------------------------------------------
     heightZoomSlider.addEventListener("input", e => {
       rowHeight = parseInt(e.target.value);
       pushState();
@@ -2058,8 +2040,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Function: parseCsv
-    // Converts CSV text into lines/bars
+    // parseCsv => loads lines/bars from CSV
     // ---------------------------------------------------------------------------------------------
     function parseCsv(csv) {
       const rows = csv.trim().split('\n');
@@ -2078,11 +2059,10 @@
         let inQuote = false;
         for (let c of row + ',') {
           if (c === '"') inQuote = !inQuote;
-          else if (c === ',' && !inQuote) { 
-            parsed.push(field); 
-            field = ''; 
-          }
-          else field += c;
+          else if (c === ',' && !inQuote) {
+            parsed.push(field);
+            field = '';
+          } else field += c;
         }
         if (parsed.length < 9) continue;
 
@@ -2152,7 +2132,7 @@
         const newBar = {
           id: barId,
           text: barText,
-          status: status,
+          status,
           startAbsWeek: startAbs,
           length,
           selected: false
@@ -2172,7 +2152,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Import file => read JSON or CSV
+    // importFileInput => handle selected file
     // ---------------------------------------------------------------------------------------------
     importFileInput.addEventListener("change", e => {
       const file = e.target.files[0];
@@ -2231,7 +2211,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Timescale apply => update start/end from inputs, re-render
+    // Timescale apply => update range
     // ---------------------------------------------------------------------------------------------
     applyTimescaleBtn.addEventListener("click", () => {
       startYear = parseInt(startYearInput.value) || startYear;
@@ -2248,32 +2228,44 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Help button => simple alert
+    // helpBtn => expanded tips
     // ---------------------------------------------------------------------------------------------
     helpBtn.addEventListener("click", () => {
-      alert(`Gantt Planner Help:
-- Click a line item label to select the row (arrows move it).
-- Double-click a line item label to edit attributes (autosaves).
-- Double-click a bar to edit bar attributes (autosaves).
-- Drag bars to move, drag handles to resize.
-- Shift/Ctrl+Click for multi-select of bars.
-- Delete: Select bars and press Delete/Backspace.
-- Copy/Paste bars: Ctrl+C / Ctrl+V.
-- Arrow keys: 
-  -- If a line is selected, Up/Down reorders the whole line.
-  -- If bars are selected, Left/Right shifts them horizontally.
-- Dynamic filter: Type in the filter box to filter by line or bar attributes.
-- Additional Filter button for advanced line-attribute filters.
-- Undo/Redo: Ctrl+Z / Ctrl+Y or use the toolbar buttons.
-- Theme: Settings gear for dark mode and color changes.
-- Import/Export: JSON/CSV for data. JSON includes theme.
-- Print: Use Print button for PDF/export.
-- Zoom: Sliders for horizontal/vertical scaling, saved locally.`);
+      alert(`Gantt Planner Detailed Help & Tips:
+
+• Selecting & Moving Lines:
+  - Single-click a line name to select that row. ArrowUp/ArrowDown moves the entire row up/down.
+• Selecting & Moving Bars:
+  - Single-click a bar to select it. ArrowLeft/ArrowRight nudges it by a week.
+  - If multiple bars are selected (Shift/Ctrl-click), ArrowUp/ArrowDown moves them to adjacent lines.
+• Double-Click to Edit:
+  - Double-click a line label to open the line properties. Autosaves on input.
+  - Double-click a bar to open its properties. Autosaves on input.
+• Adding Bars:
+  - "Add Bar" button puts a bar on the last line by default.
+  - Double-click empty space in a line's bar area adds an 8-week placeholder bar.
+  - Right-click on empty space adds a 6-week bar called "Right-Click Bar".
+• Filters & Search:
+  - Use the search box to highlight partial matches in lines or bar text/status.
+  - Use the Filter button for detailed attribute-based filtering (client, discipline, etc).
+• Timescale & Zoom:
+  - Adjust Start/End Year/Week, then "Apply" to shift the chart timescale.
+  - Horizontal/Vertical Zoom sliders to scale columns/rows.
+• Theme & Colors:
+  - Click the gear icon to toggle light/dark themes, change bar colors by status.
+• Undo/Redo:
+  - Ctrl+Z / Ctrl+Y or the toolbar buttons.
+• Copy/Paste:
+  - Select bars, press Ctrl+C to copy, Ctrl+V to paste onto the last selected line or last line if none selected.
+• Import/Export:
+  - JSON preserves all data including theme.
+  - CSV for partial data exchange.
+  - Print/PDF for browser-based export.
+Enjoy using Gantt Planner!`);
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Function: pushState
-    // Saves a deep copy of the current state onto the undo stack, clears redo stack
+    // pushState => save to undo stack
     // ---------------------------------------------------------------------------------------------
     function pushState() {
       const stateCopy = JSON.parse(JSON.stringify({
@@ -2294,8 +2286,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: restoreState
-    // Replaces current state from a saved state object, re-applies CSS & theme
+    // restoreState => restore from saved state
     // ---------------------------------------------------------------------------------------------
     function restoreState(state) {
       lines = state.lines;
@@ -2316,10 +2307,10 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: undo => revert to previous state if available
+    // undo => revert
     // ---------------------------------------------------------------------------------------------
     function undo() {
-      if (undoStack.length < 2) return; 
+      if (undoStack.length < 2) return;
       const current = undoStack.pop();
       redoStack.push(current);
       const prev = undoStack[undoStack.length - 1];
@@ -2327,7 +2318,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Function: redo => apply the next state if available
+    // redo => forward
     // ---------------------------------------------------------------------------------------------
     function redo() {
       if (!redoStack.length) return;
@@ -2349,9 +2340,7 @@
       restoreState(nextState);
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Hook up the Undo/Redo toolbar buttons
-    // ---------------------------------------------------------------------------------------------
+    // Attach undo/redo buttons
     undoBtn.addEventListener("click", () => {
       undo();
     });
@@ -2360,8 +2349,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Function: init => run on page load
-    // Loads from localStorage, sets up UI, renders, pushes initial state
+    // init => load from local storage, populate UI, etc.
     // ---------------------------------------------------------------------------------------------
     function init() {
       loadFromLocalStorage();
@@ -2381,11 +2369,18 @@
       applyTheme();
       renderTable();
       pushState();
+
+      // Listen for scroll to recenter bar text
+      document.querySelector(".table-wrapper").addEventListener("scroll", () => {
+        updateBarTextPositions();
+      });
+      // also handle window resize
+      window.addEventListener("resize", () => {
+        updateBarTextPositions();
+      });
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Run init on window load
-    // ---------------------------------------------------------------------------------------------
+    // On window load
     window.addEventListener("load", init);
   </script>
 </body>
