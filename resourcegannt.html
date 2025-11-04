@@ -83,7 +83,6 @@
     /* Row: Dynamic height via CSS variable */
     .gantt-row {
       height: var(--row-height);
-      border-bottom: 1px solid #dee2e6;
     }
 
     /* Selected row: Highlight background */
@@ -103,8 +102,6 @@
       flex-direction: column;
       justify-content: center; /* Centers children vertically */
       padding: 0 8px;
-      height: var(--row-height);
-      text-align: center;
       box-sizing: border-box;
     }
 
@@ -173,6 +170,10 @@
     }
     .bar.selected {
       outline: 2px solid #ffc107;
+    }
+    .bar.highlighted {
+      outline: 3px solid #0d6efd;
+      opacity: 0.9;
     }
 
     /* Bar text: Centered in visible portion, vertically centered */
@@ -259,6 +260,138 @@
       margin-top: 12px;
     }
 
+    /* Line editor overlay (new for line attributes) */
+    #lineEditor {
+      position: absolute;
+      display: none;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 12px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 999;
+      min-width: 280px;
+    }
+    #lineEditor label {
+      display: block;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+    #lineEditor input {
+      margin-top: 4px;
+      width: 100%;
+    }
+    #lineEditorActions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    /* Filter modal (new for filtering) */
+    #filterModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 999;
+      min-width: 300px;
+    }
+    #filterModal h3 {
+      margin-top: 0;
+    }
+    #filterModal label {
+      display: block;
+      margin-top: 8px;
+    }
+    #filterModal input {
+      width: 100%;
+      margin-top: 4px;
+    }
+    #filterActions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    /* Settings modal (new for theme) */
+    #settingsModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      z-index: 999;
+      min-width: 300px;
+    }
+    #settingsModal h3 {
+      margin-top: 0;
+    }
+    #settingsModal label {
+      display: block;
+      margin-top: 8px;
+    }
+    #settingsActions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .color-picker {
+      width: 60px;
+      height: 30px;
+      padding: 0;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* Dark theme styles */
+    body.dark-theme {
+      background-color: #212529;
+      color: #f8f9fa;
+    }
+    body.dark-theme .navbar {
+      background-color: #343a40 !important;
+    }
+    body.dark-theme #ganttTable thead th,
+    body.dark-theme .timescale-header {
+      background-color: #495057;
+      color: #f8f9fa;
+    }
+    body.dark-theme .name-cell {
+      background: #343a40;
+      color: #f8f9fa;
+    }
+    body.dark-theme .bar-text {
+      color: #212529;
+    }
+    body.dark-theme #barEditor,
+    body.dark-theme #lineEditor,
+    body.dark-theme #filterModal,
+    body.dark-theme #settingsModal {
+      background: #343a40;
+      color: #f8f9fa;
+      border: 1px solid #495057;
+    }
+    body.dark-theme input,
+    body.dark-theme select {
+      background: #495057;
+      color: #f8f9fa;
+      border: 1px solid #6c757d;
+    }
+
     /* Zoom sliders: Enhanced visibility */
     .zoom-slider {
       width: 120px;
@@ -327,6 +460,11 @@
       padding-right: 0;
     }
 
+    /* Search input in toolbar */
+    #searchInput {
+      width: 180px;
+    }
+
     /* Responsive adjustments */
     @media (max-width: 768px) {
       #nameHeader, .name-cell {
@@ -337,6 +475,9 @@
       }
       .toolbar-group {
         padding: 0 0.5rem;
+      }
+      #searchInput {
+        width: 120px;
       }
     }
 
@@ -354,6 +495,15 @@
       transform: scale(1.1);
     }
 
+    /* Settings button */
+    #settingsBtn {
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    #settingsBtn:hover {
+      transform: scale(1.1);
+    }
+
     /* Stats */
     #statsDisplay {
       font-size: 0.9rem;
@@ -362,7 +512,7 @@
 
     /* Print styles */
     @media print {
-      .navbar, #barEditor {
+      .navbar, #barEditor, #lineEditor, #filterModal, #settingsModal {
         display: none !important;
       }
       .table-wrapper {
@@ -426,14 +576,23 @@
           <input type="range" class="zoom-slider" id="heightZoomSlider" min="30" max="100" value="40" step="5">
         </div>
 
-        <!-- Group 4: Action buttons and help -->
+        <!-- Group 4: Search and actions -->
+        <div class="toolbar-group">
+          <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Search lines/bars..." />
+        </div>
+
+        <!-- Group 5: Action buttons and help/settings -->
         <div class="toolbar-group ms-auto">
           <button id="addLineItemBtn" class="btn btn-primary btn-sm">Add Line</button>
           <button id="addBarBtn" class="btn btn-secondary btn-sm">Add Bar</button>
+          <button id="filterBtn" class="btn btn-outline-primary btn-sm">Filter</button>
           <button id="importJsonBtn" class="btn btn-outline-success btn-sm">Import</button>
           <button id="exportJsonBtn" class="btn btn-outline-info btn-sm">Export JSON</button>
           <button id="downloadCsvBtn" class="btn btn-outline-secondary btn-sm">Export CSV</button>
           <button id="printBtn" class="btn btn-outline-dark btn-sm">Print/PDF</button>
+          <svg id="settingsBtn" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22l-1.92 3.32c-.14.24-.08.54.12.61l2.03 1.58c-.05.3-.09.63-.09.94 0 .31.04.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.14.24.37.34.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.45 0 .59-.22l1.92-3.32c.14-.24.08-.54-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6 0-1.98 1.62-3.6 3.6-3.6 1.98 0 3.6 1.62 3.6 3.6 0 1.98-1.62 3.6-3.6 3.6z" fill="#0d6efd"/>
+          </svg>
           <svg id="helpBtn" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 14.5v.5h-2v-1c0-1.11.45-2.11 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" fill="#0d6efd"/>
           </svg>
@@ -485,6 +644,76 @@
     </div>
   </div>
 
+  <!-- Line editor (new popup for line attributes) -->
+  <div id="lineEditor">
+    <label for="lineNameInput">Name:</label>
+    <input type="text" id="lineNameInput" placeholder="Name..." />
+    <label for="lineClientInput">Client:</label>
+    <input type="text" id="lineClientInput" placeholder="Client..." />
+    <label for="lineDisciplineInput">Discipline:</label>
+    <input type="text" id="lineDisciplineInput" placeholder="Discipline..." />
+    <label for="lineExperienceInput">Experience:</label>
+    <input type="text" id="lineExperienceInput" placeholder="Experience..." />
+    <label for="lineLocationInput">Location:</label>
+    <input type="text" id="lineLocationInput" placeholder="Location..." />
+    <label for="lineCustom1Input">Custom1:</label>
+    <input type="text" id="lineCustom1Input" placeholder="Custom1..." />
+    <label for="lineCustom2Input">Custom2:</label>
+    <input type="text" id="lineCustom2Input" placeholder="Custom2..." />
+    <label for="lineCustom3Input">Custom3:</label>
+    <input type="text" id="lineCustom3Input" placeholder="Custom3..." />
+    <div id="lineEditorActions">
+      <button id="lineEditorOkBtn" class="btn btn-sm btn-primary">OK</button>
+      <button id="lineEditorCancelBtn" class="btn btn-sm btn-secondary">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Filter modal (new for filtering) -->
+  <div id="filterModal">
+    <h3>Filter Lines</h3>
+    <label for="filterClient">Client:</label>
+    <input type="text" id="filterClient" placeholder="Client..." />
+    <label for="filterDiscipline">Discipline:</label>
+    <input type="text" id="filterDiscipline" placeholder="Discipline..." />
+    <label for="filterExperience">Experience:</label>
+    <input type="text" id="filterExperience" placeholder="Experience..." />
+    <label for="filterLocation">Location:</label>
+    <input type="text" id="filterLocation" placeholder="Location..." />
+    <label for="filterCustom1">Custom1:</label>
+    <input type="text" id="filterCustom1" placeholder="Custom1..." />
+    <label for="filterCustom2">Custom2:</label>
+    <input type="text" id="filterCustom2" placeholder="Custom2..." />
+    <label for="filterCustom3">Custom3:</label>
+    <input type="text" id="filterCustom3" placeholder="Custom3..." />
+    <div id="filterActions">
+      <button id="filterApplyBtn" class="btn btn-sm btn-primary">Apply</button>
+      <button id="filterClearBtn" class="btn btn-sm btn-secondary">Clear</button>
+      <button id="filterCancelBtn" class="btn btn-sm btn-secondary">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Settings modal (new for theme customization) -->
+  <div id="settingsModal">
+    <h3>Theme Settings</h3>
+    <label>Theme:</label>
+    <select id="themeSelect">
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+    <label for="securedColor">Secured Color:</label>
+    <input type="color" id="securedColor" class="color-picker" value="#28a745" />
+    <label for="proposedColor">Proposed Color:</label>
+    <input type="color" id="proposedColor" class="color-picker" value="#fd7e14" />
+    <label for="opportunityColor">Opportunity Color:</label>
+    <input type="color" id="opportunityColor" class="color-picker" value="#dc3545" />
+    <label for="futureColor">Future Color:</label>
+    <input type="color" id="futureColor" class="color-picker" value="#6f42c1" />
+    <div id="settingsActions">
+      <button id="settingsOkBtn" class="btn btn-sm btn-primary">Apply</button>
+      <button id="settingsCancelBtn" class="btn btn-sm btn-secondary">Cancel</button>
+    </div>
+  </div>
+
   <!-- Hidden import -->
   <input type="file" id="importFileInput" accept=".json,.csv" />
 
@@ -492,19 +721,26 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // Status colors: Map status to hex
-    const statusColors = {
+    // Status colors: Map status to hex (customizable) -->
+    let statusColors = {
       secured: "#28a745",
       proposed: "#fd7e14",
       opportunity: "#dc3545",
       future: "#6f42c1"
     };
 
-    // Sample data: Initial lines and bars
+    // Sample data: Initial lines and bars with new attributes -->
     let lines = [
       {
         id: 1,
         name: "Line Item 1",
+        client: "",
+        discipline: "",
+        experience: "",
+        location: "",
+        custom1: "",
+        custom2: "",
+        custom3: "",
         bars: [
           {
             id: 101,
@@ -520,6 +756,13 @@
       {
         id: 2,
         name: "Line Item 2",
+        client: "",
+        discipline: "",
+        experience: "",
+        location: "",
+        custom1: "",
+        custom2: "",
+        custom3: "",
         bars: [
           {
             id: 102,
@@ -534,34 +777,46 @@
       },
     ];
 
-    // Timescale defaults
+    // Timescale defaults -->
     let startYear = 2025;
     let startWeek = 1;
     let endYear = 2025;
     let endWeek = 52;
 
-    // Counters for unique IDs
+    // Counters for unique IDs -->
     let lineCounter = 2;
     let barCounter = 102;
 
-    // Zoom: Horizontal column width in px, vertical row height in px
+    // Zoom: Horizontal column width in px, vertical row height in px -->
     let cellWidth = 150;
     let rowHeight = 40;
 
-    // Clipboard for copy/paste
+    // Clipboard for copy/paste -->
     let clipboard = [];
 
-    // DOM elements
+    // Filter criteria (object to store active filters) -->
+    let filters = {};
+
+    // Search term (new for search within chart) -->
+    let searchTerm = "";
+
+    // Theme setting (new) -->
+    let currentTheme = "light";
+
+    // DOM elements -->
     const ganttTable = document.getElementById("ganttTable");
     const headerRow = document.getElementById("headerRow");
     const tableBody = document.getElementById("tableBody");
     const addLineItemBtn = document.getElementById("addLineItemBtn");
     const addBarBtn = document.getElementById("addBarBtn");
+    const filterBtn = document.getElementById("filterBtn");
     const importJsonBtn = document.getElementById("importJsonBtn");
     const exportJsonBtn = document.getElementById("exportJsonBtn");
     const downloadCsvBtn = document.getElementById("downloadCsvBtn");
     const printBtn = document.getElementById("printBtn");
     const helpBtn = document.getElementById("helpBtn");
+    const settingsBtn = document.getElementById("settingsBtn"); // New settings button
+    const searchInput = document.getElementById("searchInput"); // New search input
     const importFileInput = document.getElementById("importFileInput");
     const startYearInput = document.getElementById("startYearInput");
     const startWeekInput = document.getElementById("startWeekInput");
@@ -573,7 +828,7 @@
     const zoomSlider = document.getElementById("zoomSlider");
     const heightZoomSlider = document.getElementById("heightZoomSlider");
 
-    // Editor elements
+    // Bar editor elements -->
     const barEditor = document.getElementById("barEditor");
     const barTextInput = document.getElementById("barTextInput");
     const barStatusSelect = document.getElementById("barStatusSelect");
@@ -585,11 +840,50 @@
     const barEditorCancelBtn = document.getElementById("barEditorCancelBtn");
     const barDeleteBtn = document.getElementById("barDeleteBtn");
 
-    // Editor state
+    // Line editor elements (new) -->
+    const lineEditor = document.getElementById("lineEditor");
+    const lineNameInput = document.getElementById("lineNameInput");
+    const lineClientInput = document.getElementById("lineClientInput");
+    const lineDisciplineInput = document.getElementById("lineDisciplineInput");
+    const lineExperienceInput = document.getElementById("lineExperienceInput");
+    const lineLocationInput = document.getElementById("lineLocationInput");
+    const lineCustom1Input = document.getElementById("lineCustom1Input");
+    const lineCustom2Input = document.getElementById("lineCustom2Input");
+    const lineCustom3Input = document.getElementById("lineCustom3Input");
+    const lineEditorOkBtn = document.getElementById("lineEditorOkBtn");
+    const lineEditorCancelBtn = document.getElementById("lineEditorCancelBtn");
+
+    // Filter modal elements (new) -->
+    const filterModal = document.getElementById("filterModal");
+    const filterClient = document.getElementById("filterClient");
+    const filterDiscipline = document.getElementById("filterDiscipline");
+    const filterExperience = document.getElementById("filterExperience");
+    const filterLocation = document.getElementById("filterLocation");
+    const filterCustom1 = document.getElementById("filterCustom1");
+    const filterCustom2 = document.getElementById("filterCustom2");
+    const filterCustom3 = document.getElementById("filterCustom3");
+    const filterApplyBtn = document.getElementById("filterApplyBtn");
+    const filterClearBtn = document.getElementById("filterClearBtn");
+    const filterCancelBtn = document.getElementById("filterCancelBtn");
+
+    // Settings modal elements (new) -->
+    const settingsModal = document.getElementById("settingsModal");
+    const themeSelect = document.getElementById("themeSelect");
+    const securedColor = document.getElementById("securedColor");
+    const proposedColor = document.getElementById("proposedColor");
+    const opportunityColor = document.getElementById("opportunityColor");
+    const futureColor = document.getElementById("futureColor");
+    const settingsOkBtn = document.getElementById("settingsOkBtn");
+    const settingsCancelBtn = document.getElementById("settingsCancelBtn");
+
+    // Editor state -->
     let currentEditorBar = null;
     let currentEditorLine = null;
 
-    // Drag state
+    // Line editor state (new) -->
+    let currentLineEditor = null;
+
+    // Drag state -->
     let dragging = false;
     let dragType = null;
     let dragStartX = 0;
@@ -598,13 +892,13 @@
     let currentBar = null;
     let currentLine = null;
 
-    // Absolute week conversion: Year*52 + (week-1)
+    // Absolute week conversion: Year*52 + (week-1) -->
     function toAbsoluteWeek(year, week) {
-      // Convert year and week to absolute week number
+      // Convert year and week to absolute week number for easy calculations
       return year * 52 + (week - 1);
     }
 
-    // From absolute week to {year, week}
+    // From absolute week to {year, week} -->
     function fromAbsoluteWeek(absWeek) {
       // Convert absolute week back to year and week
       const y = Math.floor(absWeek / 52);
@@ -612,15 +906,15 @@
       return { year: y, week: w };
     }
 
-    // Get color from status
+    // Get color from status -->
     function getColorFromStatus(status) {
-      // Return hex color based on bar status
+      // Return hex color based on bar status (uses customizable statusColors)
       return statusColors[status] || "#fd7e14";
     }
 
-    // Populate year/week selects in editor
+    // Populate year/week selects in editor -->
     function populateDateSelects() {
-      // Fill year and week dropdowns
+      // Fill year and week dropdowns in the bar editor
       [startYearSelect, endYearSelect].forEach(sel => {
         sel.innerHTML = "";
         for (let y = 2010; y <= 2030; y++) {
@@ -641,7 +935,7 @@
       });
     }
 
-    // Set CSS variables for dynamic sizing
+    // Set CSS variables for dynamic grid and sizing -->
     function updateCSSVariables() {
       // Update CSS custom properties for cell width and row height
       document.documentElement.style.setProperty('--cell-width', cellWidth + 'px');
@@ -650,16 +944,35 @@
       ganttTable.style.setProperty('--row-height', rowHeight + 'px');
     }
 
-    // Save to localStorage
+    // Apply theme (new) -->
+    function applyTheme() {
+      // Apply light/dark theme class to body
+      if (currentTheme === "dark") {
+        document.body.classList.add("dark-theme");
+      } else {
+        document.body.classList.remove("dark-theme");
+      }
+      // Update legend swatches
+      document.querySelectorAll('.legend-swatch').forEach(swatch => {
+        const status = swatch.parentElement.textContent.trim().toLowerCase();
+        if (statusColors[status]) {
+          swatch.style.backgroundColor = statusColors[status];
+        }
+      });
+      renderTable();
+      saveToLocalStorage();
+    }
+
+    // Save to localStorage -->
     function saveToLocalStorage() {
-      // Persist chart data
-      const chartData = { lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth, rowHeight };
+      // Persist chart data to browser localStorage (now includes theme and colors)
+      const chartData = { lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth, rowHeight, statusColors, currentTheme };
       localStorage.setItem("ganttChartData", JSON.stringify(chartData));
     }
 
-    // Load from localStorage
+    // Load from localStorage -->
     function loadFromLocalStorage() {
-      // Retrieve and parse chart data
+      // Retrieve and parse chart data from localStorage (includes theme)
       const stored = localStorage.getItem("ganttChartData");
       if (!stored) return;
       try {
@@ -667,6 +980,13 @@
         lines = parsed.lines || [];
         lines.forEach(line => {
           line.selected = false;
+          line.client = line.client || "";
+          line.discipline = line.discipline || "";
+          line.experience = line.experience || "";
+          line.location = line.location || "";
+          line.custom1 = line.custom1 || "";
+          line.custom2 = line.custom2 || "";
+          line.custom3 = line.custom3 || "";
           line.bars.forEach(bar => { 
             if (!bar.status) bar.status = "proposed"; 
             bar.selected = false;
@@ -680,22 +1000,24 @@
         barCounter = parsed.barCounter || 0;
         cellWidth = parsed.cellWidth || 150;
         rowHeight = parsed.rowHeight || 40;
+        statusColors = parsed.statusColors || statusColors;
+        currentTheme = parsed.currentTheme || "light";
       } catch (err) {
         console.warn("Invalid localStorage data");
       }
     }
 
-    // Get selected bars
+    // Get selected bars -->
     function getSelectedBars() {
-      // Collect selected bars with parent lines
+      // Collect all selected bars with their parent lines
       const selected = [];
       lines.forEach(line => line.bars.forEach(bar => { if (bar.selected) selected.push({ bar, line }); }));
       return selected;
     }
 
-    // Delete selected bars
+    // Delete selected bars -->
     function deleteBars(barsToDelete) {
-      // Remove specified bars
+      // Remove specified bars from their lines
       barsToDelete.forEach(({ bar, line }) => {
         line.bars = line.bars.filter(b => b.id !== bar.id);
       });
@@ -703,21 +1025,27 @@
       saveToLocalStorage();
     }
 
-    // Count total bars
+    // Count total bars -->
     function getTotalBars() {
-      // Sum all bars
+      // Sum all bars across lines
       return lines.reduce((count, line) => count + line.bars.length, 0);
     }
 
-    // Unselect all bars
+    // Unselect all bars -->
     function unselectAllBars() {
-      // Clear all bar selections
+      // Clear selection on all bars
       lines.forEach(line => line.bars.forEach(bar => bar.selected = false));
     }
 
-    // Handle bar select
+    // Clear highlights (new for search) -->
+    function clearHighlights() {
+      // Remove highlighted class from all bars
+      document.querySelectorAll('.bar.highlighted').forEach(el => el.classList.remove('highlighted'));
+    }
+
+    // Handle bar select (click/shift) -->
     function handleBarClickSelect(bar, event) {
-      // Toggle selection with modifiers
+      // Toggle or set bar selection based on modifier keys
       const isMulti = event.shiftKey || event.ctrlKey || event.metaKey;
       if (!isMulti) {
         unselectAllBars();
@@ -727,18 +1055,18 @@
       }
     }
 
-    // Get display range
+    // Get display range (absolute weeks) -->
     function getDisplayRange() {
-      // Calculate start/end absolute weeks
+      // Calculate start and end absolute weeks for current view
       let ds = toAbsoluteWeek(startYear, startWeek);
       let de = toAbsoluteWeek(endYear, endWeek);
       if (ds > de) [ds, de] = [de, ds];
       return { displayStart: ds, displayEnd: de };
     }
 
-    // Update bar text centering
+    // Update bar text centering in visible area -->
     function updateBarTextPositions() {
-      // Center text in visible bar portion
+      // Adjust bar text position to stay centered in viewport while scrolling
       const wrapper = document.querySelector(".table-wrapper");
       const scrollLeft = wrapper.scrollLeft;
       const viewportWidth = wrapper.clientWidth;
@@ -766,9 +1094,9 @@
       });
     }
 
-    // Render header and timescale
+    // Render header and timescale -->
     function renderHeader() {
-      // Clear and rebuild timescale headers
+      // Clear existing timescale headers
       while (headerRow.children.length > 1) {
         headerRow.removeChild(headerRow.lastChild);
       }
@@ -788,49 +1116,61 @@
       }
     }
 
-    // Update stats display
+    // Update stats display -->
     function updateStats() {
-      // Refresh line/bar counts
+      // Refresh line and bar counts in toolbar
       lineCountSpan.textContent = lines.length;
       barCountSpan.textContent = getTotalBars();
     }
 
-    // Full table render
+    // Full table render (filtered if active, highlighted for search) -->
     function renderTable() {
-      // Rebuild header, body, bars
+      // Rebuild entire table: header, body, bars, hatches (apply filters and search)
       renderHeader();
       tableBody.innerHTML = "";
+      clearHighlights(); // Clear previous search highlights
 
       const { displayStart, displayEnd } = getDisplayRange();
       const totalWeeks = displayEnd - displayStart + 1;
       if (totalWeeks < 1) return;
 
-      lines.forEach(line => {
+      const lowerSearch = searchTerm.toLowerCase();
+
+      const filteredLines = lines.filter(line => {
+        return Object.keys(filters).every(key => {
+          if (filters[key]) {
+            return line[key] && line[key].toLowerCase().includes(filters[key].toLowerCase());
+          }
+          return true;
+        });
+      });
+
+      filteredLines.forEach(line => {
         const tr = document.createElement("tr");
         tr.className = "gantt-row";
         if (line.selected) tr.classList.add("selected");
 
-        // Name cell with wrapper for horizontal layout
+        // Name cell with remove button and label (click to edit) -->
         const nameTd = document.createElement("td");
         nameTd.className = "name-cell";
-        const contentWrapper = document.createElement("div");
-        contentWrapper.className = "name-cell-content";
         const removeBtn = document.createElement("button");
         removeBtn.className = "remove-line-btn";
         removeBtn.innerHTML = "×";
         removeBtn.title = "Remove this line";
         removeBtn.addEventListener("click", () => removeLineItem(line.id));
-        const nameInput = document.createElement("input");
-        nameInput.className = "line-item-input";
-        nameInput.value = line.name;
-        nameInput.addEventListener("click", e => e.stopPropagation());
-        nameInput.addEventListener("change", () => {
-          line.name = nameInput.value;
-          saveToLocalStorage();
+        nameTd.appendChild(removeBtn);
+        const nameLabel = document.createElement("span");
+        nameLabel.textContent = line.name;
+        nameLabel.style.flex = "1";
+        nameLabel.style.cursor = "pointer";
+        if (lowerSearch && line.name.toLowerCase().includes(lowerSearch)) {
+          nameLabel.innerHTML = highlightText(line.name, lowerSearch);
+        }
+        nameLabel.addEventListener("click", e => {
+          e.stopPropagation();
+          showLineEditor(line, e.clientX, e.clientY);
         });
-        contentWrapper.appendChild(removeBtn);
-        contentWrapper.appendChild(nameInput);
-        nameTd.appendChild(contentWrapper);
+        nameTd.appendChild(nameLabel);
         nameTd.addEventListener("click", e => {
           e.stopPropagation();
           unselectAllBars();
@@ -840,7 +1180,7 @@
         });
         tr.appendChild(nameTd);
 
-        // Bar container
+        // Bar container cell spanning all weeks -->
         const barTd = document.createElement("td");
         barTd.colSpan = totalWeeks;
         barTd.className = "bar-cell";
@@ -861,15 +1201,24 @@
           const barDiv = document.createElement("div");
           barDiv.classList.add("bar");
           if (bar.selected) barDiv.classList.add("selected");
+          if (lowerSearch && bar.text.toLowerCase().includes(lowerSearch)) {
+            barDiv.classList.add("highlighted");
+          }
           barDiv.style.left = barLeft + "px";
           barDiv.style.width = barWidth + "px";
           barDiv.style.backgroundColor = getColorFromStatus(bar.status);
 
+          // Bar text span -->
           const textSpan = document.createElement("span");
           textSpan.className = "bar-text";
-          textSpan.textContent = bar.text;
+          if (lowerSearch && bar.text.toLowerCase().includes(lowerSearch)) {
+            textSpan.innerHTML = highlightText(bar.text, lowerSearch);
+          } else {
+            textSpan.textContent = bar.text;
+          }
           barDiv.appendChild(textSpan);
 
+          // Resize handles -->
           const leftHandle = document.createElement("div");
           leftHandle.classList.add("bar-handle", "left");
           barDiv.appendChild(leftHandle);
@@ -877,6 +1226,7 @@
           rightHandle.classList.add("bar-handle", "right");
           barDiv.appendChild(rightHandle);
 
+          // Bar events: click, dblclick, mousedown -->
           barDiv.addEventListener("click", e => {
             e.stopPropagation();
             handleBarClickSelect(bar, e);
@@ -892,7 +1242,7 @@
           barContainer.appendChild(barDiv);
         });
 
-        // Overlap hatches
+        // Compute and add overlap hatches -->
         const sortedBars = [...line.bars].sort((a, b) => a.startAbsWeek - b.startAbsWeek);
         for (let i = 0; i < sortedBars.length; i++) {
           for (let j = i + 1; j < sortedBars.length; j++) {
@@ -925,17 +1275,25 @@
       updateBarTextPositions();
     }
 
-    // Remove line item
+    // Highlight text for search matches (new helper) -->
+    function highlightText(text, search) {
+      // Wrap matching substrings in <mark> for visual highlight
+      if (!search) return text;
+      const regex = new RegExp(`(${search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      return text.replace(regex, '<mark>$1</mark>');
+    }
+
+    // Remove line item by ID -->
     function removeLineItem(id) {
-      // Filter out line
+      // Filter out line by ID and re-render
       lines = lines.filter(l => l.id !== id);
       renderTable();
       saveToLocalStorage();
     }
 
-    // Bar mouse down
+    // Bar mouse down: Start drag or resize -->
     function onBarMouseDown(e, line, bar) {
-      // Start drag or resize
+      // Detect if resize handle clicked, else move
       if (e.target.classList.contains("bar-handle")) {
         dragType = e.target.classList.contains("left") ? "resize-left" : "resize-right";
       } else {
@@ -950,9 +1308,9 @@
       e.preventDefault();
     }
 
-    // Document mousemove
+    // Document mousemove: Handle dragging/resizing -->
     document.addEventListener("mousemove", e => {
-      // Handle dragging/resizing
+      // Update bar position/length during drag
       if (!dragging || !currentBar) return;
       const dx = e.clientX - dragStartX;
       const dWeeks = Math.round(dx / cellWidth);
@@ -973,9 +1331,9 @@
       renderTable();
     });
 
-    // Document mouseup
+    // Document mouseup: End drag -->
     document.addEventListener("mouseup", () => {
-      // End drag
+      // Finalize drag and save
       if (dragging) {
         dragging = false;
         dragType = null;
@@ -985,20 +1343,21 @@
       }
     });
 
-    // Click outside
+    // Click outside: Unselect bars and lines, clear clipboard -->
     document.addEventListener("click", () => {
-      // Clear selections
+      // Clear selections and clipboard on background click
       if (!dragging) {
         unselectAllBars();
         lines.forEach(l => l.selected = false);
+        clipboard = []; // Clear clipboard after click
         renderTable();
         saveToLocalStorage();
       }
     });
 
-    // Keyboard shortcuts
+    // Keyboard shortcuts -->
     document.addEventListener("keydown", e => {
-      // Delete, copy/paste, arrows
+      // Handle delete, copy/paste, arrow keys for move/reorder
       const selected = getSelectedBars();
       if ((e.key === "Delete" || e.key === "Backspace")) {
         if (selected.length) {
@@ -1020,7 +1379,7 @@
           let targetLine = selected.length ? selected[selected.length - 1].line : lines[lines.length - 1];
           if (!targetLine) {
             lineCounter++;
-            targetLine = { id: lineCounter, name: "Line Item " + lineCounter, bars: [], selected: false };
+            targetLine = { id: lineCounter, name: "Line Item " + lineCounter, client: "", discipline: "", experience: "", location: "", custom1: "", custom2: "", custom3: "", bars: [], selected: false };
             lines.push(targetLine);
           }
           clipboard.forEach(item => {
@@ -1053,6 +1412,7 @@
         }
       } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
         if (selected.length) {
+          // Move selected bars to adjacent lines
           selected.forEach(({ bar, line }) => {
             const idx = lines.indexOf(line);
             if (e.key === "ArrowUp" && idx > 0) {
@@ -1067,6 +1427,7 @@
           saveToLocalStorage();
           e.preventDefault();
         } else {
+          // Move selected line up/down
           const selectedLine = lines.find(l => l.selected);
           if (selectedLine) {
             const idx = lines.indexOf(selectedLine);
@@ -1083,18 +1444,252 @@
       }
     });
 
-    // Add line button
-    addLineItemBtn.addEventListener("click", () => {
-      // Create new line
-      lineCounter++;
-      lines.push({ id: lineCounter, name: "Line Item " + lineCounter, bars: [], selected: false });
+    // Show bar editor -->
+    function showBarEditor(bar, line, x, y) {
+      currentEditorBar = bar;
+      currentEditorLine = line;
+      barTextInput.value = bar.text;
+      barStatusSelect.value = bar.status;
+      const { year: sy, week: sw } = fromAbsoluteWeek(bar.startAbsWeek);
+      const { year: ey, week: ew } = fromAbsoluteWeek(bar.startAbsWeek + bar.length - 1);
+      startYearSelect.value = sy;
+      startWeekSelect.value = sw;
+      endYearSelect.value = ey;
+      endWeekSelect.value = ew;
+      barEditor.style.display = "block";
+      barEditor.style.left = (x + window.scrollX + 10) + "px";
+      barEditor.style.top = (y + window.scrollY + 10) + "px";
+    }
+
+    // Bar editor OK -->
+    barEditorOkBtn.addEventListener("click", () => {
+      if (!currentEditorBar) return;
+      currentEditorBar.text = barTextInput.value;
+      currentEditorBar.status = barStatusSelect.value;
+      const sy = parseInt(startYearSelect.value);
+      const sw = parseInt(startWeekSelect.value);
+      const ey = parseInt(endYearSelect.value);
+      const ew = parseInt(endWeekSelect.value);
+      currentEditorBar.startAbsWeek = toAbsoluteWeek(sy, sw);
+      currentEditorBar.length = toAbsoluteWeek(ey, ew) - currentEditorBar.startAbsWeek + 1;
+      if (currentEditorBar.length < 1) currentEditorBar.length = 1;
+      barEditor.style.display = "none";
+      currentEditorBar = null;
+      currentEditorLine = null;
       renderTable();
       saveToLocalStorage();
     });
 
-    // Add bar button
+    // Bar editor cancel -->
+    barEditorCancelBtn.addEventListener("click", () => {
+      barEditor.style.display = "none";
+      currentEditorBar = null;
+      currentEditorLine = null;
+    });
+
+    // Bar delete -->
+    barDeleteBtn.addEventListener("click", () => {
+      if (!currentEditorBar || !currentEditorLine) return;
+      currentEditorLine.bars = currentEditorLine.bars.filter(b => b.id !== currentEditorBar.id);
+      barEditor.style.display = "none";
+      currentEditorBar = null;
+      currentEditorLine = null;
+      renderTable();
+      saveToLocalStorage();
+    });
+
+    // Close editors on outside click -->
+    document.addEventListener("mousedown", e => {
+      if (barEditor.style.display === "block") {
+        const rect = barEditor.getBoundingClientRect();
+        const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (!inside) {
+          barEditor.style.display = "none";
+          currentEditorBar = null;
+          currentEditorLine = null;
+        }
+      }
+    });
+
+    // Show line editor (new) -->
+    function showLineEditor(line, x, y) {
+      // Open popup for line attributes
+      currentLineEditor = line;
+      lineNameInput.value = line.name;
+      lineClientInput.value = line.client;
+      lineDisciplineInput.value = line.discipline;
+      lineExperienceInput.value = line.experience;
+      lineLocationInput.value = line.location;
+      lineCustom1Input.value = line.custom1;
+      lineCustom2Input.value = line.custom2;
+      lineCustom3Input.value = line.custom3;
+      lineEditor.style.display = "block";
+      lineEditor.style.left = (x + window.scrollX + 10) + "px";
+      lineEditor.style.top = (y + window.scrollY + 10) + "px";
+    }
+
+    // Line editor OK (new) -->
+    lineEditorOkBtn.addEventListener("click", () => {
+      // Save line attributes
+      if (!currentLineEditor) return;
+      currentLineEditor.name = lineNameInput.value;
+      currentLineEditor.client = lineClientInput.value;
+      currentLineEditor.discipline = lineDisciplineInput.value;
+      currentLineEditor.experience = lineExperienceInput.value;
+      currentLineEditor.location = lineLocationInput.value;
+      currentLineEditor.custom1 = lineCustom1Input.value;
+      currentLineEditor.custom2 = lineCustom2Input.value;
+      currentLineEditor.custom3 = lineCustom3Input.value;
+      lineEditor.style.display = "none";
+      currentLineEditor = null;
+      renderTable();
+      saveToLocalStorage();
+    });
+
+    // Line editor cancel (new) -->
+    lineEditorCancelBtn.addEventListener("click", () => {
+      // Close line editor
+      lineEditor.style.display = "none";
+      currentLineEditor = null;
+    });
+
+    // Line editor click outside (new) -->
+    document.addEventListener("mousedown", e => {
+      // Close line editor if click outside
+      if (lineEditor.style.display === "block") {
+        const rect = lineEditor.getBoundingClientRect();
+        const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (!inside) {
+          lineEditor.style.display = "none";
+          currentLineEditor = null;
+        }
+      }
+    });
+
+    // Filter button (new) -->
+    filterBtn.addEventListener("click", () => {
+      // Open filter modal
+      filterClient.value = filters.client || "";
+      filterDiscipline.value = filters.discipline || "";
+      filterExperience.value = filters.experience || "";
+      filterLocation.value = filters.location || "";
+      filterCustom1.value = filters.custom1 || "";
+      filterCustom2.value = filters.custom2 || "";
+      filterCustom3.value = filters.custom3 || "";
+      filterModal.style.display = "block";
+    });
+
+    // Filter apply (new) -->
+    filterApplyBtn.addEventListener("click", () => {
+      // Apply filters and re-render
+      filters = {
+        client: filterClient.value.trim(),
+        discipline: filterDiscipline.value.trim(),
+        experience: filterExperience.value.trim(),
+        location: filterLocation.value.trim(),
+        custom1: filterCustom1.value.trim(),
+        custom2: filterCustom2.value.trim(),
+        custom3: filterCustom3.value.trim(),
+      };
+      Object.keys(filters).forEach(key => {
+        if (!filters[key]) delete filters[key];
+      });
+      filterModal.style.display = "none";
+      renderTable();
+    });
+
+    // Filter clear (new) -->
+    filterClearBtn.addEventListener("click", () => {
+      // Clear filters
+      filters = {};
+      filterClient.value = "";
+      filterDiscipline.value = "";
+      filterExperience.value = "";
+      filterLocation.value = "";
+      filterCustom1.value = "";
+      filterCustom2.value = "";
+      filterCustom3.value = "";
+      filterModal.style.display = "none";
+      renderTable();
+    });
+
+    // Filter cancel (new) -->
+    filterCancelBtn.addEventListener("click", () => {
+      // Close filter modal without apply
+      filterModal.style.display = "none";
+    });
+
+    // Close filter modal on outside click -->
+    document.addEventListener("mousedown", e => {
+      if (filterModal.style.display === "block") {
+        const rect = filterModal.getBoundingClientRect();
+        const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (!inside) {
+          filterModal.style.display = "none";
+        }
+      }
+    });
+
+    // Settings button (new) -->
+    settingsBtn.addEventListener("click", () => {
+      // Open settings modal with current values
+      themeSelect.value = currentTheme;
+      securedColor.value = statusColors.secured;
+      proposedColor.value = statusColors.proposed;
+      opportunityColor.value = statusColors.opportunity;
+      futureColor.value = statusColors.future;
+      settingsModal.style.display = "block";
+    });
+
+    // Settings OK (new) -->
+    settingsOkBtn.addEventListener("click", () => {
+      // Apply theme and color changes
+      currentTheme = themeSelect.value;
+      statusColors.secured = securedColor.value;
+      statusColors.proposed = proposedColor.value;
+      statusColors.opportunity = opportunityColor.value;
+      statusColors.future = futureColor.value;
+      settingsModal.style.display = "none";
+      applyTheme();
+    });
+
+    // Settings cancel (new) -->
+    settingsCancelBtn.addEventListener("click", () => {
+      // Close settings without changes
+      settingsModal.style.display = "none";
+    });
+
+    // Settings click outside (new) -->
+    document.addEventListener("mousedown", e => {
+      // Close settings if click outside
+      if (settingsModal.style.display === "block") {
+        const rect = settingsModal.getBoundingClientRect();
+        const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (!inside) {
+          settingsModal.style.display = "none";
+        }
+      }
+    });
+
+    // Search input handler (new) -->
+    searchInput.addEventListener("input", () => {
+      // Update search term and re-render with highlights
+      searchTerm = searchInput.value.trim();
+      renderTable();
+    });
+
+    // Add line button -->
+    addLineItemBtn.addEventListener("click", () => {
+      // Create new empty line with attributes
+      lineCounter++;
+      lines.push({ id: lineCounter, name: "Line Item " + lineCounter, client: "", discipline: "", experience: "", location: "", custom1: "", custom2: "", custom3: "", bars: [], selected: false });
+      renderTable();
+      saveToLocalStorage();
+    });
+
+    // Add bar button -->
     addBarBtn.addEventListener("click", e => {
-      // Add bar to last line
+      // Add new bar to last line
       e.stopPropagation();
       barCounter++;
       const { displayStart } = getDisplayRange();
@@ -1108,17 +1703,17 @@
       };
       if (!lines.length) {
         lineCounter = 1;
-        lines.push({ id: 1, name: "Line Item 1", bars: [], selected: false });
+        lines.push({ id: 1, name: "Line Item 1", client: "", discipline: "", experience: "", location: "", custom1: "", custom2: "", custom3: "", bars: [], selected: false });
       }
       lines[lines.length - 1].bars.push(newBar);
       renderTable();
       saveToLocalStorage();
     });
 
-    // Export JSON
+    // Export JSON -->
     exportJsonBtn.addEventListener("click", () => {
-      // Download JSON
-      const dataStr = JSON.stringify({ lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth, rowHeight }, null, 2);
+      // Download full chart state as JSON (updated with theme/colors)
+      const dataStr = JSON.stringify({ lines, startYear, startWeek, endYear, endWeek, lineCounter, barCounter, cellWidth, rowHeight, statusColors, currentTheme }, null, 2);
       const blob = new Blob([dataStr], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -1128,18 +1723,18 @@
       URL.revokeObjectURL(url);
     });
 
-    // Export CSV
+    // Export CSV -->
     downloadCsvBtn.addEventListener("click", () => {
-      // Download CSV
-      let csv = "Line ID,Line Name,Bar ID,Bar Text,Status,Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
+      // Export data as CSV (updated with new attributes)
+      let csv = "Line ID,Name,Client,Discipline,Experience,Location,Custom1,Custom2,Custom3,Bar ID,Bar Text,Status,Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
       lines.forEach(line => {
         if (line.bars.length === 0) {
-          csv += `${line.id},"${line.name}",,,,,,\n`;
+          csv += `${line.id},"${line.name}","${line.client}","${line.discipline}","${line.experience}","${line.location}","${line.custom1}","${line.custom2}","${line.custom3}",,,,,,\n`;
         } else {
           line.bars.forEach(bar => {
             const { year: sy, week: sw } = fromAbsoluteWeek(bar.startAbsWeek);
             const { year: ey, week: ew } = fromAbsoluteWeek(bar.startAbsWeek + bar.length - 1);
-            csv += `${line.id},"${line.name}",${bar.id},"${bar.text}","${bar.status}",${sy},${sw},${ey},${ew},${bar.length}\n`;
+            csv += `${line.id},"${line.name}","${line.client}","${line.discipline}","${line.experience}","${line.location}","${line.custom1}","${line.custom2}","${line.custom3}",${bar.id},"${bar.text}","${bar.status}",${sy},${sw},${ey},${ew},${bar.length}\n`;
           });
         }
       });
@@ -1152,33 +1747,33 @@
       URL.revokeObjectURL(url);
     });
 
-    // Print button
+    // Print/PDF button -->
     printBtn.addEventListener("click", () => {
-      // Trigger print
+      // Trigger browser print
       window.print();
     });
 
-    // Horizontal zoom
+    // Horizontal zoom slider -->
     zoomSlider.addEventListener("input", e => {
-      // Update cell width
+      // Adjust horizontal cell width
       cellWidth = parseInt(e.target.value);
       updateCSSVariables();
       renderTable();
       saveToLocalStorage();
     });
 
-    // Vertical zoom
+    // Vertical zoom slider -->
     heightZoomSlider.addEventListener("input", e => {
-      // Update row height
+      // Adjust vertical row height
       rowHeight = parseInt(e.target.value);
       updateCSSVariables();
       renderTable();
       saveToLocalStorage();
     });
 
-    // CSV parser
+    // CSV parser for import (updated with new attributes) -->
     function parseCsv(csv) {
-      // Parse CSV into data
+      // Parse CSV data into lines and bars with new fields
       const rows = csv.trim().split('\n');
       const header = rows[0].toLowerCase();
       if (!header.includes('line id') || !header.includes('bar id')) throw new Error("Invalid CSV header");
@@ -1197,195 +1792,187 @@
           else if (c === ',' && !inQuote) { parsed.push(field); field = ''; }
           else field += c;
         }
-        if (parsed.length < 5) continue;
+        if (parsed.length < 9) continue;
         const lineId = parseInt(parsed[0]);
         const lineName = parsed[1] || `Line ${lineId}`;
-        const barIdStr = parsed[2];
+        const client = parsed[2] || "";
+        const discipline = parsed[3] || "";
+        const experience = parsed[4] || "";
+        const location = parsed[5] || "";
+        const custom1 = parsed[6] || "";
+        const custom2 = parsed[7] || "";
+        const custom3 = parsed[8] || "";
+        const barIdStr = parsed[9];
         if (!barIdStr) {
-          if (!lineMap[lineId]) { lineMap[lineId] = { id: lineId, name: lineName, bars: [], selected: false }; newLines.push(lineMap[lineId]); maxLineId = Math.max(maxLineId, lineId); }
+          if (!lineMap[lineId]) { lineMap[lineId] = { id: lineId, name: lineName, client, discipline, experience, location, custom1, custom2, custom3, bars: [], selected: false }; newLines.push(lineMap[lineId]); maxLineId = Math.max(maxLineId, lineId); }
           continue;
         }
         const barId = parseInt(barIdStr);
-        const barText = parsed[3] || '';
-        const status = (parsed[4] || "proposed").toLowerCase();
-        const sy = parseInt(parsed[5]);
-        const sw = parseInt(parsed[6]);
-        const ey = parseInt(parsed[7]);
-        const ew = parseInt(parsed[8]);
-        const duration = parseInt(parsed[9]) || 1;
-        if (isNaN(sy) || isNaN(sw)) continue;
+        const barText = parsed[10] || '';
+        const status = (parsed[11] || "proposed").toLowerCase();
+        const sy = parseInt(parsed[12]);
+        const sw = parseInt(parsed[13]);
+        const ey = parseInt(parsed[14]);
+        const ew = parseInt(parsed[15]);
+        const duration = parseInt(parsed[16]) || 1;
+        if (isNaN(sy) || isNaN(sw) || isNaN(ey) || isNaN(ew)) continue;
         const startAbs = toAbsoluteWeek(sy, sw);
-        let len = duration;
-        if (!isNaN(ey) && !isNaN(ew)) len = toAbsoluteWeek(ey, ew) - startAbs + 1;
-        if (len < 1) len = 1;
-        if (!lineMap[lineId]) { lineMap[lineId] = { id: lineId, name: lineName, bars: [], selected: false }; newLines.push(lineMap[lineId]); maxLineId = Math.max(maxLineId, lineId); }
-        lineMap[lineId].bars.push({ id: barId, text: barText, status, startAbsWeek: startAbs, length: len, selected: false });
+        const endAbs = toAbsoluteWeek(ey, ew);
+        let length = endAbs - startAbs + 1;
+        if (length < 1) length = duration || 1;
+
+        if (!lineMap[lineId]) {
+          lineMap[lineId] = { id: lineId, name: lineName, client, discipline, experience, location, custom1, custom2, custom3, bars: [], selected: false };
+          newLines.push(lineMap[lineId]);
+          maxLineId = Math.max(maxLineId, lineId);
+        }
+        const newBar = {
+          id: barId,
+          text: barText,
+          status: status,
+          startAbsWeek: startAbs,
+          length: length,
+          selected: false
+        };
+        lineMap[lineId].bars.push(newBar);
         maxBarId = Math.max(maxBarId, barId);
       }
-      newLines.sort((a, b) => a.id - b.id);
       return { lines: newLines, lineCounter: maxLineId, barCounter: maxBarId };
     }
 
-    // Import handler
+    // Import button (JSON or CSV) -->
+    importJsonBtn.addEventListener("click", () => {
+      // Trigger hidden file input
+      importFileInput.value = "";
+      importFileInput.click();
+    });
+
+    // Import file change -->
     importFileInput.addEventListener("change", e => {
-      // Handle file import
+      // Handle imported file (JSON or CSV)
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = evt => {
+      reader.onload = ev => {
         try {
-          const ext = file.name.split('.').pop().toLowerCase();
-          if (ext === 'json') {
-            const imported = JSON.parse(evt.target.result);
+          let imported;
+          if (file.name.endsWith(".json")) {
+            imported = JSON.parse(ev.target.result);
             lines = imported.lines || [];
-            startYear = imported.startYear || 2025;
-            startWeek = imported.startWeek || 1;
-            endYear = imported.endYear || 2025;
-            endWeek = imported.endWeek || 52;
-            lineCounter = imported.lineCounter || 0;
-            barCounter = imported.barCounter || 0;
-            cellWidth = imported.cellWidth || 150;
-            rowHeight = imported.rowHeight || 40;
-          } else if (ext === 'csv') {
-            const parsed = parseCsv(evt.target.result);
+            startYear = imported.startYear || startYear;
+            startWeek = imported.startWeek || startWeek;
+            endYear = imported.endYear || endYear;
+            endWeek = imported.endWeek || endWeek;
+            lineCounter = imported.lineCounter || lineCounter;
+            barCounter = imported.barCounter || barCounter;
+            cellWidth = imported.cellWidth || cellWidth;
+            rowHeight = imported.rowHeight || rowHeight;
+            statusColors = imported.statusColors || statusColors;
+            currentTheme = imported.currentTheme || currentTheme;
+            lines.forEach(l => {
+              l.selected = false;
+              l.bars.forEach(b => b.selected = false);
+            });
+          } else if (file.name.endsWith(".csv")) {
+            const parsed = parseCsv(ev.target.result);
             lines = parsed.lines;
             lineCounter = parsed.lineCounter;
             barCounter = parsed.barCounter;
-          } else throw new Error("Unsupported file");
-          lines.forEach(line => line.bars.forEach(bar => { if (!bar.status) bar.status = "proposed"; }));
+          } else {
+            throw new Error("Unsupported file type");
+          }
+          // Update inputs
+          startYearInput.value = startYear;
+          startWeekInput.value = startWeek;
+          endYearInput.value = endYear;
+          endWeekInput.value = endWeek;
+          zoomSlider.value = cellWidth;
+          heightZoomSlider.value = rowHeight;
+          themeSelect.value = currentTheme;
+          securedColor.value = statusColors.secured;
+          proposedColor.value = statusColors.proposed;
+          opportunityColor.value = statusColors.opportunity;
+          futureColor.value = statusColors.future;
           updateCSSVariables();
+          applyTheme();
           renderTable();
           saveToLocalStorage();
+          alert("Import successful!");
         } catch (err) {
-          alert("Invalid file: " + err.message);
+          console.error(err);
+          alert("Import failed: " + err.message);
         }
       };
       reader.readAsText(file);
-      e.target.value = "";
     });
-    importJsonBtn.addEventListener("click", () => importFileInput.click());
 
-    // Apply timescale
+    // Timescale apply button -->
     applyTimescaleBtn.addEventListener("click", () => {
-      // Update view range
-      const sy = parseInt(startYearInput.value, 10);
-      const sw = parseInt(startWeekInput.value, 10);
-      const ey = parseInt(endYearInput.value, 10);
-      const ew = parseInt(endWeekInput.value, 10);
-      if (isNaN(sy) || sy < 1 || isNaN(sw) || sw < 1 || sw > 52 || isNaN(ey) || ey < 1 || isNaN(ew) || ew < 1 || ew > 52) {
-        alert("Invalid year/week");
-        return;
-      }
-      startYear = sy;
-      startWeek = sw;
-      endYear = ey;
-      endWeek = ew;
+      // Update timescale from inputs
+      startYear = parseInt(startYearInput.value) || startYear;
+      startWeek = parseInt(startWeekInput.value) || startWeek;
+      endYear = parseInt(endYearInput.value) || endYear;
+      endWeek = parseInt(endWeekInput.value) || endWeek;
+      startYearInput.value = startYear;
+      startWeekInput.value = startWeek;
+      endYearInput.value = endYear;
+      endWeekInput.value = endWeek;
       renderTable();
       saveToLocalStorage();
     });
 
-    // Show bar editor
-    function showBarEditor(bar, line, x, y) {
-      // Open editor
-      currentEditorBar = bar;
-      currentEditorLine = line;
-      barTextInput.value = bar.text;
-      barStatusSelect.value = bar.status;
-      const { year: sy, week: sw } = fromAbsoluteWeek(bar.startAbsWeek);
-      const { year: ey, week: ew } = fromAbsoluteWeek(bar.startAbsWeek + bar.length - 1);
-      startYearSelect.value = sy;
-      startWeekSelect.value = sw;
-      endYearSelect.value = ey;
-      endWeekSelect.value = ew;
-      barEditor.style.display = "block";
-      barEditor.style.left = (x + window.scrollX + 10) + "px";
-      barEditor.style.top = (y + window.scrollY + 10) + "px";
-    }
-
-    // Editor OK
-    barEditorOkBtn.addEventListener("click", () => {
-      // Save editor changes
-      if (!currentEditorBar) return;
-      currentEditorBar.text = barTextInput.value;
-      currentEditorBar.status = barStatusSelect.value;
-      const sy = parseInt(startYearSelect.value);
-      const sw = parseInt(startWeekSelect.value);
-      const ey = parseInt(endYearSelect.value);
-      const ew = parseInt(endWeekSelect.value);
-      const startAbs = toAbsoluteWeek(sy, sw);
-      const endAbs = toAbsoluteWeek(ey, ew);
-      currentEditorBar.startAbsWeek = startAbs;
-      currentEditorBar.length = endAbs - startAbs + 1;
-      if (currentEditorBar.length < 1) currentEditorBar.length = 1;
-      barEditor.style.display = "none";
-      currentEditorBar = null;
-      renderTable();
-      saveToLocalStorage();
-    });
-
-    // Editor delete
-    barDeleteBtn.addEventListener("click", () => {
-      // Delete bar
-      if (currentEditorBar && currentEditorLine) {
-        deleteBars([{ bar: currentEditorBar, line: currentEditorLine }]);
-        barEditor.style.display = "none";
-        currentEditorBar = null;
-        currentEditorLine = null;
-      }
-    });
-
-    // Editor cancel
-    barEditorCancelBtn.addEventListener("click", () => {
-      // Close editor
-      barEditor.style.display = "none";
-      currentEditorBar = null;
-    });
-
-    // Editor click outside
-    document.addEventListener("mousedown", e => {
-      // Close if outside
-      if (barEditor.style.display === "block") {
-        const rect = barEditor.getBoundingClientRect();
-        const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
-        if (!inside) {
-          barEditor.style.display = "none";
-          currentEditorBar = null;
-        }
-      }
-    });
-
-    // Help button
+    // Help button (simple alert for now) -->
     helpBtn.addEventListener("click", () => {
-      // Open help
-      const helpWindow = window.open("", "GanttHelp", "width=800,height=800,scrollbars=yes,resizable=yes");
-      const helpHTML = `<!DOCTYPE html><html><head><title>Gantt Planner - Help</title><style>body{font-family:Arial;padding:20px;line-height:1.6;background:#f9f9f9;}h1,h2,h3{color:#0d6efd;}</style></head><body>
-        <h1>Gantt Planner</h1>
-        <p>Interactive Gantt chart with drag, resize, zoom, import/export.</p>
-        <p>Bars and task labels are perfectly centered vertically via flexbox.</p>
-        <p>Grid: Single vertical/horizontal lines, dynamic with zoom.</p>
-      </body></html>`;
-      helpWindow.document.write(helpHTML);am
-      helpWindow.document.close();
+      // Show help dialog
+      alert(`Gantt Planner Help:
+- Click a line name to edit attributes.
+- Double-click a bar to edit.
+- Drag bars to move, drag handles to resize.
+- Shift/Ctrl+Click for multi-select.
+- Delete: Select bars and press Delete.
+- Copy/Paste: Ctrl+C / Ctrl+V.
+- Arrow keys: Nudge or move bars/lines.
+- Search: Type in search box to highlight.
+- Filter: Use Filter button for line attributes.
+- Theme: Settings gear for dark mode and colors.
+- Import/Export: JSON preserves everything, CSV for data.
+- Print: Use Print button for PDF/export.
+- Zoom: Sliders for horizontal/vertical scaling.`);
     });
 
-    // Scroll handler
-    const tableWrapper = document.querySelector(".table-wrapper");
-    tableWrapper.addEventListener("scroll", () => {
-      // Update text on scroll
+    // Scroll handler for text positioning -->
+    document.querySelector(".table-wrapper").addEventListener("scroll", () => {
       updateBarTextPositions();
     });
 
-    // Initialization
-    populateDateSelects();
-    loadFromLocalStorage();
-    updateCSSVariables();
-    zoomSlider.value = cellWidth;
-    heightZoomSlider.value = rowHeight;
-    startYearInput.value = startYear;
-    startWeekInput.value = startWeek;
-    endYearInput.value = endYear;
-    endWeekInput.value = endWeek;
-    renderTable();
+    // Window resize: Update text positions -->
+    window.addEventListener("resize", () => {
+      updateBarTextPositions();
+    });
+
+    // Initial setup -->
+    function init() {
+      // Load data, set up UI, render
+      loadFromLocalStorage();
+      populateDateSelects();
+      updateCSSVariables();
+      startYearInput.value = startYear;
+      startWeekInput.value = startWeek;
+      endYearInput.value = endYear;
+      endWeekInput.value = endWeek;
+      zoomSlider.value = cellWidth;
+      heightZoomSlider.value = rowHeight;
+      themeSelect.value = currentTheme;
+      securedColor.value = statusColors.secured;
+      proposedColor.value = statusColors.proposed;
+      opportunityColor.value = statusColors.opportunity;
+      futureColor.value = statusColors.future;
+      applyTheme(); // Applies theme and updates legend
+      renderTable();
+    }
+
+    // Run init on load -->
+    window.addEventListener("load", init);
   </script>
 </body>
 </html>
