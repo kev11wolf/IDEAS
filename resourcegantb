@@ -1,0 +1,2343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Character set: Declares UTF-8 encoding to prevent garbled text -->
+  <meta charset="UTF-8" />
+  <!-- Page Title: Shown in browser tab -->
+  <title>Advanced Gantt Chart</title>
+  <!-- Bootstrap 5 CSS via CDN: Loads grid, navbar, modals, buttons -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+  />
+  <style>
+    /* Make navbar/toolbar span the full screen width */
+    .navbar .container-fluid {
+      max-width: 100vw; /* Ensure full screen width usage */
+    }
+
+    /* Remove default body margin, set font: Resets margin, sets default font */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Navbar: Sticky at top, always visible, full width */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000; /* so it remains on top of table content when scrolling */
+      background-color: #f8f9fa;
+      padding: 0.5rem 1rem;
+      width: 100%;
+    }
+
+    /* force the navbar collapse area to flex-wrap so we can stack items vertically */
+    .navbar-collapse {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      align-items: flex-start !important;
+    }
+
+    /* Each toolbar group can be stacked */
+    .toolbar-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      border-left: 1px solid #dee2e6;
+    }
+    .toolbar-group:first-child {
+      border-left: none;
+      padding-left: 0;
+    }
+
+    /* For stacking label/inputs in a vertical manner */
+    .stacked-field {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    /* Timescale block to group timescale items */
+    .timescale-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    /* color legend stacked vertically */
+    .legend-container-vertical {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    /* Gantt container: Full width with padding */
+    .gantt-container {
+      margin: 0 1rem;
+      position: relative;
+    }
+
+    /* Cohesive table: Native HTML table for perfect alignment */
+    #ganttTable {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed; /* Ensures column widths remain consistent */
+    }
+
+    /* Header row: Sticky top */
+    #ganttTable thead th {
+      position: sticky;
+      top: 0px; /* Below navbar */
+      background-color: #f8f9fa;
+      z-index: 10;
+      border-bottom: 1px solid #dee2e6;
+      text-align: center;
+      font-size: 0.9rem;
+      padding: 4px 8px;
+      box-sizing: border-box;
+    }
+
+    /* Name header: Fixed width, explicit background */
+    #nameHeader {
+      width: 240px;
+      text-align: center;
+      height: 100%;
+      font-weight: bold;
+      background-color: #f8f9fa;
+      border-right: 1px solid #dee2e6;
+      z-index: 11;
+    }
+
+    /* Timescale headers: Dynamic width */
+    .timescale-header {
+      background-color: #e9ecef;
+      border-right: 1px solid #dee2e6;
+      min-width: 50px;
+    }
+
+    /* Table body: Single clean grid using CSS variables for spacing */
+    #ganttTable tbody {
+      background-image: 
+        linear-gradient(to right, rgba(0,0,0,0.1) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,0,0,0.1) 1px, transparent 1px);
+      background-size: var(--cell-width) var(--row-height);
+      background-position: 0 0;
+      background-repeat: repeat;
+    }
+
+    /* Row: Dynamic height via CSS variable */
+    .gantt-row {
+      height: var(--row-height);
+    }
+
+    /* Selected row highlight */
+    .gantt-row.selected {
+      background-color: #fff3cd;
+    }
+
+    /* Name cell: Sticky left, slightly gray background, shadow, clickable for drag reorder in admin mode */
+    .name-cell {
+      position: sticky;
+      left: 0;
+      background-color: #f0f0f0;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+      z-index: 9;
+      width: 240px;
+      border-right: 1px solid #dee2e6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: var(--row-height);
+      box-sizing: border-box;
+      cursor: move; /* used for both user & admin, but drag reorder only if admin */
+    }
+
+    /* Bar container cell: Relative for absolute bars */
+    .bar-cell {
+      position: relative;
+      border-right: 1px solid #dee2e6;
+      padding: 0;
+    }
+
+    /* Full row bar container: flex center bars vertically */
+    .bar-row-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      /* We'll handle drop logic in admin */
+    }
+
+    /* Bar: Absolute, with fluid dragging in admin, vertical-only in user */
+    .bar {
+      position: absolute;
+      height: calc(var(--row-height) - 16px);
+      top: auto;
+      left: 0;
+      border-radius: 4px;
+      color: #fff;
+      cursor: move; /* for dragging in user or admin modes */
+      user-select: none;
+      opacity: 0.7;
+      overflow: hidden;
+      z-index: 0;
+      box-sizing: border-box;
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
+    .bar.selected {
+      outline: 3px solid #00f;
+    }
+
+    /* Highlighted for search matches */
+    .bar.highlighted {
+      outline: 3px solid #0d6efd;
+      opacity: 0.9;
+    }
+
+    /* Bar text: dynamically centered horizontally on scroll */
+    .bar-text {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      line-height: calc(var(--row-height) - 16px);
+      white-space: nowrap;
+      pointer-events: none;
+      font-weight: 500;
+      padding: 0 8px;
+    }
+
+    /* Resize handles (admin only) */
+    .bar-handle {
+      position: absolute;
+      top: 0;
+      width: 6px;
+      height: 100%;
+      cursor: col-resize;
+      background-color: rgba(255,255,255,0.4);
+      z-index: 2;
+    }
+    .bar-handle.left {
+      left: 0;
+      border-radius: 4px 0 0 4px;
+    }
+    .bar-handle.right {
+      right: 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* Overlap hatch: indicates overlapping bars */
+    .overlap-hatch {
+      position: absolute;
+      height: calc(var(--row-height) - 16px);
+      top: auto;
+      background: repeating-linear-gradient(
+        45deg,
+        red,
+        red 2px,
+        transparent 2px,
+        transparent 4px
+      );
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 1;
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+
+    /* Scrollable wrapper for table */
+    .table-wrapper {
+      overflow: auto;
+      max-height: calc(100vh - 96px);
+    }
+
+    /* Editor overlays have high z-index to appear above everything */
+    #barEditor,
+    #lineEditor {
+      position: absolute;
+      display: none;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 12px;
+      border-radius: 6px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5); /* increased to ensure topmost */
+      z-index: 9999; /* ensure on top of sticky bar */
+      min-width: 280px;
+    }
+    #barEditor label,
+    #lineEditor label {
+      display: block;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+    #barEditor input, #barEditor select,
+    #lineEditor input {
+      margin-top: 4px;
+      width: 100%;
+    }
+    #barEditorActions,
+    #lineEditorActions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    /* Filter modal */
+    #filterModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5); /* ensure topmost */
+      z-index: 9999;
+      min-width: 300px;
+    }
+    #filterModal h3 {
+      margin-top: 0;
+    }
+    #filterModal label {
+      display: block;
+      margin-top: 8px;
+    }
+    #filterModal input {
+      width: 100%;
+      margin-top: 4px;
+    }
+    #filterActions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    /* Settings modal */
+    #settingsModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5); /* ensure topmost */
+      z-index: 9999;
+      min-width: 300px;
+    }
+    #settingsModal h3 {
+      margin-top: 0;
+    }
+    #settingsModal label {
+      display: block;
+      margin-top: 8px;
+    }
+    #settingsActions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .color-picker {
+      width: 60px;
+      height: 30px;
+      padding: 0;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* Dark theme */
+    body.dark-theme {
+      background-color: #212529;
+      color: #f8f9fa;
+    }
+    body.dark-theme .navbar {
+      background-color: #343a40 !important;
+    }
+    body.dark-theme #ganttTable thead th,
+    body.dark-theme .timescale-header {
+      background-color: #495057;
+      color: #f8f9fa;
+    }
+    body.dark-theme .name-cell {
+      background-color: #444; 
+      color: #f8f9fa;
+      box-shadow: 1px 1px 3px rgba(255,255,255,0.2);
+    }
+    body.dark-theme .bar-text {
+      color: #212529;
+    }
+    body.dark-theme #barEditor,
+    body.dark-theme #lineEditor,
+    body.dark-theme #filterModal,
+    body.dark-theme #settingsModal,
+    body.dark-theme #csvEditModal {
+      background: #343a40;
+      color: #f8f9fa;
+      border: 1px solid #495057;
+    }
+    body.dark-theme input,
+    body.dark-theme select,
+    body.dark-theme textarea {
+      background: #495057;
+      color: #f8f9fa;
+      border: 1px solid #6c757d;
+    }
+
+    /* Zoom sliders styling */
+    .zoom-slider {
+      width: 120px;
+      margin: 0 8px;
+      height: 8px;
+      border-radius: 4px;
+      background: #ced4da;
+      outline: none;
+      -webkit-appearance: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+    .zoom-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #0d6efd;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .zoom-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #0d6efd;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    #heightZoomSlider {
+      transform: rotate(-90deg);
+      width: 100px;
+    }
+
+    /* CSV Edit modal must appear on top of everything as well */
+    #csvEditModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 60%;
+      height: 60%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 6px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5); /* ensure topmost */
+      z-index: 99999; /* ensure above sticky bar */
+      overflow: auto;
+    }
+    #csvTextarea {
+      width: 100%;
+      height: 70%;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+    #csvEditModalActions {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* Print styling */
+    @media print {
+      .navbar, #barEditor, #lineEditor, #filterModal, #settingsModal, #adminToggleBtn, #csvEditToggleBtn, #csvEditModal {
+        display: none !important;
+      }
+      .table-wrapper {
+        overflow: visible;
+        max-height: none;
+      }
+      #ganttTable {
+        font-size: 10pt;
+      }
+    }
+
+    /* Help button */
+    #helpBtn {
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    #helpBtn:hover {
+      transform: scale(1.1);
+    }
+
+    /* Settings button */
+    #settingsBtn {
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    #settingsBtn:hover {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Sticky navbar with stacked layout inside for space savings -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <!-- Brand -->
+      <a class="navbar-brand" href="#">Gantt Planner</a>
+      <!-- Toggler -->
+      <button class="navbar-toggler" 
+              type="button" 
+              data-bs-toggle="collapse" 
+              data-bs-target="#navbarSupportedContent"
+              aria-controls="navbarSupportedContent"
+              aria-expanded="false"
+              aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Collapsible content with wrap -->
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <!-- Timescale group -->
+        <div class="toolbar-group">
+          <span>Timescale</span>
+          <div class="timescale-block">
+            <!-- Start date stacked -->
+            <div class="stacked-field">
+              <label for="startYearInput" class="form-label m-0">Start Year:</label>
+              <input id="startYearInput" type="number" class="form-control form-control-sm" value="2025" />
+            </div>
+            <div class="stacked-field">
+              <label for="startWeekInput" class="form-label m-0">Start Week:</label>
+              <input id="startWeekInput" type="number" class="form-control form-control-sm" value="1" />
+            </div>
+            <!-- End date stacked -->
+            <div class="stacked-field">
+              <label for="endYearInput" class="form-label m-0">End Year:</label>
+              <input id="endYearInput" type="number" class="form-control form-control-sm" value="2025" />
+            </div>
+            <div class="stacked-field">
+              <label for="endWeekInput" class="form-label m-0">End Week:</label>
+              <input id="endWeekInput" type="number" class="form-control form-control-sm" value="52" />
+            </div>
+            <button id="applyTimescaleBtn" type="button" class="btn btn-secondary btn-sm">Apply</button>
+          </div>
+        </div>
+        
+        <!-- Legend group with color squares properly shown -->
+        <div class="toolbar-group">
+          <span>Legend</span>
+          <div id="statusLegend" class="legend-container-vertical">
+            <div class="legend-item">
+              <div class="legend-swatch" style="width:16px; height:16px; background:#28a745;"></div>
+              <span>Secured</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="width:16px; height:16px; background:#fd7e14;"></div>
+              <span>Proposed</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="width:16px; height:16px; background:#dc3545;"></div>
+              <span>Opportunity</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" style="width:16px; height:16px; background:#6f42c1;"></div>
+              <span>Future</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Zoom group -->
+        <div class="toolbar-group">
+          <span>Zoom</span>
+          <div style="display: flex; flex-direction: row; gap: 0.5rem;">
+            <div>
+              <label for="zoomSlider" class="form-label m-0 me-2">H-Zoom:</label>
+              <input type="range" class="zoom-slider" id="zoomSlider" min="50" max="300" value="150" step="10">
+            </div>
+            <div>
+              <label for="heightZoomSlider" class="form-label m-0 me-2">V-Zoom:</label>
+              <input type="range" class="zoom-slider" id="heightZoomSlider" min="30" max="100" value="40" step="5">
+            </div>
+          </div>
+        </div>
+
+        <!-- Search group -->
+        <div class="toolbar-group">
+          <span>Search</span>
+          <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="Filter lines/bars..." />
+        </div>
+
+        <!-- Action buttons stacked in one group -->
+        <div class="toolbar-group">
+          <span>Actions</span>
+          <div style="display: flex; flex-wrap: wrap; gap:4px;">
+            <button id="addLineItemBtn" class="btn btn-primary btn-sm">Add Line</button>
+            <button id="addBarBtn" class="btn btn-secondary btn-sm">Add Bar</button>
+            <button id="filterBtn" class="btn btn-outline-primary btn-sm">Filter</button>
+            <button id="importJsonBtn" class="btn btn-outline-success btn-sm">Import</button>
+            <button id="exportJsonBtn" class="btn btn-outline-info btn-sm">Export JSON</button>
+            <button id="downloadCsvBtn" class="btn btn-outline-secondary btn-sm">Export CSV</button>
+            <button id="printBtn" class="btn btn-outline-dark btn-sm">Print/PDF</button>
+            <svg id="settingsBtn" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+              <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22l-1.92 3.32c-.14.24-.08.54.12.61l2.03 1.58c-.05.3-.09.63-.09.94 0 .31.04.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.14.24.37.34.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.45 0 .59-.22l1.92-3.32c.14-.24.08-.54-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6 0-1.98 1.62-3.6 3.6-3.6 1.98 0 3.6 1.62 3.6 3.6 0 1.98-1.62 3.6-3.6 3.6z"
+                    fill="#0d6efd"/>
+            </svg>
+            <svg id="helpBtn" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                 xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 14.5v.5h-2v-1c0-1.11.45-2.11 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"
+                    fill="#0d6efd"/>
+            </svg>
+            <button id="adminToggleBtn" class="btn btn-outline-danger btn-sm">Toggle Admin</button>
+            <button id="csvEditToggleBtn" class="btn btn-outline-dark btn-sm" style="display:none;">Edit CSV</button>
+          </div>
+        </div>
+
+        <!-- Undo/Redo group -->
+        <div class="toolbar-group">
+          <span>History</span>
+          <div style="display: flex; flex-wrap: wrap; gap:4px;">
+            <button id="undoBtn" type="button" class="btn btn-sm btn-success">Undo</button>
+            <button id="redoBtn" type="button" class="btn btn-sm btn-warning">Redo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main cohesive table -->
+  <div class="gantt-container">
+    <div class="table-wrapper">
+      <table id="ganttTable">
+        <thead>
+          <tr id="headerRow">
+            <th id="nameHeader">Tasks</th>
+            <!-- Timescale headers injected here -->
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- Rows injected here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Bar editor -->
+  <div id="barEditor">
+    <label for="barTextInput">Bar Text:</label>
+    <input type="text" id="barTextInput" placeholder="Bar text..." />
+    <label for="barStatusSelect">Status:</label>
+    <select id="barStatusSelect">
+      <option value="secured">Secured</option>
+      <option value="proposed">Proposed</option>
+      <option value="opportunity">Opportunity</option>
+      <option value="future">Future</option>
+    </select>
+    <label for="startYearSelect">Start Year:</label>
+    <select id="startYearSelect"></select>
+    <label for="startWeekSelect">Start Week:</label>
+    <select id="startWeekSelect"></select>
+    <label for="endYearSelect">End Year:</label>
+    <select id="endYearSelect"></select>
+    <label for="endWeekSelect">End Week:</label>
+    <select id="endWeekSelect"></select>
+    <div id="barEditorActions">
+      <button id="barDeleteBtn" class="btn btn-sm btn-danger">Delete Bar</button>
+      <button id="barEditorOkBtn" class="btn btn-sm btn-primary">OK</button>
+      <button id="barEditorCancelBtn" class="btn btn-sm btn-secondary">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Line editor (for line attributes) -->
+  <div id="lineEditor">
+    <label for="lineNameInput">Name:</label>
+    <input type="text" id="lineNameInput" placeholder="Name..." />
+    <label for="lineClientInput">Client:</label>
+    <input type="text" id="lineClientInput" placeholder="Client..." />
+    <label for="lineDisciplineInput">Discipline:</label>
+    <input type="text" id="lineDisciplineInput" placeholder="Discipline..." />
+    <label for="lineExperienceInput">Experience:</label>
+    <input type="text" id="lineExperienceInput" placeholder="Experience..." />
+    <label for="lineLocationInput">Location:</label>
+    <input type="text" id="lineLocationInput" placeholder="Location..." />
+    <label for="lineCustom1Input">Custom1:</label>
+    <input type="text" id="lineCustom1Input" placeholder="Custom1..." />
+    <label for="lineCustom2Input">Custom2:</label>
+    <input type="text" id="lineCustom2Input" placeholder="Custom2..." />
+    <label for="lineCustom3Input">Custom3:</label>
+    <input type="text" id="lineCustom3Input" placeholder="Custom3..." />
+    <div id="lineEditorActions">
+      <button id="lineDeleteBtn" class="btn btn-sm btn-danger">Delete Line Item</button>
+      <button id="lineEditorOkBtn" class="btn btn-sm btn-primary">OK</button>
+      <button id="lineEditorCancelBtn" class="btn btn-sm btn-secondary">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Filter modal -->
+  <div id="filterModal">
+    <h3>Filter Lines</h3>
+    <label for="filterClient">Client:</label>
+    <input type="text" id="filterClient" placeholder="Client..." />
+    <label for="filterDiscipline">Discipline:</label>
+    <input type="text" id="filterDiscipline" placeholder="Discipline..." />
+    <label for="filterExperience">Experience:</label>
+    <input type="text" id="filterExperience" placeholder="Experience..." />
+    <label for="filterLocation">Location:</label>
+    <input type="text" id="filterLocation" placeholder="Location..." />
+    <label for="filterCustom1">Custom1:</label>
+    <input type="text" id="filterCustom1" placeholder="Custom1..." />
+    <label for="filterCustom2">Custom2:</label>
+    <input type="text" id="filterCustom2" placeholder="Custom2..." />
+    <label for="filterCustom3">Custom3:</label>
+    <input type="text" id="filterCustom3" placeholder="Custom3..." />
+    <div id="filterActions">
+      <button id="filterApplyBtn" class="btn btn-sm btn-primary">Apply</button>
+      <button id="filterClearBtn" class="btn btn-sm btn-secondary">Clear</button>
+      <button id="filterCancelBtn" class="btn btn-sm btn-secondary">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div id="settingsModal">
+    <h3>Theme Settings</h3>
+    <label>Theme:</label>
+    <select id="themeSelect">
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+    <label for="securedColor">Secured Color:</label>
+    <input type="color" id="securedColor" class="color-picker" value="#28a745" />
+    <label for="proposedColor">Proposed Color:</label>
+    <input type="color" id="proposedColor" class="color-picker" value="#fd7e14" />
+    <label for="opportunityColor">Opportunity Color:</label>
+    <input type="color" id="opportunityColor" class="color-picker" value="#dc3545" />
+    <label for="futureColor">Future Color:</label>
+    <input type="color" id="futureColor" class="color-picker" value="#6f42c1" />
+    <div id="settingsActions">
+      <button id="settingsOkBtn" class="btn btn-sm btn-primary">Apply</button>
+      <button id="settingsCancelBtn" class="btn btn-sm btn-secondary">Cancel</button>
+    </div>
+  </div>
+
+  <!-- CSV Edit modal (for inline editing) -->
+  <div id="csvEditModal">
+    <h3>Edit CSV In-Browser</h3>
+    <textarea id="csvTextarea"></textarea>
+    <div id="csvEditModalActions">
+      <button id="csvEditApplyBtn" class="btn btn-sm btn-primary">Apply Changes</button>
+      <button id="csvEditCancelBtn" class="btn btn-sm btn-secondary">Close</button>
+    </div>
+  </div>
+
+  <!-- Hidden import for JSON/CSV -->
+  <input type="file" id="importFileInput" accept=".json,.csv" style="display:none;" />
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ---------------------------------------------------------------------------------------------
+    // Global toggles, data, counters
+    // ---------------------------------------------------------------------------------------------
+    let adminMode = false; // password protected
+    let statusColors = {
+      secured: "#28a745",
+      proposed: "#fd7e14",
+      opportunity: "#dc3545",
+      future: "#6f42c1"
+    };
+
+    // Lines with bars
+    let lines = [
+      {
+        id: 1,
+        name: "Line Item 1",
+        client: "",
+        discipline: "",
+        experience: "",
+        location: "",
+        custom1: "",
+        custom2: "",
+        custom3: "",
+        bars: [
+          {
+            id: 101,
+            text: "Bar A",
+            status: "secured",
+            startAbsWeek: toAbsoluteWeek(2025, 2),
+            length: 4,
+            selected: false,
+          },
+        ],
+        selected: false
+      },
+      {
+        id: 2,
+        name: "Line Item 2",
+        client: "",
+        discipline: "",
+        experience: "",
+        location: "",
+        custom1: "",
+        custom2: "",
+        custom3: "",
+        bars: [
+          {
+            id: 102,
+            text: "Bar B",
+            status: "proposed",
+            startAbsWeek: toAbsoluteWeek(2025, 10),
+            length: 7,
+            selected: false,
+          },
+        ],
+        selected: false
+      },
+    ];
+
+    // Timescale defaults
+    let startYear = 2025;
+    let startWeek = 1;
+    let endYear = 2025;
+    let endWeek = 52;
+
+    // ID counters
+    let lineCounter = 2;
+    let barCounter = 102;
+
+    // Zoom
+    let cellWidth = 150;
+    let rowHeight = 40;
+
+    // Filter + search
+    let filters = {};
+    let searchTerm = "";
+
+    // Theme
+    let currentTheme = "light";
+
+    // Undo/redo
+    let undoStack = [];
+    let redoStack = [];
+
+    // Drag states
+    let dragging = false;
+    let dragType = null;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let initialStartAbs = 0;
+    let initialLength = 0;
+    let currentBar = null;
+    let currentLine = null;
+
+    // For line dragging reorder in admin
+    let draggingLine = null;
+    let originalLineIndex = null;
+    let previousLineIndex = null;
+
+    // For bar vertical drag in user mode
+    let originalUserLineIndex = null;
+    let previousUserLineIndex = null;
+
+    // Editor references
+    let currentEditorBar = null;
+    let currentEditorLine = null;
+
+    // Clipboard
+    let clipboard = [];
+
+    // DOM references
+    const startYearInput = document.getElementById("startYearInput");
+    const startWeekInput = document.getElementById("startWeekInput");
+    const endYearInput = document.getElementById("endYearInput");
+    const endWeekInput = document.getElementById("endWeekInput");
+    const applyTimescaleBtn = document.getElementById("applyTimescaleBtn");
+    const zoomSlider = document.getElementById("zoomSlider");
+    const heightZoomSlider = document.getElementById("heightZoomSlider");
+    const searchInput = document.getElementById("searchInput");
+    const filterBtn = document.getElementById("filterBtn");
+    const importJsonBtn = document.getElementById("importJsonBtn");
+    const exportJsonBtn = document.getElementById("exportJsonBtn");
+    const downloadCsvBtn = document.getElementById("downloadCsvBtn");
+    const printBtn = document.getElementById("printBtn");
+    const helpBtn = document.getElementById("helpBtn");
+    const settingsBtn = document.getElementById("settingsBtn");
+    const addLineItemBtn = document.getElementById("addLineItemBtn");
+    const addBarBtn = document.getElementById("addBarBtn");
+    const undoBtn = document.getElementById("undoBtn");
+    const redoBtn = document.getElementById("redoBtn");
+    const adminToggleBtn = document.getElementById("adminToggleBtn");
+    const csvEditToggleBtn = document.getElementById("csvEditToggleBtn");
+    const importFileInput = document.getElementById("importFileInput");
+    const ganttTable = document.getElementById("ganttTable");
+    const headerRow = document.getElementById("headerRow");
+    const tableBody = document.getElementById("tableBody");
+
+    // Bar editor
+    const barEditor = document.getElementById("barEditor");
+    const barTextInput = document.getElementById("barTextInput");
+    const barStatusSelect = document.getElementById("barStatusSelect");
+    const startYearSelect = document.getElementById("startYearSelect");
+    const startWeekSelect = document.getElementById("startWeekSelect");
+    const endYearSelect = document.getElementById("endYearSelect");
+    const endWeekSelect = document.getElementById("endWeekSelect");
+    const barEditorOkBtn = document.getElementById("barEditorOkBtn");
+    const barEditorCancelBtn = document.getElementById("barEditorCancelBtn");
+    const barDeleteBtn = document.getElementById("barDeleteBtn");
+
+    // Line editor
+    const lineEditor = document.getElementById("lineEditor");
+    const lineNameInput = document.getElementById("lineNameInput");
+    const lineClientInput = document.getElementById("lineClientInput");
+    const lineDisciplineInput = document.getElementById("lineDisciplineInput");
+    const lineExperienceInput = document.getElementById("lineExperienceInput");
+    const lineLocationInput = document.getElementById("lineLocationInput");
+    const lineCustom1Input = document.getElementById("lineCustom1Input");
+    const lineCustom2Input = document.getElementById("lineCustom2Input");
+    const lineCustom3Input = document.getElementById("lineCustom3Input");
+    const lineEditorOkBtn = document.getElementById("lineEditorOkBtn");
+    const lineEditorCancelBtn = document.getElementById("lineEditorCancelBtn");
+    const lineDeleteBtn = document.getElementById("lineDeleteBtn");
+
+    // Filter modal
+    const filterModal = document.getElementById("filterModal");
+    const filterClient = document.getElementById("filterClient");
+    const filterDiscipline = document.getElementById("filterDiscipline");
+    const filterExperience = document.getElementById("filterExperience");
+    const filterLocation = document.getElementById("filterLocation");
+    const filterCustom1 = document.getElementById("filterCustom1");
+    const filterCustom2 = document.getElementById("filterCustom2");
+    const filterCustom3 = document.getElementById("filterCustom3");
+    const filterApplyBtn = document.getElementById("filterApplyBtn");
+    const filterClearBtn = document.getElementById("filterClearBtn");
+    const filterCancelBtn = document.getElementById("filterCancelBtn");
+
+    // Settings modal
+    const settingsModal = document.getElementById("settingsModal");
+    const themeSelect = document.getElementById("themeSelect");
+    const securedColor = document.getElementById("securedColor");
+    const proposedColor = document.getElementById("proposedColor");
+    const opportunityColor = document.getElementById("opportunityColor");
+    const futureColor = document.getElementById("futureColor");
+    const settingsOkBtn = document.getElementById("settingsOkBtn");
+    const settingsCancelBtn = document.getElementById("settingsCancelBtn");
+
+    // CSV edit modal
+    const csvEditModal = document.getElementById("csvEditModal");
+    const csvTextarea = document.getElementById("csvTextarea");
+    const csvEditApplyBtn = document.getElementById("csvEditApplyBtn");
+    const csvEditCancelBtn = document.getElementById("csvEditCancelBtn");
+
+    // ---------------------------------------------------------------------------------------------
+    // Utility: toAbsoluteWeek / fromAbsoluteWeek
+    // ---------------------------------------------------------------------------------------------
+    function toAbsoluteWeek(year, week) {
+      return year * 52 + (week - 1);
+    }
+    function fromAbsoluteWeek(absWeek) {
+      const y = Math.floor(absWeek / 52);
+      const w = (absWeek % 52) + 1;
+      return { year: y, week: w };
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // getColorFromStatus
+    // ---------------------------------------------------------------------------------------------
+    function getColorFromStatus(status) {
+      return statusColors[status] || "#fd7e14";
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Populate date selects for bar editors
+    // ---------------------------------------------------------------------------------------------
+    function populateDateSelects() {
+      [startYearSelect, endYearSelect].forEach(sel => {
+        sel.innerHTML = "";
+        for (let y = 2010; y <= 2030; y++) {
+          const opt = document.createElement("option");
+          opt.value = y;
+          opt.textContent = y;
+          sel.appendChild(opt);
+        }
+      });
+      [startWeekSelect, endWeekSelect].forEach(sel => {
+        sel.innerHTML = "";
+        for (let w = 1; w <= 52; w++) {
+          const opt = document.createElement("option");
+          opt.value = w;
+          opt.textContent = w;
+          sel.appendChild(opt);
+        }
+      });
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Local storage
+    // ---------------------------------------------------------------------------------------------
+    function saveToLocalStorage() {
+      const chartData = {
+        lines,
+        startYear,
+        startWeek,
+        endYear,
+        endWeek,
+        lineCounter,
+        barCounter,
+        cellWidth,
+        rowHeight,
+        statusColors,
+        currentTheme
+      };
+      localStorage.setItem("ganttChartData", JSON.stringify(chartData));
+    }
+    function loadFromLocalStorage() {
+      const stored = localStorage.getItem("ganttChartData");
+      if (!stored) return;
+      try {
+        const parsed = JSON.parse(stored);
+        lines = parsed.lines || [];
+        lines.forEach(line => {
+          line.selected = false;
+          line.client = line.client || "";
+          line.discipline = line.discipline || "";
+          line.experience = line.experience || "";
+          line.location = line.location || "";
+          line.custom1 = line.custom1 || "";
+          line.custom2 = line.custom2 || "";
+          line.custom3 = line.custom3 || "";
+          line.bars.forEach(bar => {
+            bar.selected = false;
+            if (!bar.status) bar.status = "proposed";
+          });
+        });
+        startYear = parsed.startYear || 2025;
+        startWeek = parsed.startWeek || 1;
+        endYear = parsed.endYear || 2025;
+        endWeek = parsed.endWeek || 52;
+        lineCounter = parsed.lineCounter || 0;
+        barCounter = parsed.barCounter || 0;
+        cellWidth = parsed.cellWidth || 150;
+        rowHeight = parsed.rowHeight || 40;
+        statusColors = parsed.statusColors || statusColors;
+        currentTheme = parsed.currentTheme || "light";
+      } catch (err) {
+        console.warn("Invalid localStorage data");
+      }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // applyTheme & updateCSSVariables
+    // ---------------------------------------------------------------------------------------------
+    function applyTheme() {
+      if (currentTheme === "dark") {
+        document.body.classList.add("dark-theme");
+      } else {
+        document.body.classList.remove("dark-theme");
+      }
+      // make sure legend squares update
+      document.querySelectorAll('.legend-swatch').forEach(swatch => {
+        // we won't specifically recolor them here, they're hard-coded
+      });
+      renderTable();
+      saveToLocalStorage();
+    }
+    function updateCSSVariables() {
+      document.documentElement.style.setProperty('--cell-width', cellWidth + 'px');
+      document.documentElement.style.setProperty('--row-height', rowHeight + 'px');
+      ganttTable.style.setProperty('--cell-width', cellWidth + 'px');
+      ganttTable.style.setProperty('--row-height', rowHeight + 'px');
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // getDisplayRange
+    // ---------------------------------------------------------------------------------------------
+    function getDisplayRange() {
+      let ds = toAbsoluteWeek(startYear, startWeek);
+      let de = toAbsoluteWeek(endYear, endWeek);
+      if (ds > de) [ds, de] = [de, ds];
+      return { displayStart: ds, displayEnd: de };
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // unselectAllBars
+    // ---------------------------------------------------------------------------------------------
+    function unselectAllBars() {
+      lines.forEach(line => line.bars.forEach(bar => {
+        bar.selected = false;
+      }));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // getSelectedBars
+    // ---------------------------------------------------------------------------------------------
+    function getSelectedBars() {
+      const selected = [];
+      lines.forEach(line => {
+        line.bars.forEach(bar => {
+          if (bar.selected) {
+            selected.push({ bar, line });
+          }
+        });
+      });
+      return selected;
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // deleteBars
+    // ---------------------------------------------------------------------------------------------
+    function deleteBars(barsToDelete) {
+      barsToDelete.forEach(({ bar, line }) => {
+        line.bars = line.bars.filter(b => b.id !== bar.id);
+      });
+      pushState();
+      renderTable();
+      saveToLocalStorage();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // handleBarClickSelect
+    // ---------------------------------------------------------------------------------------------
+    function handleBarClickSelect(bar, event) {
+      const isMulti = event.shiftKey || event.ctrlKey || event.metaKey;
+      if (!isMulti) {
+        unselectAllBars();
+        bar.selected = true;
+      } else {
+        bar.selected = !bar.selected;
+      }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // clearHighlights
+    // ---------------------------------------------------------------------------------------------
+    function clearHighlights() {
+      document.querySelectorAll('.bar.highlighted').forEach(el => el.classList.remove('highlighted'));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // updateBarTextPositions => keeps bar label centered horizontally
+    // ---------------------------------------------------------------------------------------------
+    function updateBarTextPositions() {
+      const wrapper = document.querySelector(".table-wrapper");
+      const scrollLeft = wrapper.scrollLeft;
+      const viewportWidth = wrapper.clientWidth;
+      document.querySelectorAll(".bar-text").forEach(textEl => {
+        const barEl = textEl.parentElement; 
+        const barLeft = parseFloat(barEl.style.left);
+        const barWidth = parseFloat(barEl.style.width);
+        const barRight = barLeft + barWidth;
+
+        const visibleLeft = Math.max(barLeft, scrollLeft);
+        const visibleRight = Math.min(barRight, scrollLeft + viewportWidth);
+        const visibleWidth = visibleRight - visibleLeft;
+        if (visibleWidth <= 0) {
+          textEl.style.opacity = "0";
+          return;
+        }
+        textEl.style.opacity = "1";
+        const textWidth = textEl.offsetWidth;
+        let textLeft = visibleLeft - barLeft + (visibleWidth - textWidth) / 2;
+        if (textLeft < 5) textLeft = 5;
+        if (textLeft + textWidth > barWidth - 5) textLeft = barWidth - textWidth - 5;
+        textEl.style.left = textLeft + "px";
+      });
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // renderHeader
+    // ---------------------------------------------------------------------------------------------
+    function renderHeader() {
+      while (headerRow.children.length > 1) {
+        headerRow.removeChild(headerRow.lastChild);
+      }
+      const { displayStart, displayEnd } = getDisplayRange();
+      const totalWeeks = displayEnd - displayStart + 1;
+      if (totalWeeks < 1) return;
+      for (let i = 0; i < totalWeeks; i++) {
+        const abs = displayStart + i;
+        const { year, week } = fromAbsoluteWeek(abs);
+        const th = document.createElement("th");
+        th.className = "timescale-header";
+        th.textContent = `${year}-W${week}`;
+        th.style.width = cellWidth + "px";
+        headerRow.appendChild(th);
+      }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // renderTable => main
+    // ---------------------------------------------------------------------------------------------
+    function renderTable() {
+      renderHeader();
+      tableBody.innerHTML = "";
+      clearHighlights();
+
+      const { displayStart, displayEnd } = getDisplayRange();
+      const totalWeeks = displayEnd - displayStart + 1;
+      if (totalWeeks < 1) return;
+
+      const lowerSearch = searchTerm.toLowerCase();
+
+      // Filter lines
+      const filteredLines = lines.filter(line => {
+        const passesAttributeFilters = Object.keys(filters).every(key => {
+          if (filters[key]) {
+            return line[key] && line[key].toLowerCase().includes(filters[key].toLowerCase());
+          }
+          return true;
+        });
+        if (!passesAttributeFilters) return false;
+
+        if (!lowerSearch) return true;
+
+        // line-level search
+        const lineMatch = (
+          (line.name && line.name.toLowerCase().includes(lowerSearch)) ||
+          (line.client && line.client.toLowerCase().includes(lowerSearch)) ||
+          (line.discipline && line.discipline.toLowerCase().includes(lowerSearch)) ||
+          (line.experience && line.experience.toLowerCase().includes(lowerSearch)) ||
+          (line.location && line.location.toLowerCase().includes(lowerSearch)) ||
+          (line.custom1 && line.custom1.toLowerCase().includes(lowerSearch)) ||
+          (line.custom2 && line.custom2.toLowerCase().includes(lowerSearch)) ||
+          (line.custom3 && line.custom3.toLowerCase().includes(lowerSearch))
+        );
+
+        // bar-level search
+        const barMatch = line.bars.some(b => {
+          const textLow = (b.text || "").toLowerCase();
+          const statusLow = (b.status || "").toLowerCase();
+          return textLow.includes(lowerSearch) || statusLow.includes(lowerSearch);
+        });
+
+        return (lineMatch || barMatch);
+      });
+
+      // Build each line
+      filteredLines.forEach((line, lineIndex) => {
+        const tr = document.createElement("tr");
+        tr.className = "gantt-row";
+        if (line.selected) tr.classList.add("selected");
+
+        // Name cell
+        const nameTd = document.createElement("td");
+        nameTd.className = "name-cell";
+        // If admin, reordering lines by drag; if user, only can double-click to view but can't reorder
+        nameTd.addEventListener("mousedown", e => onLineMouseDown(e, line, lineIndex));
+        
+        // Show name
+        const nameLabel = document.createElement("span");
+        nameLabel.textContent = line.name;
+        nameLabel.style.flex = "1";
+        // Double-click => show line info (admin => can edit, user => read-only)
+        nameLabel.addEventListener("dblclick", e => {
+          e.stopPropagation();
+          showLineEditor(line, e.clientX, e.clientY);
+        });
+        nameTd.appendChild(nameLabel);
+        tr.appendChild(nameTd);
+
+        // Bars container
+        const barTd = document.createElement("td");
+        barTd.colSpan = totalWeeks;
+        barTd.className = "bar-cell";
+        const barContainer = document.createElement("div");
+        barContainer.className = "bar-row-container";
+
+        // Additional admin add bars on double/right-click
+        if (adminMode) {
+          barContainer.addEventListener("dblclick", e => {
+            if (!e.target.classList.contains("bar") &&
+                !e.target.classList.contains("bar-text") &&
+                !e.target.classList.contains("bar-handle")) {
+              barCounter++;
+              let offsetX = e.offsetX;
+              let weeksFromStart = Math.floor(offsetX / cellWidth);
+              const newBar = {
+                id: barCounter,
+                text: "Placeholder",
+                status: "proposed",
+                startAbsWeek: displayStart + weeksFromStart,
+                length: 8,
+                selected: false
+              };
+              line.bars.push(newBar);
+              pushState();
+              renderTable();
+              saveToLocalStorage();
+            }
+          });
+          barContainer.addEventListener("contextmenu", e => {
+            e.preventDefault();
+            if (!e.target.classList.contains("bar") &&
+                !e.target.classList.contains("bar-text") &&
+                !e.target.classList.contains("bar-handle")) {
+              barCounter++;
+              let offsetX = e.offsetX;
+              let weeksFromStart = Math.floor(offsetX / cellWidth);
+              const newBar = {
+                id: barCounter,
+                text: "Right-Click Bar",
+                status: "proposed",
+                startAbsWeek: displayStart + weeksFromStart,
+                length: 6,
+                selected: false
+              };
+              line.bars.push(newBar);
+              pushState();
+              renderTable();
+              saveToLocalStorage();
+            }
+          });
+        }
+
+        // Render bars in this line
+        line.bars.forEach(bar => {
+          const barStart = bar.startAbsWeek;
+          const barEnd = barStart + bar.length;
+          const overlapStart = Math.max(displayStart, barStart);
+          const overlapEnd = Math.min(displayEnd + 1, barEnd);
+          const overlapLen = overlapEnd - overlapStart;
+          if (overlapLen <= 0) return; // not in timescale
+
+          const barLeft = (overlapStart - displayStart) * cellWidth;
+          const barWidth = overlapLen * cellWidth;
+          const barDiv = document.createElement("div");
+          barDiv.classList.add("bar");
+          if (bar.selected) barDiv.classList.add("selected");
+
+          if (lowerSearch && bar.text.toLowerCase().includes(lowerSearch)) {
+            barDiv.classList.add("highlighted");
+          }
+          barDiv.style.left = barLeft + "px";
+          barDiv.style.width = barWidth + "px";
+          barDiv.style.backgroundColor = getColorFromStatus(bar.status);
+
+          // Bar text
+          const textSpan = document.createElement("span");
+          textSpan.className = "bar-text";
+          textSpan.textContent = bar.text;
+          barDiv.appendChild(textSpan);
+
+          // Resize handles if admin
+          if (adminMode) {
+            const leftHandle = document.createElement("div");
+            leftHandle.classList.add("bar-handle", "left");
+            const rightHandle = document.createElement("div");
+            rightHandle.classList.add("bar-handle", "right");
+            barDiv.appendChild(leftHandle);
+            barDiv.appendChild(rightHandle);
+          }
+
+          // Single click => select
+          barDiv.addEventListener("click", e => {
+            e.stopPropagation();
+            handleBarClickSelect(bar, e);
+            renderTable();
+            saveToLocalStorage();
+          });
+
+          // Double click => open bar editor or read-only if user
+          barDiv.addEventListener("dblclick", e => {
+            e.stopPropagation();
+            showBarEditor(bar, line, e.clientX, e.clientY);
+          });
+
+          // Mouse down => begin drag (fluid in admin => horizontal/vertical, user => vertical only)
+          barDiv.addEventListener("mousedown", e => onBarMouseDown(e, line, bar, lineIndex));
+
+          barContainer.appendChild(barDiv);
+        });
+
+        // Overlap hatch
+        const sortedBars = [...line.bars].sort((a, b) => a.startAbsWeek - b.startAbsWeek);
+        for (let i = 0; i < sortedBars.length; i++) {
+          for (let j = i + 1; j < sortedBars.length; j++) {
+            const bar1 = sortedBars[i];
+            const bar2 = sortedBars[j];
+            const start1 = Math.max(displayStart, bar1.startAbsWeek);
+            const end1 = Math.min(displayEnd + 1, bar1.startAbsWeek + bar1.length);
+            const start2 = Math.max(displayStart, bar2.startAbsWeek);
+            const end2 = Math.min(displayEnd + 1, bar2.startAbsWeek + bar2.length);
+            const overlapStart2 = Math.max(start1, start2);
+            const overlapEnd2 = Math.min(end1, end2);
+            if (overlapEnd2 > overlapStart2) {
+              const left = (overlapStart2 - displayStart) * cellWidth;
+              const width = (overlapEnd2 - overlapStart2) * cellWidth;
+              const hatchDiv = document.createElement("div");
+              hatchDiv.className = "overlap-hatch";
+              hatchDiv.style.left = left + "px";
+              hatchDiv.style.width = width + "px";
+              barContainer.appendChild(hatchDiv);
+            }
+          }
+        }
+
+        barTd.appendChild(barContainer);
+        tr.appendChild(barTd);
+        tableBody.appendChild(tr);
+      });
+
+      updateBarTextPositions();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // onLineMouseDown => admin can reorder lines, user can do nothing but see the pointer
+    // ---------------------------------------------------------------------------------------------
+    function onLineMouseDown(e, line, lineIndex) {
+      if (adminMode) {
+        dragging = true;
+        dragType = "line-reorder";
+        draggingLine = line;
+        originalLineIndex = lineIndex;
+        previousLineIndex = lineIndex;
+        dragStartY = e.clientY;
+        e.preventDefault();
+      } 
+      // user mode => do not reorder lines
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // onBarMouseDown => fluid mouse drag for admin (horizontal + vertical) / user (vertical only)
+    // ---------------------------------------------------------------------------------------------
+    function onBarMouseDown(e, line, bar, lineIndex) {
+      dragging = true;
+      currentBar = bar;
+      currentLine = line;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      if (adminMode) {
+        // We can move or resize in both directions
+        if (e.target.classList.contains("bar-handle")) {
+          dragType = e.target.classList.contains("left") ? "resize-left" : "resize-right";
+          initialStartAbs = currentBar.startAbsWeek;
+          initialLength = currentBar.length;
+        } else {
+          dragType = "bar-move-admin";
+          initialStartAbs = currentBar.startAbsWeek;
+          initialLength = currentBar.length;
+        }
+      } else {
+        // user => only vertical, fluid
+        dragType = "bar-move-user";
+        originalUserLineIndex = lineIndex;
+        previousUserLineIndex = lineIndex;
+      }
+      e.preventDefault();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // document mousemove => fluid dragging
+    // ---------------------------------------------------------------------------------------------
+    document.addEventListener("mousemove", e => {
+      if (!dragging) return;
+      if (dragType === "line-reorder" && draggingLine) {
+        // vertical reorder lines in admin
+        let dy = e.clientY - dragStartY;
+        let rowOffset = Math.round(dy / rowHeight);
+        let newIndex = originalLineIndex + rowOffset;
+        if (newIndex < 0) newIndex = 0;
+        if (newIndex >= lines.length) newIndex = lines.length - 1;
+        if (newIndex !== previousLineIndex) {
+          // remove from old index
+          const removedLine = lines.splice(previousLineIndex, 1)[0];
+          // insert at new index
+          lines.splice(newIndex, 0, removedLine);
+          previousLineIndex = newIndex;
+          renderTable();
+        }
+      } 
+      else if (dragType === "bar-move-admin" && currentBar) {
+        // admin fluid bar move horizontally+vertically
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+        const dWeeks = Math.round(dx / cellWidth);
+
+        // horizontal shift
+        currentBar.startAbsWeek = Math.max(0, initialStartAbs + dWeeks);
+
+        // check vertical line offset
+        let rowOffset = Math.round(dy / rowHeight);
+        const currentLineIndex = lines.indexOf(currentLine);
+        let newIndex = currentLineIndex + rowOffset;
+        if (newIndex < 0) newIndex = 0;
+        if (newIndex >= lines.length) newIndex = lines.length - 1;
+        if (newIndex !== currentLineIndex) {
+          // remove bar from old line
+          currentLine.bars = currentLine.bars.filter(b => b.id !== currentBar.id);
+          // add bar to new line
+          lines[newIndex].bars.push(currentBar);
+          currentLine = lines[newIndex];
+        }
+
+        renderTable();
+      }
+      else if (dragType === "resize-left" && currentBar) {
+        // left resize
+        const dx = e.clientX - dragStartX;
+        const dWeeks = Math.round(dx / cellWidth);
+        let newStart = initialStartAbs + dWeeks;
+        let newLength = initialStartAbs + initialLength - newStart;
+        if (newLength < 1) {
+          newLength = 1;
+          newStart = initialStartAbs + initialLength - 1;
+        }
+        currentBar.startAbsWeek = Math.max(0, newStart);
+        currentBar.length = newLength;
+        renderTable();
+      }
+      else if (dragType === "resize-right" && currentBar) {
+        const dx = e.clientX - dragStartX;
+        const dWeeks = Math.round(dx / cellWidth);
+        let newLength = initialLength + dWeeks;
+        if (newLength < 1) newLength = 1;
+        currentBar.length = newLength;
+        renderTable();
+      }
+      else if (dragType === "bar-move-user" && currentBar) {
+        // user vertical only
+        let dy = e.clientY - dragStartY;
+        let rowOffset = Math.round(dy / rowHeight);
+        let newIndex = originalUserLineIndex + rowOffset;
+        if (newIndex < 0) newIndex = 0;
+        if (newIndex >= lines.length) newIndex = lines.length - 1;
+        if (newIndex !== previousUserLineIndex) {
+          // remove from old line
+          lines[previousUserLineIndex].bars = lines[previousUserLineIndex].bars.filter(b => b.id !== currentBar.id);
+          // add to new line
+          lines[newIndex].bars.push(currentBar);
+          previousUserLineIndex = newIndex;
+          renderTable();
+        }
+      }
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // document mouseup => finalize drags
+    // ---------------------------------------------------------------------------------------------
+    document.addEventListener("mouseup", e => {
+      if (!dragging) return;
+      dragging = false;
+      if (dragType === "line-reorder") {
+        draggingLine = null;
+        pushState();
+        saveToLocalStorage();
+      } 
+      else if (dragType === "bar-move-admin" ||
+               dragType === "resize-left" ||
+               dragType === "resize-right") {
+        currentBar = null;
+        currentLine = null;
+        pushState();
+        saveToLocalStorage();
+      }
+      else if (dragType === "bar-move-user") {
+        currentBar = null;
+        currentLine = null;
+        pushState();
+        saveToLocalStorage();
+      }
+
+      dragType = null;
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // document click => unselect if click outside bars/lines
+    // ---------------------------------------------------------------------------------------------
+    document.addEventListener("click", evt => {
+      if (!dragging) {
+        let target = evt.target;
+        const isNameCell = target.closest('.name-cell');
+        const isBar = target.closest('.bar');
+        if (!isNameCell && !isBar) {
+          lines.forEach(l => l.selected = false);
+          unselectAllBars();
+          renderTable();
+          saveToLocalStorage();
+        }
+      }
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // showBarEditor => can be read-only if not admin
+    // ---------------------------------------------------------------------------------------------
+    function showBarEditor(bar, line, x, y) {
+      currentEditorBar = bar;
+      currentEditorLine = line;
+      barTextInput.value = bar.text;
+      barStatusSelect.value = bar.status;
+      const { year: sy, week: sw } = fromAbsoluteWeek(bar.startAbsWeek);
+      const { year: ey, week: ew } = fromAbsoluteWeek(bar.startAbsWeek + bar.length - 1);
+      startYearSelect.value = sy;
+      startWeekSelect.value = sw;
+      endYearSelect.value = ey;
+      endWeekSelect.value = ew;
+      // disable fields if not admin
+      barTextInput.disabled = !adminMode;
+      barStatusSelect.disabled = !adminMode;
+      startYearSelect.disabled = !adminMode;
+      startWeekSelect.disabled = !adminMode;
+      endYearSelect.disabled = !adminMode;
+      endWeekSelect.disabled = !adminMode;
+      barDeleteBtn.disabled = !adminMode;
+
+      barEditor.style.display = "block";
+      barEditor.style.left = (x + window.scrollX + 10) + "px";
+      barEditor.style.top = (y + window.scrollY + 10) + "px";
+
+      // autosave if admin
+      const autosaveBar = () => {
+        if (!adminMode) return;
+        currentEditorBar.text = barTextInput.value;
+        currentEditorBar.status = barStatusSelect.value;
+        let sy_ = parseInt(startYearSelect.value);
+        let sw_ = parseInt(startWeekSelect.value);
+        let ey_ = parseInt(endYearSelect.value);
+        let ew_ = parseInt(endWeekSelect.value);
+        currentEditorBar.startAbsWeek = toAbsoluteWeek(sy_, sw_);
+        currentEditorBar.length = toAbsoluteWeek(ey_, ew_) - currentEditorBar.startAbsWeek + 1;
+        if (currentEditorBar.length < 1) currentEditorBar.length = 1;
+        renderTable();
+        saveToLocalStorage();
+      };
+      barTextInput.oninput = autosaveBar;
+      barStatusSelect.onchange = autosaveBar;
+      startYearSelect.onchange = autosaveBar;
+      startWeekSelect.onchange = autosaveBar;
+      endYearSelect.onchange = autosaveBar;
+      endWeekSelect.onchange = autosaveBar;
+    }
+    barEditorOkBtn.addEventListener("click", () => {
+      barEditor.style.display = "none";
+      currentEditorBar = null;
+      currentEditorLine = null;
+      pushState();
+    });
+    barEditorCancelBtn.addEventListener("click", () => {
+      barEditor.style.display = "none";
+      currentEditorBar = null;
+      currentEditorLine = null;
+      pushState();
+    });
+    barDeleteBtn.addEventListener("click", () => {
+      if (!adminMode) return;
+      if (!currentEditorBar || !currentEditorLine) return;
+      currentEditorLine.bars = currentEditorLine.bars.filter(b => b.id !== currentEditorBar.id);
+      barEditor.style.display = "none";
+      currentEditorBar = null;
+      currentEditorLine = null;
+      pushState();
+      renderTable();
+      saveToLocalStorage();
+    });
+    // close if click outside
+    document.addEventListener("mousedown", e => {
+      if (barEditor.style.display === "block") {
+        const rect = barEditor.getBoundingClientRect();
+        const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (!inside) {
+          barEditor.style.display = "none";
+          currentEditorBar = null;
+          currentEditorLine = null;
+          pushState();
+        }
+      }
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // showLineEditor => read-only if not admin
+    // ---------------------------------------------------------------------------------------------
+    function showLineEditor(line, x, y) {
+      currentLineEditor = line;
+      lineNameInput.value = line.name;
+      lineClientInput.value = line.client;
+      lineDisciplineInput.value = line.discipline;
+      lineExperienceInput.value = line.experience;
+      lineLocationInput.value = line.location;
+      lineCustom1Input.value = line.custom1;
+      lineCustom2Input.value = line.custom2;
+      lineCustom3Input.value = line.custom3;
+
+      // disable if not admin
+      lineNameInput.disabled = !adminMode;
+      lineClientInput.disabled = !adminMode;
+      lineDisciplineInput.disabled = !adminMode;
+      lineExperienceInput.disabled = !adminMode;
+      lineLocationInput.disabled = !adminMode;
+      lineCustom1Input.disabled = !adminMode;
+      lineCustom2Input.disabled = !adminMode;
+      lineCustom3Input.disabled = !adminMode;
+      lineDeleteBtn.disabled = !adminMode;
+
+      lineEditor.style.display = "block";
+      lineEditor.style.left = (x + window.scrollX + 10) + "px";
+      lineEditor.style.top = (y + window.scrollY + 10) + "px";
+
+      // autosave if admin
+      const autosaveLine = () => {
+        if (!adminMode) return;
+        currentLineEditor.name = lineNameInput.value;
+        currentLineEditor.client = lineClientInput.value;
+        currentLineEditor.discipline = lineDisciplineInput.value;
+        currentLineEditor.experience = lineExperienceInput.value;
+        currentLineEditor.location = lineLocationInput.value;
+        currentLineEditor.custom1 = lineCustom1Input.value;
+        currentLineEditor.custom2 = lineCustom2Input.value;
+        currentLineEditor.custom3 = lineCustom3Input.value;
+        renderTable();
+        saveToLocalStorage();
+      };
+      lineNameInput.oninput = autosaveLine;
+      lineClientInput.oninput = autosaveLine;
+      lineDisciplineInput.oninput = autosaveLine;
+      lineExperienceInput.oninput = autosaveLine;
+      lineLocationInput.oninput = autosaveLine;
+      lineCustom1Input.oninput = autosaveLine;
+      lineCustom2Input.oninput = autosaveLine;
+      lineCustom3Input.oninput = autosaveLine;
+    }
+    lineEditorOkBtn.addEventListener("click", () => {
+      lineEditor.style.display = "none";
+      currentLineEditor = null;
+      pushState();
+    });
+    lineEditorCancelBtn.addEventListener("click", () => {
+      lineEditor.style.display = "none";
+      currentLineEditor = null;
+      pushState();
+    });
+    lineDeleteBtn.addEventListener("click", () => {
+      if (!adminMode) return;
+      if (!currentLineEditor) return;
+      removeLineItem(currentLineEditor.id);
+      lineEditor.style.display = "none";
+      currentLineEditor = null;
+    });
+    document.addEventListener("mousedown", e => {
+      if (lineEditor.style.display === "block") {
+        const rect = lineEditor.getBoundingClientRect();
+        const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (!inside) {
+          lineEditor.style.display = "none";
+          currentLineEditor = null;
+          pushState();
+        }
+      }
+    });
+    function removeLineItem(id) {
+      lines = lines.filter(l => l.id !== id);
+      pushState();
+      renderTable();
+      saveToLocalStorage();
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Filter modal
+    // ---------------------------------------------------------------------------------------------
+    filterBtn.addEventListener("click", () => {
+      filterClient.value = filters.client || "";
+      filterDiscipline.value = filters.discipline || "";
+      filterExperience.value = filters.experience || "";
+      filterLocation.value = filters.location || "";
+      filterCustom1.value = filters.custom1 || "";
+      filterCustom2.value = filters.custom2 || "";
+      filterCustom3.value = filters.custom3 || "";
+      filterModal.style.display = "block";
+    });
+    filterApplyBtn.addEventListener("click", () => {
+      filters = {
+        client: filterClient.value.trim(),
+        discipline: filterDiscipline.value.trim(),
+        experience: filterExperience.value.trim(),
+        location: filterLocation.value.trim(),
+        custom1: filterCustom1.value.trim(),
+        custom2: filterCustom2.value.trim(),
+        custom3: filterCustom3.value.trim(),
+      };
+      Object.keys(filters).forEach(key => {
+        if (!filters[key]) delete filters[key];
+      });
+      filterModal.style.display = "none";
+      renderTable();
+    });
+    filterClearBtn.addEventListener("click", () => {
+      filters = {};
+      filterModal.style.display = "none";
+      renderTable();
+    });
+    filterCancelBtn.addEventListener("click", () => {
+      filterModal.style.display = "none";
+    });
+    document.addEventListener("mousedown", e => {
+      if (filterModal.style.display === "block") {
+        const rect = filterModal.getBoundingClientRect();
+        const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (!inside) {
+          filterModal.style.display = "none";
+        }
+      }
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // Settings modal
+    // ---------------------------------------------------------------------------------------------
+    settingsBtn.addEventListener("click", () => {
+      themeSelect.value = currentTheme;
+      securedColor.value = statusColors.secured;
+      proposedColor.value = statusColors.proposed;
+      opportunityColor.value = statusColors.opportunity;
+      futureColor.value = statusColors.future;
+      settingsModal.style.display = "block";
+    });
+    settingsOkBtn.addEventListener("click", () => {
+      currentTheme = themeSelect.value;
+      statusColors.secured = securedColor.value;
+      statusColors.proposed = proposedColor.value;
+      statusColors.opportunity = opportunityColor.value;
+      statusColors.future = futureColor.value;
+      settingsModal.style.display = "none";
+      applyTheme();
+    });
+    settingsCancelBtn.addEventListener("click", () => {
+      settingsModal.style.display = "none";
+    });
+    document.addEventListener("mousedown", e => {
+      if (settingsModal.style.display === "block") {
+        const rect = settingsModal.getBoundingClientRect();
+        const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (!inside) {
+          settingsModal.style.display = "none";
+        }
+      }
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // search box
+    // ---------------------------------------------------------------------------------------------
+    searchInput.addEventListener("input", () => {
+      searchTerm = searchInput.value.trim();
+      renderTable();
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // Add line => admin only
+    // ---------------------------------------------------------------------------------------------
+    addLineItemBtn.addEventListener("click", () => {
+      if (!adminMode) return;
+      lineCounter++;
+      lines.push({
+        id: lineCounter,
+        name: "Line Item " + lineCounter,
+        client: "",
+        discipline: "",
+        experience: "",
+        location: "",
+        custom1: "",
+        custom2: "",
+        custom3: "",
+        bars: [],
+        selected: false
+      });
+      pushState();
+      renderTable();
+      saveToLocalStorage();
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // Add bar => admin only
+    // ---------------------------------------------------------------------------------------------
+    addBarBtn.addEventListener("click", e => {
+      if (!adminMode) return;
+      e.stopPropagation();
+      barCounter++;
+      const { displayStart } = getDisplayRange();
+      const newBar = {
+        id: barCounter,
+        text: "New Bar",
+        status: "proposed",
+        startAbsWeek: displayStart,
+        length: 4,
+        selected: false,
+      };
+      if (!lines.length) {
+        lineCounter = 1;
+        lines.push({
+          id: 1,
+          name: "Line Item 1",
+          client: "",
+          discipline: "",
+          experience: "",
+          location: "",
+          custom1: "",
+          custom2: "",
+          custom3: "",
+          bars: [],
+          selected: false
+        });
+      }
+      lines[lines.length - 1].bars.push(newBar);
+      pushState();
+      renderTable();
+      saveToLocalStorage();
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // Import/Export
+    // ---------------------------------------------------------------------------------------------
+    exportJsonBtn.addEventListener("click", () => {
+      const dataStr = JSON.stringify({
+        lines,
+        startYear,
+        startWeek,
+        endYear,
+        endWeek,
+        lineCounter,
+        barCounter,
+        cellWidth,
+        rowHeight,
+        statusColors,
+        currentTheme
+      }, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const now = new Date();
+      let dateStr = now.toISOString().replace(/[:.]/g, '-');
+      const a = document.createElement("a");
+      a.download = "Gannt_" + dateStr + ".json";
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+    downloadCsvBtn.addEventListener("click", () => {
+      let csv = "Line ID,Name,Client,Discipline,Experience,Location,Custom1,Custom2,Custom3,Bar ID,Bar Text,Status,Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
+      lines.forEach(line => {
+        if (line.bars.length === 0) {
+          csv += `${line.id},"${line.name}","${line.client}","${line.discipline}","${line.experience}","${line.location}","${line.custom1}","${line.custom2}","${line.custom3}",,,,,,\n`;
+        } else {
+          line.bars.forEach(bar => {
+            const { year: sy, week: sw } = fromAbsoluteWeek(bar.startAbsWeek);
+            const { year: ey, week: ew } = fromAbsoluteWeek(bar.startAbsWeek + bar.length - 1);
+            csv += `${line.id},"${line.name}","${line.client}","${line.discipline}","${line.experience}","${line.location}","${line.custom1}","${line.custom2}","${line.custom3}",${bar.id},"${bar.text}","${bar.status}",${sy},${sw},${ey},${ew},${bar.length}\n`;
+          });
+        }
+      });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.download = "gantt-data.csv";
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // Import
+    // ---------------------------------------------------------------------------------------------
+    importJsonBtn.addEventListener("click", () => {
+      importFileInput.value = "";
+      importFileInput.click();
+    });
+    importFileInput.addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          let imported;
+          if (file.name.endsWith(".json")) {
+            imported = JSON.parse(ev.target.result);
+            lines = imported.lines || [];
+            startYear = imported.startYear || startYear;
+            startWeek = imported.startWeek || startWeek;
+            endYear = imported.endYear || endYear;
+            endWeek = imported.endWeek || endWeek;
+            lineCounter = imported.lineCounter || lineCounter;
+            barCounter = imported.barCounter || barCounter;
+            cellWidth = imported.cellWidth || cellWidth;
+            rowHeight = imported.rowHeight || rowHeight;
+            statusColors = imported.statusColors || statusColors;
+            currentTheme = imported.currentTheme || currentTheme;
+            lines.forEach(l => {
+              l.selected = false;
+              l.bars.forEach(b => b.selected = false);
+            });
+          } else if (file.name.endsWith(".csv")) {
+            const parsed = parseCsv(ev.target.result);
+            lines = parsed.lines;
+            lineCounter = parsed.lineCounter;
+            barCounter = parsed.barCounter;
+          } else {
+            throw new Error("Unsupported file type");
+          }
+          startYearInput.value = startYear;
+          startWeekInput.value = startWeek;
+          endYearInput.value = endYear;
+          endWeekInput.value = endWeek;
+          zoomSlider.value = cellWidth;
+          heightZoomSlider.value = rowHeight;
+          themeSelect.value = currentTheme;
+          securedColor.value = statusColors.secured;
+          proposedColor.value = statusColors.proposed;
+          opportunityColor.value = statusColors.opportunity;
+          futureColor.value = statusColors.future;
+          updateCSSVariables();
+          applyTheme();
+          renderTable();
+          saveToLocalStorage();
+          alert("Import successful!");
+        } catch (err) {
+          console.error(err);
+          alert("Import failed: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // parseCsv helper
+    function parseCsv(csv) {
+      const rows = csv.trim().split('\n');
+      const header = rows[0].toLowerCase();
+      if (!header.includes('line id') || !header.includes('bar id')) throw new Error("Invalid CSV header");
+      const newLines = [];
+      let maxLineId = 0;
+      let maxBarId = 0;
+      const lineMap = {};
+
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i].trim();
+        if (!row) continue;
+        const parsed = [];
+        let field = '';
+        let inQuote = false;
+        for (let c of row + ',') {
+          if (c === '"') inQuote = !inQuote;
+          else if (c === ',' && !inQuote) {
+            parsed.push(field);
+            field = '';
+          } else field += c;
+        }
+        if (parsed.length < 9) continue;
+
+        const lineId = parseInt(parsed[0]);
+        const lineName = parsed[1] || `Line ${lineId}`;
+        const client = parsed[2] || "";
+        const discipline = parsed[3] || "";
+        const experience = parsed[4] || "";
+        const location = parsed[5] || "";
+        const custom1 = parsed[6] || "";
+        const custom2 = parsed[7] || "";
+        const custom3 = parsed[8] || "";
+        const barIdStr = parsed[9];
+
+        if (!barIdStr) {
+          if (!lineMap[lineId]) {
+            lineMap[lineId] = {
+              id: lineId,
+              name: lineName,
+              client,
+              discipline,
+              experience,
+              location,
+              custom1,
+              custom2,
+              custom3,
+              bars: [],
+              selected: false
+            };
+            newLines.push(lineMap[lineId]);
+            maxLineId = Math.max(maxLineId, lineId);
+          }
+          continue;
+        }
+        const barId = parseInt(barIdStr);
+        const barText = parsed[10] || '';
+        const status = (parsed[11] || "proposed").toLowerCase();
+        const sy = parseInt(parsed[12]);
+        const sw = parseInt(parsed[13]);
+        const ey = parseInt(parsed[14]);
+        const ew = parseInt(parsed[15]);
+        const duration = parseInt(parsed[16]) || 1;
+        if (isNaN(sy) || isNaN(sw) || isNaN(ey) || isNaN(ew)) continue;
+
+        const startAbs = toAbsoluteWeek(sy, sw);
+        const endAbs = toAbsoluteWeek(ey, ew);
+        let length = endAbs - startAbs + 1;
+        if (length < 1) length = duration || 1;
+
+        if (!lineMap[lineId]) {
+          lineMap[lineId] = {
+            id: lineId,
+            name: lineName,
+            client,
+            discipline,
+            experience,
+            location,
+            custom1,
+            custom2,
+            custom3,
+            bars: [],
+            selected: false
+          };
+          newLines.push(lineMap[lineId]);
+          maxLineId = Math.max(maxLineId, lineId);
+        }
+        const newBar = {
+          id: barId,
+          text: barText,
+          status,
+          startAbsWeek: startAbs,
+          length,
+          selected: false
+        };
+        lineMap[lineId].bars.push(newBar);
+        maxBarId = Math.max(maxBarId, barId);
+      }
+      return { lines: newLines, lineCounter: maxLineId, barCounter: maxBarId };
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // printBtn
+    // ---------------------------------------------------------------------------------------------
+    printBtn.addEventListener("click", () => {
+      window.print();
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // Zoom
+    // ---------------------------------------------------------------------------------------------
+    zoomSlider.addEventListener("input", e => {
+      cellWidth = parseInt(e.target.value);
+      pushState();
+      updateCSSVariables();
+      renderTable();
+      saveToLocalStorage();
+    });
+    heightZoomSlider.addEventListener("input", e => {
+      rowHeight = parseInt(e.target.value);
+      pushState();
+      updateCSSVariables();
+      renderTable();
+      saveToLocalStorage();
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // pushState => store in undoStack
+    // ---------------------------------------------------------------------------------------------
+    function pushState() {
+      const stateCopy = JSON.parse(JSON.stringify({
+        lines,
+        startYear,
+        startWeek,
+        endYear,
+        endWeek,
+        lineCounter,
+        barCounter,
+        cellWidth,
+        rowHeight,
+        statusColors,
+        currentTheme
+      }));
+      undoStack.push(stateCopy);
+      redoStack = [];
+    }
+    // restoreState
+    function restoreState(state) {
+      lines = state.lines;
+      startYear = state.startYear;
+      startWeek = state.startWeek;
+      endYear = state.endYear;
+      endWeek = state.endWeek;
+      lineCounter = state.lineCounter;
+      barCounter = state.barCounter;
+      cellWidth = state.cellWidth;
+      rowHeight = state.rowHeight;
+      statusColors = state.statusColors;
+      currentTheme = state.currentTheme;
+      updateCSSVariables();
+      applyTheme();
+      renderTable();
+      saveToLocalStorage();
+    }
+    // undo
+    function undo() {
+      if (!adminMode) return;
+      if (undoStack.length < 2) return;
+      const current = undoStack.pop();
+      redoStack.push(current);
+      const prev = undoStack[undoStack.length - 1];
+      restoreState(prev);
+    }
+    // redo
+    function redo() {
+      if (!adminMode) return;
+      if (!redoStack.length) return;
+      const nextState = redoStack.pop();
+      const current = JSON.parse(JSON.stringify({
+        lines,
+        startYear,
+        startWeek,
+        endYear,
+        endWeek,
+        lineCounter,
+        barCounter,
+        cellWidth,
+        rowHeight,
+        statusColors,
+        currentTheme
+      }));
+      undoStack.push(current);
+      restoreState(nextState);
+    }
+    undoBtn.addEventListener("click", () => undo());
+    redoBtn.addEventListener("click", () => redo());
+
+    // ---------------------------------------------------------------------------------------------
+    // helpBtn
+    // ---------------------------------------------------------------------------------------------
+    helpBtn.addEventListener("click", () => {
+      alert(`Gantt Planner Detailed Help & Tips:
+
+• Admin vs User:
+  - "Toggle Admin" with password "Password" for full editing (bar changes, line reordering, arrow keys, etc.).
+  - In user mode, bars can be dragged only vertically. Double-click any item to view attributes, but no changes.
+• Line Reordering (Admin):
+  - Click + drag the line label. The row moves fluidly as you drag.
+• Bar Dragging (Admin):
+  - Bars can be dragged horizontally and vertically in one motion. Resize via handles on each side.
+• Bar Dragging (User):
+  - Bars can only be dragged vertically to another row. Duration is locked.
+• Searching & Filtering:
+  - Use the search box or the filter modal to find lines/bars by various attributes.
+• Timescale & Zoom:
+  - Enter Start/End years/weeks, then "Apply". Use horizontal/vertical zoom sliders.
+• Undo/Redo (Admin):
+  - Activated only in Admin mode.
+• CSV Editor (Admin):
+  - Click "Edit CSV" to open the inline CSV editor pop-up, shields above everything.
+• Import/Export:
+  - JSON for full fidelity. CSV for partial. Print/PDF from the browser.
+
+Enjoy using Gantt Planner!
+`);
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // adminToggleBtn => password protected
+    // ---------------------------------------------------------------------------------------------
+    adminToggleBtn.addEventListener("click", () => {
+      if (!adminMode) {
+        // going user -> admin
+        const pwd = prompt("Enter admin password:");
+        if (pwd === "Password") {
+          adminMode = true;
+          alert("Admin mode enabled.");
+        } else {
+          alert("Incorrect password. Remaining in user mode.");
+          return;
+        }
+      } else {
+        // admin -> user
+        adminMode = false;
+        alert("Admin mode disabled.");
+      }
+      renderTable();
+      csvEditToggleBtn.style.display = adminMode ? "inline-block" : "none";
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // CSV Edit
+    // ---------------------------------------------------------------------------------------------
+    csvEditToggleBtn.addEventListener("click", () => {
+      if (!adminMode) return;
+      let csvStr = "Line ID,Name,Client,Discipline,Experience,Location,Custom1,Custom2,Custom3,Bar ID,Bar Text,Status,Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
+      lines.forEach(line => {
+        if (line.bars.length === 0) {
+          csvStr += `${line.id},"${line.name}","${line.client}","${line.discipline}","${line.experience}","${line.location}","${line.custom1}","${line.custom2}","${line.custom3}",,,,,,\n`;
+        } else {
+          line.bars.forEach(bar => {
+            const { year: sy, week: sw } = fromAbsoluteWeek(bar.startAbsWeek);
+            const { year: ey, week: ew } = fromAbsoluteWeek(bar.startAbsWeek + bar.length - 1);
+            csvStr += `${line.id},"${line.name}","${line.client}","${line.discipline}","${line.experience}","${line.location}","${line.custom1}","${line.custom2}","${line.custom3}",${bar.id},"${bar.text}","${bar.status}",${sy},${sw},${ey},${ew},${bar.length}\n`;
+          });
+        }
+      });
+      csvTextarea.value = csvStr;
+      csvEditModal.style.display = "block";
+    });
+    csvEditApplyBtn.addEventListener("click", () => {
+      if (!adminMode) return;
+      const csvData = csvTextarea.value;
+      try {
+        const parsed = parseCsv(csvData);
+        lines = parsed.lines;
+        lineCounter = parsed.lineCounter;
+        barCounter = parsed.barCounter;
+        pushState();
+        renderTable();
+        saveToLocalStorage();
+        alert("CSV updated successfully.");
+        csvEditModal.style.display = "none";
+      } catch (err) {
+        alert("Error parsing CSV: " + err.message);
+      }
+    });
+    csvEditCancelBtn.addEventListener("click", () => {
+      csvEditModal.style.display = "none";
+    });
+    document.addEventListener("mousedown", e => {
+      if (csvEditModal.style.display === "block") {
+        const rect = csvEditModal.getBoundingClientRect();
+        const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+        if (!inside) {
+          csvEditModal.style.display = "none";
+        }
+      }
+    });
+
+    // ---------------------------------------------------------------------------------------------
+    // init => load from local, populate, apply theme, render
+    // ---------------------------------------------------------------------------------------------
+    function init() {
+      loadFromLocalStorage();
+      populateDateSelects();
+      updateCSSVariables();
+      startYearInput.value = startYear;
+      startWeekInput.value = startWeek;
+      endYearInput.value = endYear;
+      endWeekInput.value = endWeek;
+      zoomSlider.value = cellWidth;
+      heightZoomSlider.value = rowHeight;
+      themeSelect.value = currentTheme;
+      securedColor.value = statusColors.secured;
+      proposedColor.value = statusColors.proposed;
+      opportunityColor.value = statusColors.opportunity;
+      futureColor.value = statusColors.future;
+      applyTheme();
+      renderTable();
+      pushState();
+      csvEditToggleBtn.style.display = "none"; // hidden if not admin
+      document.querySelector(".table-wrapper").addEventListener("scroll", () => {
+        updateBarTextPositions();
+      });
+      window.addEventListener("resize", () => {
+        updateBarTextPositions();
+      });
+    }
+
+    window.addEventListener("load", init);
+  </script>
+</body>
+</html>
