@@ -8,35 +8,30 @@
     <!-- Bootstrap 5 CSS via CDN: for grid, modals, etc. -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
     <style>
-        /* Make navbar/toolbar span the full screen width */
+        /*
+         * Navbar layout: The top toolbar is sticky. 
+         * We ensure the entire nav is pinned at top. 
+         */
         .navbar .container-fluid {
             max-width: 100vw;
         }
-
-        /* Remove default body margin, set font: resets margin, sets default font */
         body {
             margin: 0;
             font-family: Arial, sans-serif;
         }
-
-        /* Navbar: Sticky at top, always visible, full width */
         .navbar {
             position: sticky;
             top: 0;
-            z-index: 1000; /* ensures the navbar is on top */
+            z-index: 1000;
             background-color: #f8f9fa;
             padding: 0.5rem 1rem;
             width: 100%;
         }
-
-        /* Force the navbar collapse area to flex-wrap so we can stack items vertically */
         .navbar-collapse {
             display: flex !important;
             flex-wrap: wrap !important;
             align-items: flex-start !important;
         }
-
-        /* Each toolbar group can be stacked */
         .toolbar-group {
             display: flex;
             flex-direction: column;
@@ -44,55 +39,59 @@
             padding: 0.5rem;
             border-left: 1px solid #dee2e6;
         }
-
         .toolbar-group:first-child {
             border-left: none;
             padding-left: 0;
         }
 
-        /* For stacking label/inputs in a vertical manner (timescale, etc.) */
+        /* Provide vertical stack for fields in timescale block */
         .stacked-field {
             display: flex;
             flex-direction: column;
             gap: 2px;
         }
-
-        /* Timescale block to group timescale items */
         .timescale-block {
             display: flex;
             flex-direction: column;
             gap: 0.25rem;
         }
-
-        /* color legend stacked vertically */
         .legend-container-vertical {
             display: flex;
             flex-direction: column;
             gap: 0.25rem;
         }
 
-        /* Gantt container: Full width with padding */
+        /* Gantt container: position relative, holds the main table. */
         .gantt-container {
             margin: 0 1rem;
             position: relative;
         }
 
-        /* The main wrapper for both horizontal and vertical scrolls */
+        /*
+         * The main scroll wrapper. 
+         * We keep a max-height so the header row can truly remain sticky. 
+         */
         .table-wrapper {
             overflow: auto;
             position: relative;
+            max-height: 75vh; 
         }
 
-        /* Cohesive table: Native HTML table for perfect alignment */
+        /* 
+         * Our main table: 
+         * border-collapse => no extra spacing, 
+         * table-layout: fixed => consistent column widths
+         */
         #ganttTable {
             width: 100%;
-            border-collapse: collapse; /* needed for aligned borders */
-            table-layout: fixed; /* Ensures column widths remain consistent */
+            border-collapse: collapse;
+            table-layout: fixed;
+            position: relative;
         }
 
         /*
-         * Add black gridlines to rows and columns.
-         * Each cell, including the header cells, gets a 1px solid black border.
+         * Add black gridlines to rows and columns:
+         * 1px solid #000 on the table, header cells, etc.
          */
         #ganttTable,
         #ganttTable thead th,
@@ -100,55 +99,65 @@
             border: 1px solid #000; /* black gridlines */
         }
 
-        /* Header row: sticky top so that we always see it, z-index higher than lines */
-        #ganttTable thead th {
+        /* 
+         * The header row must remain sticky at the top of the table-wrapper
+         */
+        #ganttTable thead {
             position: sticky;
             top: 0; 
+            z-index: 50; 
+            background: #f8f9fa; 
+        }
+        #ganttTable thead th {
             background-color: #f8f9fa;
-            z-index: 10; 
             text-align: center;
             font-size: 0.9rem;
             padding: 4px 8px;
             box-sizing: border-box;
         }
 
-        /* Name header: width, background */
+        /* 
+         * The first header cell => "Tasks" 
+         */
         #nameHeader {
             width: 240px;
             text-align: center;
             font-weight: bold;
             background-color: #f8f9fa;
-            z-index: 11; 
+            z-index: 51;
         }
 
-        /* Timescale headers: for each week, also keep them sticky for columns if we like, but we only keep them top sticky here */
+        /* Each timescale column => set min of 50px width */
         .timescale-header {
             background-color: #e9ecef;
             min-width: 50px;
         }
 
-        /* Table body with dynamic background coloration for months/weeks */
+        /* Tbody for the main content. */
         #ganttTable tbody {
             position: relative;
         }
 
-        /* Row: dynamic height via CSS variable */
+        /* 
+         * Each row => dynamic height from a CSS variable 
+         */
         .gantt-row {
             height: var(--row-height);
             transition: outline 0.2s;
         }
-
-        /* Selected row highlight */
+        /* highlight row if selected */
         .gantt-row.selected {
             background-color: #fff3cd;
         }
-
-        /* Highlight row in yellow when dragging (feedback) */
+        /* highlight row in yellow if dragging */
         .gantt-row.drag-highlight {
             outline: 2px solid yellow;
         }
 
-        /* Name cell: Sticky left, background, etc. */
+        /* 
+         * The first cell in each row => name cell. 
+         * Sticky left so tasks remain visible if horizontally scrolled.
+         */
         .name-cell {
             position: sticky;
             left: 0;
@@ -161,16 +170,20 @@
             align-items: center;
             height: var(--row-height);
             box-sizing: border-box;
-            cursor: move; /* we drag lines by the cell */
+            cursor: move; /* we drag lines from here */
         }
 
-        /* Container for bars in each row (covering the entire colspan) */
+        /* 
+         * The cell that spans columns for bars 
+         */
         .bar-cell {
             position: relative;
             padding: 0;
         }
 
-        /* Full row bar container: flex center */
+        /* 
+         * Container for bars: absolutely placed elements 
+         */
         .bar-row-container {
             position: relative;
             width: 100%;
@@ -179,7 +192,9 @@
             align-items: center;
         }
 
-        /* Bar: absolute, can drag in admin, vertical-only in user */
+        /* 
+         * The bar itself: absolute, with a set height. 
+         */
         .bar {
             position: absolute;
             height: calc(var(--row-height) - 16px);
@@ -194,18 +209,18 @@
             z-index: 0;
             box-sizing: border-box;
         }
-
         .bar.selected {
             outline: 3px solid #00f;
         }
-
-        /* Highlighted for search matches */
         .bar.highlighted {
             outline: 3px solid #0d6efd;
             opacity: 0.9;
         }
 
-        /* Bar text: center horizontally */
+        /* 
+         * The text inside a bar: 
+         * absolutely placed, horizontally centered by JS 
+         */
         .bar-text {
             position: absolute;
             top: 0;
@@ -217,7 +232,9 @@
             padding: 0 8px;
         }
 
-        /* Resize handles in admin mode only */
+        /* 
+         * Resizing handles for admin mode 
+         */
         .bar-handle {
             position: absolute;
             top: 0;
@@ -236,7 +253,9 @@
             border-radius: 0 4px 4px 0;
         }
 
-        /* Overlap hatch: indicates overlapping bars */
+        /* 
+         * Overlap hatch => if bars overlap 
+         */
         .overlap-hatch {
             position: absolute;
             height: calc(var(--row-height) - 16px);
@@ -251,11 +270,9 @@
             opacity: 0.5;
             pointer-events: none;
             z-index: 1;
-            margin-top: 0;
-            margin-bottom: 0;
         }
 
-        /* Editor overlays have high z-index to appear above everything */
+        /* Editors => above everything. */
         #barEditor,
         #lineEditor {
             position: absolute;
@@ -268,21 +285,18 @@
             z-index: 9999;
             min-width: 280px;
         }
-
         #barEditor label,
         #lineEditor label {
             display: block;
             margin-top: 8px;
             font-weight: 500;
         }
-
         #barEditor input,
         #barEditor select,
         #lineEditor input {
             margin-top: 4px;
             width: 100%;
         }
-
         #barEditorActions,
         #lineEditorActions {
             display: flex;
@@ -291,7 +305,7 @@
             margin-top: 12px;
         }
 
-        /* Filter modal with two cards side-by-side */
+        /* Filter modal => in front of everything else except the editors. */
         #filterModal {
             display: none;
             position: fixed;
@@ -306,18 +320,15 @@
             z-index: 9999;
             min-width: 600px;
         }
-
         #filterModal h3 {
             margin-top: 0;
         }
-
         .filter-container {
             display: flex;
             flex-direction: row;
             justify-content: space-between;
             gap: 20px;
         }
-
         .filter-card {
             background: #f8f9fa;
             padding: 10px;
@@ -327,14 +338,12 @@
             flex-direction: column;
             gap: 6px;
         }
-
         .filter-card h5 {
             margin-top: 0;
             margin-bottom: 6px;
             font-size: 1rem;
             font-weight: 600;
         }
-
         #filterActions {
             display: flex;
             justify-content: flex-end;
@@ -342,7 +351,7 @@
             margin-top: 12px;
         }
 
-        /* Settings modal */
+        /* Settings modal => for color/theme settings. */
         #settingsModal {
             display: none;
             position: fixed;
@@ -357,23 +366,19 @@
             z-index: 9999;
             min-width: 300px;
         }
-
         #settingsModal h3 {
             margin-top: 0;
         }
-
         #settingsModal label {
             display: block;
             margin-top: 8px;
         }
-
         #settingsActions {
             display: flex;
             justify-content: flex-end;
             gap: 8px;
             margin-top: 12px;
         }
-
         .color-picker {
             width: 60px;
             height: 30px;
@@ -382,32 +387,27 @@
             cursor: pointer;
         }
 
-        /* Dark theme */
+        /* Dark theme => toggled programmatically. */
         body.dark-theme {
             background-color: #212529;
             color: #f8f9fa;
         }
-
         body.dark-theme .navbar {
             background-color: #343a40 !important;
         }
-
         body.dark-theme #ganttTable thead th,
         body.dark-theme .timescale-header {
             background-color: #495057;
             color: #f8f9fa;
         }
-
         body.dark-theme .name-cell {
             background-color: #444;
             color: #f8f9fa;
             box-shadow: 1px 1px 3px rgba(255,255,255,0.2);
         }
-
         body.dark-theme .bar-text {
             color: #212529;
         }
-
         body.dark-theme #barEditor,
         body.dark-theme #lineEditor,
         body.dark-theme #filterModal,
@@ -417,7 +417,6 @@
             color: #f8f9fa;
             border: 1px solid #495057;
         }
-
         body.dark-theme input,
         body.dark-theme select,
         body.dark-theme textarea {
@@ -426,7 +425,7 @@
             border: 1px solid #6c757d;
         }
 
-        /* Zoom sliders styling */
+        /* Zoom slider styling => range input. */
         .zoom-slider {
             width: 120px;
             margin: 0 8px;
@@ -437,7 +436,6 @@
             -webkit-appearance: none;
             box-shadow: 0 2px 6px rgba(0,0,0,0.25);
         }
-
         .zoom-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             width: 20px;
@@ -447,7 +445,6 @@
             cursor: pointer;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
-
         .zoom-slider::-moz-range-thumb {
             width: 20px;
             height: 20px;
@@ -457,13 +454,12 @@
             border: none;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
-
         #heightZoomSlider {
             transform: rotate(-90deg);
             width: 100px;
         }
 
-        /* CSV Edit modal must appear on top of everything */
+        /* CSV Edit modal => top of everything. */
         #csvEditModal {
             display: none;
             position: fixed;
@@ -480,14 +476,12 @@
             z-index: 99999;
             overflow: auto;
         }
-
         #csvTextarea {
             width: 100%;
             height: 70%;
             font-family: monospace;
             font-size: 0.9rem;
         }
-
         #csvEditModalActions {
             margin-top: 10px;
             display: flex;
@@ -495,7 +489,7 @@
             gap: 8px;
         }
 
-        /* Print styling, hide UI elements */
+        /* Print => hide UI elements except table. */
         @media print {
             .navbar,
             #barEditor,
@@ -507,17 +501,16 @@
             #csvEditModal {
                 display: none !important;
             }
-
             .table-wrapper {
                 overflow: visible;
+                max-height: none;
             }
-
             #ganttTable {
                 font-size: 10pt;
             }
         }
 
-        /* Help button */
+        /* Help button => small hover effect. */
         #helpBtn {
             cursor: pointer;
             transition: transform 0.2s;
@@ -526,7 +519,7 @@
             transform: scale(1.1);
         }
 
-        /* Settings button */
+        /* Settings button => small hover effect. */
         #settingsBtn {
             cursor: pointer;
             transition: transform 0.2s;
@@ -549,7 +542,7 @@
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <!-- Collapsible content with wrap -->
+        <!-- Collapsible area -->
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <!-- Timescale group -->
             <div class="toolbar-group">
@@ -571,7 +564,7 @@
                         <label for="endWeekInput" class="form-label m-0">End Week:</label>
                         <input id="endWeekInput" type="number" class="form-control form-control-sm" value="52" />
                     </div>
-                    <button id="applyTimescaleBtn" type="button" class="btn btn-secondary btn-sm">Apply</button>
+                    <button id="applyTimescaleBtn" class="btn btn-secondary btn-sm">Apply</button>
                 </div>
             </div>
 
@@ -630,23 +623,24 @@
                     <button id="exportJsonBtn" class="btn btn-outline-info btn-sm">Export JSON</button>
                     <button id="downloadCsvBtn" class="btn btn-outline-secondary btn-sm">Export CSV</button>
                     <button id="printBtn" class="btn btn-outline-dark btn-sm">Print/PDF</button>
+                    <!-- Settings icon -->
                     <svg id="settingsBtn" width="24" height="24" viewBox="0 0 24 24" fill="none"
                          xmlns="http://www.w3.org/2000/svg">
                         <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.488.488 0 0 0-.59.22l-1.92 3.32c-.14.24-.08.54.12.61l2.03 1.58c-.05.3-.09.63-.09.94 0 .31.04.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.14.24.37.34.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.45 0 .59-.22l1.92-3.32c.14-.24.08-.54-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6 0-1.98 1.62-3.6 3.6-3.6 1.98 0 3.6 1.62 3.6 3.6 0 1.98-1.62 3.6-3.6 3.6z"
                               fill="#0d6efd"/>
                     </svg>
+                    <!-- Help icon -->
                     <svg id="helpBtn" width="24" height="24" viewBox="0 0 24 24" fill="none"
                          xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 14.5v.5h-2v-1c0-1.11.45-2.11 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"
                               fill="#0d6efd"/>
                     </svg>
                     <button id="adminToggleBtn" class="btn btn-outline-danger btn-sm">Toggle Admin</button>
-                    <!-- CSV Editing toggles in admin mode -->
                     <button id="csvEditToggleBtn" class="btn btn-outline-dark btn-sm" style="display:none;">Edit CSV</button>
                 </div>
             </div>
 
-            <!-- Undo/Redo group -->
+            <!-- Undo/Redo -->
             <div class="toolbar-group">
                 <span>History</span>
                 <div style="display: flex; flex-wrap: wrap; gap:4px;">
@@ -658,18 +652,18 @@
     </div>
 </nav>
 
-<!-- Main cohesive table -->
+<!-- Gantt container with table wrapper -->
 <div class="gantt-container">
     <div class="table-wrapper" id="tableWrapper">
         <table id="ganttTable">
             <thead>
             <tr id="headerRow">
                 <th id="nameHeader">Tasks</th>
-                <!-- Timescale headers go here -->
+                <!-- Timescale columns appended dynamically -->
             </tr>
             </thead>
             <tbody id="tableBody">
-            <!-- Rows go here -->
+            <!-- Rows generated dynamically -->
             </tbody>
         </table>
     </div>
@@ -677,7 +671,7 @@
 
 <!-- Bar editor -->
 <div id="barEditor">
-    <!-- Re-organizing to place Label first, then others. -->
+    <!-- Single custom label for the bar, displayed inside the bar -->
     <label for="barLabelInput">Bar Label:</label>
     <input type="text" id="barLabelInput" placeholder="Bar Label..." />
 
@@ -699,7 +693,6 @@
     <label for="barLocationInput">Location:</label>
     <input type="text" id="barLocationInput" placeholder="Location..." />
 
-    <!-- Type => color from the legend -->
     <label for="barTypeSelect">Type (affects color):</label>
     <select id="barTypeSelect">
         <option value="secured">Secured</option>
@@ -756,7 +749,7 @@
     </div>
 </div>
 
-<!-- Filter modal with 2 cards side by side -->
+<!-- Filter modal -->
 <div id="filterModal">
     <h3>Filter Lines/Bars</h3>
     <div class="filter-container">
@@ -854,7 +847,7 @@
     </div>
 </div>
 
-<!-- Hidden import for JSON/CSV -->
+<!-- Hidden file input for import -->
 <input type="file" id="importFileInput" accept=".json,.csv" style="display:none;" />
 
 <!-- Bootstrap JS -->
@@ -862,20 +855,23 @@
 <script>
 /*
     ---------------------------------------------------------------------------------------------
-    GLOBAL VARIABLES
+    GLOBAL VARIABLES/OBJECTS
     ---------------------------------------------------------------------------------------------
 */
 let adminMode = false;
 
-/* Ties type field => color */
+/* Tie bar 'type' => color */
 let typeColors = {
     secured: "#28a745",
     proposed: "#fd7e14",
     opportunity: "#dc3545",
-    future: "#6f42c1"
+    future: "#6f42c1",
 };
 
-/* Our lines array with bars, plus a "label" attribute on each bar.  */
+/* 
+ * lines array with bars
+ * We have only one "label" field for bars, removed the extra label.
+ */
 let lines = [
     {
         id: 1,
@@ -888,7 +884,7 @@ let lines = [
         bars: [
             {
                 id: 101,
-                label: "Bar A Label",
+                label: "Bar A Label",  // The main label for the bar
                 projectName: "Bar A",
                 client: "",
                 discipline: "",
@@ -943,12 +939,13 @@ let lineCounter = 2;
 let barCounter = 102;
 let cellWidth = 150;
 let rowHeight = 40;
-let filters = { line: {}, bar: {} };
+let filters = { line:{}, bar:{} };
 let searchTerm = "";
 let currentTheme = "light";
 let undoStack = [];
 let redoStack = [];
 
+// For dragging
 let dragging = false;
 let dragType = null;
 let dragStartX = 0;
@@ -958,29 +955,28 @@ let initialLength = 0;
 let currentBar = null;
 let currentLine = null;
 let draggingLine = null;
-let lineOriginalIndex = null;
-let previousUserLineIndex = null;
-let barOriginalLineIndex = null;
 let tableBodyRect = null;
 let mainFilteredLines = [];
 
-// Editor references
+// For editors
 let currentEditorBar = null;
 let currentEditorLine = null;
 
 /*
     ---------------------------------------------------------------------------------------------
-    DOM REFERENCES
+    DOM References
     ---------------------------------------------------------------------------------------------
 */
 const tableBody = document.getElementById("tableBody");
 const headerRow = document.getElementById("headerRow");
 const tableWrapper = document.getElementById("tableWrapper");
+
 const startYearInput = document.getElementById("startYearInput");
 const startWeekInput = document.getElementById("startWeekInput");
 const endYearInput = document.getElementById("endYearInput");
 const endWeekInput = document.getElementById("endWeekInput");
 const applyTimescaleBtn = document.getElementById("applyTimescaleBtn");
+
 const zoomSlider = document.getElementById("zoomSlider");
 const heightZoomSlider = document.getElementById("heightZoomSlider");
 const searchInput = document.getElementById("searchInput");
@@ -1070,24 +1066,24 @@ const importFileInput = document.getElementById("importFileInput");
 function toAbsoluteWeek(year, week) {
     return year * 52 + (week - 1);
 }
-function fromAbsoluteWeek(absWeek) {
-    let y = Math.floor(absWeek / 52);
-    let w = (absWeek % 52) + 1;
+function fromAbsoluteWeek(abs) {
+    const y = Math.floor(abs / 52);
+    const w = (abs % 52) + 1;
     return { year: y, week: w };
 }
 function getMonthFromYearWeek(year, week) {
     let january4 = new Date(year, 0, 4);
-    let dayMs = 24*3600*1000;
-    let offsetDays = (week - 1)*7 - ( (january4.getDay()+6)%7 );
-    let date = new Date(january4.getTime() + offsetDays*dayMs);
-    return date.getMonth(); 
+    let dayMs = 24 * 3600 * 1000;
+    let offsetDays = (week - 1)*7 - ((january4.getDay() + 6) % 7);
+    let date = new Date(january4.getTime() + offsetDays * dayMs);
+    return date.getMonth();
 }
 function getMonthName(m) {
-    const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-    return months[m]||"";
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return months[m] || "";
 }
 function getColorFromType(t) {
-    return typeColors[t]||"#fd7e14";
+    return typeColors[t] || "#fd7e14";
 }
 
 /*
@@ -1095,8 +1091,8 @@ function getColorFromType(t) {
     LOCAL STORAGE
     ---------------------------------------------------------------------------------------------
 */
-function saveToLocalStorage(){
-    let chartData = {
+function saveToLocalStorage() {
+    const chartData = {
         lines,
         startYear,
         startWeek,
@@ -1111,32 +1107,32 @@ function saveToLocalStorage(){
     };
     localStorage.setItem("ganttChartData", JSON.stringify(chartData));
 }
-function loadFromLocalStorage(){
-    let stored=localStorage.getItem("ganttChartData");
-    if(!stored)return;
+function loadFromLocalStorage() {
+    const stored = localStorage.getItem("ganttChartData");
+    if (!stored) return;
     try {
-        let parsed=JSON.parse(stored);
-        lines=parsed.lines||[];
-        lines.forEach(l=>{
-            l.selected=false;
-            l.dragging=false;
-            l.bars.forEach(b=>{
-                b.selected=false;
-                if(b.type===undefined)b.type="proposed";
-                if(b.label===undefined)b.label="";
+        let parsed = JSON.parse(stored);
+        lines = parsed.lines || [];
+        lines.forEach(line => {
+            line.selected = false;
+            line.dragging = false;
+            line.bars.forEach(bar => {
+                bar.selected = false;
+                if (bar.type === undefined) bar.type = "proposed";
+                if (bar.label === undefined) bar.label = "";
             });
         });
-        startYear = parsed.startYear||2025;
-        startWeek = parsed.startWeek||1;
-        endYear = parsed.endYear||2025;
-        endWeek = parsed.endWeek||52;
-        lineCounter = parsed.lineCounter||0;
-        barCounter = parsed.barCounter||0;
-        cellWidth = parsed.cellWidth||150;
-        rowHeight = parsed.rowHeight||40;
-        typeColors = parsed.typeColors||typeColors;
-        currentTheme = parsed.currentTheme||"light";
-    }catch(err){
+        startYear = parsed.startYear || 2025;
+        startWeek = parsed.startWeek || 1;
+        endYear = parsed.endYear || 2025;
+        endWeek = parsed.endWeek || 52;
+        lineCounter = parsed.lineCounter || 0;
+        barCounter = parsed.barCounter || 0;
+        cellWidth = parsed.cellWidth || 150;
+        rowHeight = parsed.rowHeight || 40;
+        typeColors = parsed.typeColors || typeColors;
+        currentTheme = parsed.currentTheme || "light";
+    } catch (err) {
         console.warn("Invalid localStorage data");
     }
 }
@@ -1146,8 +1142,8 @@ function loadFromLocalStorage(){
     THEME & CSS
     ---------------------------------------------------------------------------------------------
 */
-function applyTheme(){
-    if(currentTheme==="dark"){
+function applyTheme() {
+    if (currentTheme === "dark") {
         document.body.classList.add("dark-theme");
     } else {
         document.body.classList.remove("dark-theme");
@@ -1155,155 +1151,127 @@ function applyTheme(){
     renderTable();
     saveToLocalStorage();
 }
-function updateCSSVariables(){
-    document.documentElement.style.setProperty("--cell-width", cellWidth+"px");
-    document.documentElement.style.setProperty("--row-height", rowHeight+"px");
+function updateCSSVariables() {
+    document.documentElement.style.setProperty("--cell-width", cellWidth + "px");
+    document.documentElement.style.setProperty("--row-height", rowHeight + "px");
 }
 
 /*
     ---------------------------------------------------------------------------------------------
-    DISPLAY RANGE
+    getDisplayRange => from user input in timescale
     ---------------------------------------------------------------------------------------------
 */
-function getDisplayRange(){
+function getDisplayRange() {
     let ds = toAbsoluteWeek(startYear, startWeek);
     let de = toAbsoluteWeek(endYear, endWeek);
-    if(ds>de){let temp=ds; ds=de; de=temp;}
-    return {displayStart: ds, displayEnd: de};
+    if (ds > de) [ds, de] = [de, ds];
+    return { displayStart: ds, displayEnd: de };
 }
 
 /*
     ---------------------------------------------------------------------------------------------
-    SELECTION HELPER
+    UNSELECT/HIGHLIGHT UTILS
     ---------------------------------------------------------------------------------------------
 */
-function unselectAllBars(){
-    lines.forEach(l=>l.bars.forEach(b=>b.selected=false));
+function unselectAllBars() {
+    lines.forEach(line => line.bars.forEach(bar => bar.selected = false));
 }
-function clearHighlights(){
-    document.querySelectorAll(".bar.highlighted").forEach(el=>el.classList.remove("highlighted"));
+function clearHighlights() {
+    document.querySelectorAll('.bar.highlighted').forEach(el => el.classList.remove('highlighted'));
 }
 
 /*
     ---------------------------------------------------------------------------------------------
-    BAR TEXT POS
+    updateBarTextPositions => keep bar text horizontally centered if visible
     ---------------------------------------------------------------------------------------------
 */
-function updateBarTextPositions(){
-    const scrollLeft = tableWrapper.scrollLeft;
-    const viewportWidth = tableWrapper.clientWidth;
-    document.querySelectorAll(".bar-text").forEach(textEl=>{
+function updateBarTextPositions() {
+    let scrollLeft = tableWrapper.scrollLeft;
+    let viewportWidth = tableWrapper.clientWidth;
+    document.querySelectorAll(".bar-text").forEach(textEl => {
         let barEl = textEl.parentElement;
         let barLeft = parseFloat(barEl.style.left);
         let barWidth = parseFloat(barEl.style.width);
-        let barRight = barLeft+barWidth;
+        let barRight = barLeft + barWidth;
         let visibleLeft = Math.max(barLeft, scrollLeft);
-        let visibleRight= Math.min(barRight, scrollLeft+viewportWidth);
+        let visibleRight = Math.min(barRight, scrollLeft + viewportWidth);
         let visibleWidth = visibleRight - visibleLeft;
-        if(visibleWidth<=0){
-            textEl.style.opacity="0";
+        if (visibleWidth <= 0) {
+            textEl.style.opacity = "0";
             return;
         }
-        textEl.style.opacity="1";
+        textEl.style.opacity = "1";
         let textWidth = textEl.offsetWidth;
-        let textLeft = visibleLeft - barLeft + (visibleWidth-textWidth)/2;
-        if(textLeft<5) textLeft=5;
-        if(textLeft+textWidth>barWidth-5) textLeft=barWidth-textWidth-5;
-        textEl.style.left= textLeft+"px";
+        let textLeft = (visibleLeft - barLeft) + (visibleWidth - textWidth)/2;
+        if (textLeft < 5) textLeft = 5;
+        if (textLeft + textWidth > barWidth - 5) textLeft = barWidth - textWidth - 5;
+        textEl.style.left = textLeft + "px";
     });
 }
 
 /*
     ---------------------------------------------------------------------------------------------
-    RENDER HEADER => sticky
+    renderHeader => builds timescale columns
     ---------------------------------------------------------------------------------------------
 */
-function renderHeader(){
-    while(headerRow.children.length>1){
+function renderHeader() {
+    // remove old timescale columns
+    while (headerRow.children.length > 1) {
         headerRow.removeChild(headerRow.lastChild);
     }
-    let {displayStart, displayEnd} = getDisplayRange();
-    let totalWeeks = displayEnd-displayStart+1;
-    if(totalWeeks<1)return;
+    let { displayStart, displayEnd } = getDisplayRange();
+    let totalWeeks = displayEnd - displayStart + 1;
+    if (totalWeeks < 1) return;
 
-    let monArr=[];
-    for(let i=0; i<totalWeeks; i++){
-        let abs = displayStart+i;
-        let {year, week} = fromAbsoluteWeek(abs);
-        let mIdx = getMonthFromYearWeek(year, week);
-        monArr.push(mIdx);
-    }
-
-    for(let i=0; i<totalWeeks;i++){
-        let abs=displayStart+i;
-        let {year,week}=fromAbsoluteWeek(abs);
-        let th = document.createElement("th");
+    // We'll simply create columns for each week
+    for (let i=0; i< totalWeeks; i++){
+        let abs= displayStart + i;
+        let {year, week}= fromAbsoluteWeek(abs);
+        let th= document.createElement("th");
         th.className="timescale-header";
-        let m=monArr[i];
-        th.textContent= `${year}-W${week} (${getMonthName(m)})`;
-        th.style.width=cellWidth+"px";
+        // Show something like "2025-W10 (Mar)" 
+        let mIdx= getMonthFromYearWeek(year, week);
+        th.textContent= `${year}-W${week} (${getMonthName(mIdx)})`;
+        th.style.width= cellWidth+"px";
         headerRow.appendChild(th);
     }
-
-    // background gradient
-    let colorStops=[];
-    let pm = monArr[0]||0;
-    let c1="#ffffff";
-    let c2="#f0f0f0";
-    let curColor=c1;
-    let xLast=0;
-    for(let i=0;i<=totalWeeks;i++){
-        if(i===totalWeeks){
-            let p=(i/totalWeeks)*100;
-            colorStops.push(`${curColor} ${xLast}%`);
-            colorStops.push(`${curColor} ${p}%`);
-        } else {
-            let mc=monArr[i];
-            let p=(i/totalWeeks)*100;
-            if(mc!==pm){
-                colorStops.push(`${curColor} ${xLast}%`);
-                colorStops.push(`${curColor} ${p}%`);
-                curColor= (curColor===c1? c2:c1);
-                xLast=p;
-                pm=mc;
-            }
-        }
-    }
-    tableBody.style.background=`linear-gradient(to right, ${colorStops.join(",")})`;
 }
 
 /*
     ---------------------------------------------------------------------------------------------
-    handleBarClickSelect
+    handleBarClickSelect => shift/ctrl multi
     ---------------------------------------------------------------------------------------------
 */
-function handleBarClickSelect(bar,e){
-    let multi=e.shiftKey||e.ctrlKey||e.metaKey;
+function handleBarClickSelect(bar, evt) {
+    let multi = evt.shiftKey || evt.ctrlKey || evt.metaKey;
     if(!multi){
         unselectAllBars();
-        bar.selected=true;
+        bar.selected= true;
     } else {
-        bar.selected=!bar.selected;
+        bar.selected= !bar.selected;
     }
 }
 
 /*
     ---------------------------------------------------------------------------------------------
-    RENDER TABLE
+    renderTable => main UI drawing
     ---------------------------------------------------------------------------------------------
 */
-function renderTable(){
+function renderTable() {
     renderHeader();
-    tableBody.innerHTML="";
+    tableBody.innerHTML= "";
     clearHighlights();
-    let {displayStart, displayEnd} = getDisplayRange();
-    let totalWeeks= displayEnd-displayStart+1;
-    if(totalWeeks<1)return;
-    let lowerSearch = searchTerm.toLowerCase();
 
-    // filtering lines
-    let filteredLines = lines.filter(line=>{
-        let linePass = (
+    let { displayStart, displayEnd }= getDisplayRange();
+    let totalWeeks= displayEnd- displayStart + 1;
+    if(totalWeeks<1) return;
+
+    let lowerSearch= searchTerm.toLowerCase();
+
+    // filter lines
+    let filteredLines= lines.filter(line=>{
+        // line-level filters
+        const linePass= (
             (!filters.line.name || (line.name && line.name.toLowerCase().includes(filters.line.name.toLowerCase()))) &&
             (!filters.line.discipline || (line.discipline && line.discipline.toLowerCase().includes(filters.line.discipline.toLowerCase()))) &&
             (!filters.line.experience || (line.experience && line.experience.toLowerCase().includes(filters.line.experience.toLowerCase()))) &&
@@ -1311,19 +1279,20 @@ function renderTable(){
             (!filters.line.geoLocation || (line.geoLocation && line.geoLocation.toLowerCase().includes(filters.line.geoLocation.toLowerCase()))) &&
             (!filters.line.type || (line.type && line.type.toLowerCase().includes(filters.line.type.toLowerCase())))
         );
-        let barPass = line.bars.some(b=>{
-            let pProj= (!filters.bar.projectName || (b.projectName && b.projectName.toLowerCase().includes(filters.bar.projectName.toLowerCase())));
-            let pCl= (!filters.bar.client ||(b.client && b.client.toLowerCase().includes(filters.bar.client.toLowerCase())));
-            let pDis=(!filters.bar.discipline ||(b.discipline && b.discipline.toLowerCase().includes(filters.bar.discipline.toLowerCase())));
-            let pExp=(!filters.bar.experience ||(b.experience && b.experience.toLowerCase().includes(filters.bar.experience.toLowerCase())));
-            let pLOE=(!filters.bar.LOE ||(b.LOE && b.LOE.toLowerCase().includes(filters.bar.LOE.toLowerCase())));
-            let pLoc=(!filters.bar.location ||(b.location && b.location.toLowerCase().includes(filters.bar.location.toLowerCase())));
-            let pType=(!filters.bar.type ||(b.type && b.type.toLowerCase().includes(filters.bar.type.toLowerCase())));
-            let pProp=(!filters.bar.proposed ||(b.proposed && b.proposed.toLowerCase().includes(filters.bar.proposed.toLowerCase())));
-            return (pProj && pCl && pDis && pExp && pLOE && pLoc && pType && pProp);
+        // bar-level => at least 1 bar must pass
+        const barPass= line.bars.some(b=>{
+            const condProj= (!filters.bar.projectName || (b.projectName && b.projectName.toLowerCase().includes(filters.bar.projectName.toLowerCase())));
+            const condClient=(!filters.bar.client || (b.client && b.client.toLowerCase().includes(filters.bar.client.toLowerCase())));
+            const condDis=(!filters.bar.discipline || (b.discipline && b.discipline.toLowerCase().includes(filters.bar.discipline.toLowerCase())));
+            const condExp=(!filters.bar.experience|| (b.experience && b.experience.toLowerCase().includes(filters.bar.experience.toLowerCase())));
+            const condLOE=(!filters.bar.LOE|| (b.LOE && b.LOE.toLowerCase().includes(filters.bar.LOE.toLowerCase())));
+            const condLoc=(!filters.bar.location|| (b.location && b.location.toLowerCase().includes(filters.bar.location.toLowerCase())));
+            const condType=(!filters.bar.type|| (b.type && b.type.toLowerCase().includes(filters.bar.type.toLowerCase())));
+            const condProp=(!filters.bar.proposed|| (b.proposed && b.proposed.toLowerCase().includes(filters.bar.proposed.toLowerCase())));
+            return(condProj && condClient && condDis && condExp && condLOE && condLoc && condType && condProp);
         });
-        if(!linePass)return false;
-        if(!barPass && line.bars.length>0)return false;
+        if(!linePass) return false;
+        if(!barPass && line.bars.length>0) return false;
 
         // search
         if(lowerSearch){
@@ -1336,7 +1305,7 @@ function renderTable(){
                 (line.type && line.type.toLowerCase().includes(lowerSearch))
             );
             let barMatch= line.bars.some(b=>{
-                let bFields=[
+                const bFields=[
                     (b.label||"").toLowerCase(),
                     (b.projectName||"").toLowerCase(),
                     (b.client||"").toLowerCase(),
@@ -1347,53 +1316,57 @@ function renderTable(){
                     (b.type||"").toLowerCase(),
                     (b.proposed||"").toLowerCase()
                 ];
-                return bFields.some(ff=>ff.includes(lowerSearch));
+                return bFields.some(f=> f.includes(lowerSearch));
             });
             if(!lineMatch && !barMatch) return false;
         }
         return true;
     });
 
-    mainFilteredLines=filteredLines;
+    mainFilteredLines= filteredLines;
 
-    filteredLines.forEach((line,lineIndex)=>{
-        let tr=document.createElement("tr");
+    // For each line => build a table row
+    filteredLines.forEach((line, lineIndex)=>{
+        const tr= document.createElement("tr");
         tr.className="gantt-row";
-        if(line.selected)tr.classList.add("selected");
-        if(line.dragging)tr.classList.add("drag-highlight");
+        if(line.selected) tr.classList.add("selected");
+        if(line.dragging) tr.classList.add("drag-highlight");
 
-        let nameTd= document.createElement("td");
+        // name cell
+        const nameTd= document.createElement("td");
         nameTd.className="name-cell";
-        nameTd.addEventListener("mousedown", e=>onLineMouseDown(e,line,lineIndex));
+        nameTd.addEventListener("mousedown", e=> onLineMouseDown(e, line, lineIndex));
+        // right-click => line editor
         nameTd.addEventListener("contextmenu", e=>{
             e.preventDefault();
-            showLineEditor(line,e.clientX,e.clientY);
+            showLineEditor(line, e.clientX, e.clientY);
         });
-        let span=document.createElement("span");
-        span.textContent=line.name;
-        nameTd.appendChild(span);
+        const labelSpan= document.createElement("span");
+        labelSpan.textContent= line.name;
+        nameTd.appendChild(labelSpan);
         tr.appendChild(nameTd);
 
-        let barTd=document.createElement("td");
-        barTd.colSpan=totalWeeks;
+        // bar cell => colSpan all weeks
+        const barTd= document.createElement("td");
+        barTd.colSpan= totalWeeks;
         barTd.className="bar-cell";
-        let barContainer=document.createElement("div");
+        const barContainer= document.createElement("div");
         barContainer.className="bar-row-container";
 
-        barContainer.addEventListener("contextmenu", e=>{
-            // right-click blank => add bar if admin
+        // right-click blank => add bar
+        barContainer.addEventListener("contextmenu", ev=>{
             if(adminMode){
-                if(!e.target.classList.contains("bar") &&
-                   !e.target.classList.contains("bar-text") &&
-                   !e.target.classList.contains("bar-handle"))
+                if(!ev.target.classList.contains("bar") &&
+                   !ev.target.classList.contains("bar-text") &&
+                   !ev.target.classList.contains("bar-handle"))
                 {
-                   e.preventDefault();
+                   ev.preventDefault();
                    barCounter++;
-                   let offsetX=e.offsetX;
-                   let weeksFromStart=Math.floor(offsetX/cellWidth);
-                   let {displayStart}=getDisplayRange();
+                   let offsetX= ev.offsetX;
+                   let weeksFromStart= Math.floor(offsetX / cellWidth);
+                   let { displayStart }= getDisplayRange();
                    let nb={
-                       id:barCounter,
+                       id: barCounter,
                        label:"",
                        projectName:"New Project",
                        client:"",
@@ -1403,7 +1376,7 @@ function renderTable(){
                        location:"",
                        proposed:"no",
                        type:"proposed",
-                       startAbsWeek:displayStart+weeksFromStart,
+                       startAbsWeek: displayStart + weeksFromStart,
                        length:4,
                        selected:false
                    };
@@ -1415,74 +1388,82 @@ function renderTable(){
             }
         });
 
+        // Render each bar
         line.bars.forEach(bar=>{
-            let barStart=bar.startAbsWeek;
-            let barEnd=barStart+bar.length;
-            let overlapStart=Math.max(displayStart, barStart);
-            let overlapEnd=Math.min(displayEnd+1, barEnd);
-            let overlapLen=overlapEnd-overlapStart;
-            if(overlapLen<=0)return;
+            let barStart= bar.startAbsWeek;
+            let barEnd= barStart+ bar.length;
+            let overlapStart= Math.max(displayStart, barStart);
+            let overlapEnd= Math.min(displayEnd+1, barEnd);
+            let overlapLen= overlapEnd- overlapStart;
+            if(overlapLen<=0) return;
 
-            let leftPx=(overlapStart-displayStart)*cellWidth;
-            let widthPx=overlapLen*cellWidth;
-            let barDiv=document.createElement("div");
+            let barLeftPx= (overlapStart- displayStart)* cellWidth;
+            let barWidthPx= overlapLen* cellWidth;
+            const barDiv= document.createElement("div");
             barDiv.classList.add("bar");
-            if(bar.selected)barDiv.classList.add("selected");
-            if(lowerSearch && bar.projectName.toLowerCase().includes(lowerSearch)){
+            if(bar.selected) barDiv.classList.add("selected");
+            // highlight if search matched bar name
+            if(lowerSearch && bar.projectName.toLowerCase().includes(lowerSearch)) {
                 barDiv.classList.add("highlighted");
             }
-            barDiv.style.left=leftPx+"px";
-            barDiv.style.width=widthPx+"px";
-            barDiv.style.backgroundColor=getColorFromType(bar.type);
+            barDiv.style.left= barLeftPx + "px";
+            barDiv.style.width= barWidthPx + "px";
+            barDiv.style.backgroundColor= getColorFromType(bar.type);
 
-            let textSpan=document.createElement("span");
+            // bar text => bar.label
+            const textSpan= document.createElement("span");
             textSpan.className="bar-text";
             textSpan.textContent= bar.label || bar.projectName;
             barDiv.appendChild(textSpan);
 
+            // if admin => show resize handles
             if(adminMode){
-                let lh=document.createElement("div");
-                lh.classList.add("bar-handle","left");
-                let rh=document.createElement("div");
-                rh.classList.add("bar-handle","right");
-                barDiv.appendChild(lh);
-                barDiv.appendChild(rh);
+                const leftHandle= document.createElement("div");
+                leftHandle.classList.add("bar-handle","left");
+                const rightHandle= document.createElement("div");
+                rightHandle.classList.add("bar-handle","right");
+                barDiv.appendChild(leftHandle);
+                barDiv.appendChild(rightHandle);
             }
 
+            // right-click => bar editor
             barDiv.addEventListener("contextmenu", e=>{
                 e.preventDefault();
                 showBarEditor(bar,line,e.clientX,e.clientY);
             });
+            // click => select
             barDiv.addEventListener("click", e=>{
                 e.stopPropagation();
                 handleBarClickSelect(bar,e);
                 renderTable();
                 saveToLocalStorage();
             });
+            // mousedown => bar drag
             barDiv.addEventListener("mousedown", e=> onBarMouseDown(e,line,bar,lineIndex));
 
+            // add to barContainer
             barContainer.appendChild(barDiv);
         });
 
-        // overlap hatch
-        let sortedBars=[...line.bars].sort((a,b)=>a.startAbsWeek-b.startAbsWeek);
-        for(let i=0;i<sortedBars.length;i++){
-            for(let j=i+1;j<sortedBars.length;j++){
-                let b1=sortedBars[i];
-                let b2=sortedBars[j];
-                let s1=Math.max(displayStart, b1.startAbsWeek);
-                let e1=Math.min(displayEnd+1, b1.startAbsWeek+b1.length);
-                let s2=Math.max(displayStart, b2.startAbsWeek);
-                let e2=Math.min(displayEnd+1, b2.startAbsWeek+b2.length);
-                let overS=Math.max(s1,s2);
-                let overE=Math.min(e1,e2);
-                if(overE>overS){
-                    let l=(overS-displayStart)*cellWidth;
-                    let w=(overE-overS)*cellWidth;
-                    let hatch=document.createElement("div");
+        // Overlap hatch => detect overlapping bars
+        let sorted=[...line.bars].sort((a,b)=> a.startAbsWeek - b.startAbsWeek);
+        for(let i=0; i< sorted.length; i++){
+            for(let j=i+1; j< sorted.length; j++){
+                let b1= sorted[i];
+                let b2= sorted[j];
+                let s1= Math.max(displayStart, b1.startAbsWeek);
+                let e1= Math.min(displayEnd+1, b1.startAbsWeek+b1.length);
+                let s2= Math.max(displayStart, b2.startAbsWeek);
+                let e2= Math.min(displayEnd+1, b2.startAbsWeek+b2.length);
+                let overlapS= Math.max(s1,s2);
+                let overlapE= Math.min(e1,e2);
+                if(overlapE> overlapS){
+                    let leftPx= (overlapS- displayStart)* cellWidth;
+                    let wPx= (overlapE- overlapS)* cellWidth;
+                    let hatch= document.createElement("div");
                     hatch.className="overlap-hatch";
-                    hatch.style.left=l+"px";
-                    hatch.style.width=w+"px";
+                    hatch.style.left= leftPx+ "px";
+                    hatch.style.width= wPx+ "px";
                     barContainer.appendChild(hatch);
                 }
             }
@@ -1498,35 +1479,33 @@ function renderTable(){
 
 /*
     ---------------------------------------------------------------------------------------------
-    onLineMouseDown => line reorder
+    onLineMouseDown => reorder lines 
     ---------------------------------------------------------------------------------------------
 */
 function onLineMouseDown(e, line, lineIndex){
-    dragging=true;
+    dragging= true;
     dragType="line-reorder";
     draggingLine=line;
     line.dragging=true;
-    lineOriginalIndex=lineIndex;
-    tableBodyRect=tableBody.getBoundingClientRect();
+    tableBodyRect= tableBody.getBoundingClientRect();
     renderTable();
     e.preventDefault();
 }
 
 /*
     ---------------------------------------------------------------------------------------------
-    onBarMouseDown => bar drag
+    onBarMouseDown => bar drag or resize
     ---------------------------------------------------------------------------------------------
 */
 function onBarMouseDown(e, line, bar, lineIndex){
-    dragging=true;
-    currentBar=bar;
-    currentLine=line;
-    dragStartX=e.clientX;
-    dragStartY=e.clientY;
-    barOriginalLineIndex=lineIndex;
-    initialStartAbs=bar.startAbsWeek;
-    initialLength=bar.length;
-    tableBodyRect=tableBody.getBoundingClientRect();
+    dragging= true;
+    currentBar= bar;
+    currentLine= line;
+    dragStartX= e.clientX;
+    dragStartY= e.clientY;
+    initialStartAbs= bar.startAbsWeek;
+    initialLength= bar.length;
+    tableBodyRect= tableBody.getBoundingClientRect();
 
     if(adminMode){
         if(e.target.classList.contains("bar-handle")){
@@ -1537,87 +1516,88 @@ function onBarMouseDown(e, line, bar, lineIndex){
         }
     } else {
         dragType="bar-move-user";
-        previousUserLineIndex=lineIndex;
     }
     e.preventDefault();
 }
 
 /*
     ---------------------------------------------------------------------------------------------
-    DOCUMENT MOUSEMOVE => handle dragging
+    MOUSEMOVE => handle dragging (line or bar)
     ---------------------------------------------------------------------------------------------
 */
 document.addEventListener("mousemove", e=>{
-    if(!dragging)return;
+    if(!dragging) return;
 
     if(dragType==="line-reorder" && draggingLine){
-        /* We want a fluid up/down re-org among visible lines. */
-        let posY=e.clientY-tableBodyRect.top;
-        let newIndex=Math.floor(posY/rowHeight);
-        if(newIndex<0)newIndex=0;
-        if(newIndex>=mainFilteredLines.length)newIndex=mainFilteredLines.length-1;
-
+        let posY= e.clientY - tableBodyRect.top;
+        let newIndex= Math.floor(posY / rowHeight);
+        if(newIndex<0) newIndex=0;
+        if(newIndex>= mainFilteredLines.length) newIndex= mainFilteredLines.length-1;
         let oldIndex= mainFilteredLines.indexOf(draggingLine);
         if(oldIndex<0)return;
-        if(newIndex!==oldIndex){
-            // remove from global lines, find target line in mainFilteredLines
-            lines.splice(lines.indexOf(draggingLine),1);
+        if(newIndex!== oldIndex){
+            lines.splice(lines.indexOf(draggingLine), 1);
             let targetLine= mainFilteredLines[newIndex];
-            let targetGIdx = lines.indexOf(targetLine);
-            if(targetGIdx<0) targetGIdx= lines.length;
-            lines.splice(targetGIdx,0,draggingLine);
+            let targetGlobalIdx= lines.indexOf(targetLine);
+            if(targetGlobalIdx<0) targetGlobalIdx= lines.length;
+            lines.splice(targetGlobalIdx, 0, draggingLine);
             renderTable();
         }
     }
     else if(dragType==="bar-move-admin" && currentBar){
-        let dx=e.clientX-dragStartX;
-        let dWeeks=Math.round(dx/cellWidth);
-        currentBar.startAbsWeek=Math.max(0, initialStartAbs+dWeeks);
+        let dx= e.clientX- dragStartX;
+        let dWeeks= Math.round(dx/cellWidth);
+        currentBar.startAbsWeek= Math.max(0, initialStartAbs + dWeeks);
 
-        let posY=e.clientY-tableBodyRect.top;
+        let posY= e.clientY- tableBodyRect.top;
         let idxCur= mainFilteredLines.indexOf(currentLine);
-        if(idxCur<0)idxCur=0;
-        let newIdx=Math.floor(posY/rowHeight);
-        if(newIdx<0)newIdx=0;
-        if(newIdx>=mainFilteredLines.length)newIdx= mainFilteredLines.length-1;
-        if(newIdx!==idxCur){
-            currentLine.bars= currentLine.bars.filter(b=>b.id!==currentBar.id);
+        if(idxCur<0) idxCur= 0;
+        let newIdx= Math.floor(posY / rowHeight);
+        if(newIdx<0) newIdx=0;
+        if(newIdx>= mainFilteredLines.length) newIdx= mainFilteredLines.length-1;
+        if(newIdx!== idxCur){
+            // remove bar from old line
+            currentLine.bars= currentLine.bars.filter(b=> b.id!== currentBar.id);
+            // push bar to new line
             mainFilteredLines[newIdx].bars.push(currentBar);
             currentLine= mainFilteredLines[newIdx];
         }
         renderTable();
     }
     else if(dragType==="resize-left" && currentBar){
-        let dx=e.clientX-dragStartX;
-        let dWeeks=Math.round(dx/cellWidth);
-        let newStart=initialStartAbs+dWeeks;
-        let newLen= initialStartAbs+initialLength - newStart;
+        let dx= e.clientX- dragStartX;
+        let dWeeks= Math.round(dx / cellWidth);
+        let newStart= initialStartAbs + dWeeks;
+        let newLen= initialStartAbs + initialLength - newStart;
         if(newLen<1){
             newLen=1;
-            newStart= initialStartAbs+initialLength-1;
+            newStart= initialStartAbs + initialLength-1;
         }
-        currentBar.startAbsWeek=Math.max(0,newStart);
-        currentBar.length=newLen;
+        currentBar.startAbsWeek= Math.max(0, newStart);
+        currentBar.length= newLen;
         renderTable();
     }
     else if(dragType==="resize-right" && currentBar){
-        let dx=e.clientX-dragStartX;
-        let dWeeks=Math.round(dx/cellWidth);
-        let newLen= initialLength+dWeeks;
+        let dx= e.clientX- dragStartX;
+        let dWeeks= Math.round(dx / cellWidth);
+        let newLen= initialLength + dWeeks;
         if(newLen<1)newLen=1;
-        currentBar.length=newLen;
+        currentBar.length= newLen;
         renderTable();
     }
     else if(dragType==="bar-move-user" && currentBar){
-        let posY= e.clientY-tableBodyRect.top;
-        let newIndex= Math.floor(posY/rowHeight);
-        if(newIndex<0)newIndex=0;
-        if(newIndex>= mainFilteredLines.length)newIndex= mainFilteredLines.length-1;
-        if(newIndex!== previousUserLineIndex){
-            mainFilteredLines[previousUserLineIndex].bars=
-                mainFilteredLines[previousUserLineIndex].bars.filter(b=> b.id!== currentBar.id);
+        // user can only move bar vertically among visible lines
+        let posY= e.clientY- tableBodyRect.top;
+        let newIndex= Math.floor(posY/ rowHeight);
+        if(newIndex<0) newIndex=0;
+        if(newIndex>= mainFilteredLines.length) newIndex= mainFilteredLines.length-1;
+        // find old line
+        let oldLineIdx= mainFilteredLines.indexOf(currentLine);
+        if(oldLineIdx<0) oldLineIdx=0;
+        if(newIndex!== oldLineIdx){
+            mainFilteredLines[oldLineIdx].bars= mainFilteredLines[oldLineIdx].bars.filter(b=> b.id!== currentBar.id);
             mainFilteredLines[newIndex].bars.push(currentBar);
-            previousUserLineIndex=newIndex;
+            currentLine= mainFilteredLines[newIndex];
             renderTable();
         }
     }
@@ -1625,11 +1605,11 @@ document.addEventListener("mousemove", e=>{
 
 /*
     ---------------------------------------------------------------------------------------------
-    DOCUMENT MOUSEUP => finalize drag
+    MOUSEUP => finalize drag
     ---------------------------------------------------------------------------------------------
 */
 document.addEventListener("mouseup", e=>{
-    if(!dragging)return;
+    if(!dragging) return;
     dragging=false;
     if(dragType==="line-reorder"){
         draggingLine.dragging=false;
@@ -1637,12 +1617,8 @@ document.addEventListener("mouseup", e=>{
         pushState();
         saveToLocalStorage();
         renderTable();
-    } else if(["bar-move-admin","resize-left","resize-right"].includes(dragType)){
-        currentBar=null;
-        currentLine=null;
-        pushState();
-        saveToLocalStorage();
-    } else if(dragType==="bar-move-user"){
+    }
+    else if(["bar-move-admin","resize-left","resize-right","bar-move-user"].includes(dragType)){
         currentBar=null;
         currentLine=null;
         pushState();
@@ -1653,7 +1629,7 @@ document.addEventListener("mouseup", e=>{
 
 /*
     ---------------------------------------------------------------------------------------------
-    DOCUMENT CLICK => unselect if blank
+    Document click => unselect lines/bars if user clicks blank area 
     ---------------------------------------------------------------------------------------------
 */
 document.addEventListener("click", evt=>{
@@ -1671,85 +1647,87 @@ document.addEventListener("click", evt=>{
 
 /*
     ---------------------------------------------------------------------------------------------
-    BAR EDITOR
+    showBarEditor => open bar editor form
     ---------------------------------------------------------------------------------------------
 */
-function showBarEditor(bar,line,x,y){
-    currentEditorBar=bar;
-    currentEditorLine=line;
+function showBarEditor(bar, line, x, y){
+    currentEditorBar= bar;
+    currentEditorLine= line;
 
-    barLabelInput.value = bar.label || "";
-    barProjectNameInput.value = bar.projectName||"";
+    barLabelInput.value= bar.label||"";
+    barProjectNameInput.value= bar.projectName||"";
     barClientInput.value= bar.client||"";
-    barDisciplineInput.value=bar.discipline||"";
+    barDisciplineInput.value= bar.discipline||"";
     barExperienceInput.value= bar.experience||"";
     barLOEInput.value= bar.LOE||"";
     barLocationInput.value= bar.location||"";
     barTypeSelect.value= bar.type||"proposed";
     barProposedSelect.value= bar.proposed||"no";
 
-    let {year:sy,week:sw} = fromAbsoluteWeek(bar.startAbsWeek);
-    let {year:ey,week:ew} = fromAbsoluteWeek(bar.startAbsWeek+bar.length-1);
-    startYearSelect.value=sy;
-    startWeekSelect.value=sw;
-    endYearSelect.value=ey;
-    endWeekSelect.value=ew;
+    let {year:sy, week:sw} = fromAbsoluteWeek(bar.startAbsWeek);
+    let {year:ey, week:ew} = fromAbsoluteWeek(bar.startAbsWeek + bar.length -1);
+    startYearSelect.value= sy;
+    startWeekSelect.value= sw;
+    endYearSelect.value= ey;
+    endWeekSelect.value= ew;
 
-    let ro=!adminMode;
-    barLabelInput.disabled=ro;
-    barProjectNameInput.disabled=ro;
-    barClientInput.disabled=ro;
-    barDisciplineInput.disabled=ro;
-    barExperienceInput.disabled=ro;
-    barLOEInput.disabled=ro;
-    barLocationInput.disabled=ro;
-    barTypeSelect.disabled=ro;
-    barProposedSelect.disabled=ro;
-    startYearSelect.disabled=ro;
-    startWeekSelect.disabled=ro;
-    endYearSelect.disabled=ro;
-    endWeekSelect.disabled=ro;
-    barDeleteBtn.disabled=ro;
+    let ro= !adminMode;
+    barLabelInput.disabled= ro;
+    barProjectNameInput.disabled= ro;
+    barClientInput.disabled= ro;
+    barDisciplineInput.disabled= ro;
+    barExperienceInput.disabled= ro;
+    barLOEInput.disabled= ro;
+    barLocationInput.disabled= ro;
+    barTypeSelect.disabled= ro;
+    barProposedSelect.disabled= ro;
+    startYearSelect.disabled= ro;
+    startWeekSelect.disabled= ro;
+    endYearSelect.disabled= ro;
+    endWeekSelect.disabled= ro;
+    barDeleteBtn.disabled= ro;
 
-    barEditor.style.display="block";
-    barEditor.style.left= (x+window.scrollX+10)+"px";
-    barEditor.style.top= (y+window.scrollY+10)+"px";
+    barEditor.style.display= "block";
+    barEditor.style.left= (x + window.scrollX + 10)+ "px";
+    barEditor.style.top= (y + window.scrollY + 10)+ "px";
 
-    const autosave=()=>{
+    const autosave= ()=>{
         if(!adminMode)return;
-        bar.label= barLabelInput.value;
-        bar.projectName= barProjectNameInput.value;
-        bar.client= barClientInput.value;
-        bar.discipline= barDisciplineInput.value;
-        bar.experience= barExperienceInput.value;
-        bar.LOE= barLOEInput.value;
-        bar.location= barLocationInput.value;
-        bar.type= barTypeSelect.value;
-        bar.proposed= barProposedSelect.value;
-        let sy=parseInt(startYearSelect.value);
-        let sw=parseInt(startWeekSelect.value);
-        let ey=parseInt(endYearSelect.value);
-        let ew=parseInt(endWeekSelect.value);
-        bar.startAbsWeek= toAbsoluteWeek(sy,sw);
-        bar.length= toAbsoluteWeek(ey,ew)- bar.startAbsWeek+1;
-        if(bar.length<1) bar.length=1;
+        currentEditorBar.label= barLabelInput.value;
+        currentEditorBar.projectName= barProjectNameInput.value;
+        currentEditorBar.client= barClientInput.value;
+        currentEditorBar.discipline= barDisciplineInput.value;
+        currentEditorBar.experience= barExperienceInput.value;
+        currentEditorBar.LOE= barLOEInput.value;
+        currentEditorBar.location= barLocationInput.value;
+        currentEditorBar.type= barTypeSelect.value;
+        currentEditorBar.proposed= barProposedSelect.value;
+
+        let sY= parseInt(startYearSelect.value);
+        let sW= parseInt(startWeekSelect.value);
+        let eY= parseInt(endYearSelect.value);
+        let eW= parseInt(endWeekSelect.value);
+        currentEditorBar.startAbsWeek= toAbsoluteWeek(sY, sW);
+        currentEditorBar.length= toAbsoluteWeek(eY, eW) - currentEditorBar.startAbsWeek + 1;
+        if(currentEditorBar.length<1) currentEditorBar.length=1;
+
         renderTable();
         saveToLocalStorage();
     };
 
-    barLabelInput.oninput=autosave;
-    barProjectNameInput.oninput=autosave;
-    barClientInput.oninput=autosave;
-    barDisciplineInput.oninput=autosave;
-    barExperienceInput.oninput=autosave;
-    barLOEInput.oninput=autosave;
-    barLocationInput.oninput=autosave;
-    barTypeSelect.onchange=autosave;
-    barProposedSelect.onchange=autosave;
-    startYearSelect.onchange=autosave;
-    startWeekSelect.onchange=autosave;
-    endYearSelect.onchange=autosave;
-    endWeekSelect.onchange=autosave;
+    barLabelInput.oninput= autosave;
+    barProjectNameInput.oninput= autosave;
+    barClientInput.oninput= autosave;
+    barDisciplineInput.oninput= autosave;
+    barExperienceInput.oninput= autosave;
+    barLOEInput.oninput= autosave;
+    barLocationInput.oninput= autosave;
+    barTypeSelect.onchange= autosave;
+    barProposedSelect.onchange= autosave;
+    startYearSelect.onchange= autosave;
+    startWeekSelect.onchange= autosave;
+    endYearSelect.onchange= autosave;
+    endWeekSelect.onchange= autosave;
 }
 
 barEditorOkBtn.addEventListener("click", ()=>{
@@ -1779,8 +1757,8 @@ document.addEventListener("mousedown", e=>{
     if(barEditor.style.display==="block"){
         let rect= barEditor.getBoundingClientRect();
         let inside= (
-            e.clientX>=rect.left && e.clientX<=rect.right &&
-            e.clientY>=rect.top && e.clientY<=rect.bottom
+            e.clientX>= rect.left && e.clientX<= rect.right &&
+            e.clientY>= rect.top && e.clientY<= rect.bottom
         );
         if(!inside){
             barEditor.style.display="none";
@@ -1793,43 +1771,42 @@ document.addEventListener("mousedown", e=>{
 
 /*
     ---------------------------------------------------------------------------------------------
-    LINE EDITOR
+    showLineEditor => line editor form
     ---------------------------------------------------------------------------------------------
 */
 function showLineEditor(line,x,y){
-    currentEditorLine=line;
-    lineNameInput.value=line.name||"";
-    lineDisciplineInput.value=line.discipline||"";
-    lineExperienceInput.value=line.experience||"";
-    lineOfficeLocationInput.value=line.officeLocation||"";
-    lineGeoLocationInput.value=line.geoLocation||"";
-    lineTypeInput.value=line.type||"";
+    currentEditorLine= line;
+    lineNameInput.value= line.name||"";
+    lineDisciplineInput.value= line.discipline||"";
+    lineExperienceInput.value= line.experience||"";
+    lineOfficeLocationInput.value= line.officeLocation||"";
+    lineGeoLocationInput.value= line.geoLocation||"";
+    lineTypeInput.value= line.type||"";
 
-    let ro=!adminMode;
-    lineNameInput.disabled=ro;
-    lineDisciplineInput.disabled=ro;
-    lineExperienceInput.disabled=ro;
-    lineOfficeLocationInput.disabled=ro;
-    lineGeoLocationInput.disabled=ro;
-    lineTypeInput.disabled=ro;
-    lineDeleteBtn.disabled=ro;
+    let ro= !adminMode;
+    lineNameInput.disabled= ro;
+    lineDisciplineInput.disabled= ro;
+    lineExperienceInput.disabled= ro;
+    lineOfficeLocationInput.disabled= ro;
+    lineGeoLocationInput.disabled= ro;
+    lineTypeInput.disabled= ro;
+    lineDeleteBtn.disabled= ro;
 
     lineEditor.style.display="block";
-    lineEditor.style.left= (x+window.scrollX+10)+"px";
-    lineEditor.style.top= (y+window.scrollY+10)+"px";
+    lineEditor.style.left= (x+ window.scrollX+10)+ "px";
+    lineEditor.style.top= (y+ window.scrollY+10)+ "px";
 
-    const autosaveLine=()=>{
+    const autosaveLine= ()=>{
         if(!adminMode)return;
-        line.name=lineNameInput.value;
-        line.discipline=lineDisciplineInput.value;
-        line.experience=lineExperienceInput.value;
-        line.officeLocation=lineOfficeLocationInput.value;
-        line.geoLocation=lineGeoLocationInput.value;
-        line.type=lineTypeInput.value;
+        currentEditorLine.name= lineNameInput.value;
+        currentEditorLine.discipline= lineDisciplineInput.value;
+        currentEditorLine.experience= lineExperienceInput.value;
+        currentEditorLine.officeLocation= lineOfficeLocationInput.value;
+        currentEditorLine.geoLocation= lineGeoLocationInput.value;
+        currentEditorLine.type= lineTypeInput.value;
         renderTable();
         saveToLocalStorage();
     };
-
     lineNameInput.oninput= autosaveLine;
     lineDisciplineInput.oninput= autosaveLine;
     lineExperienceInput.oninput= autosaveLine;
@@ -1861,9 +1838,9 @@ lineDeleteBtn.addEventListener("click", ()=>{
 document.addEventListener("mousedown", e=>{
     if(lineEditor.style.display==="block"){
         let rect= lineEditor.getBoundingClientRect();
-        let inside= (
-            e.clientX>=rect.left && e.clientX<=rect.right &&
-            e.clientY>=rect.top && e.clientY<=rect.bottom
+        let inside=(
+            e.clientX>= rect.left && e.clientX<= rect.right &&
+            e.clientY>= rect.top && e.clientY<= rect.bottom
         );
         if(!inside){
             lineEditor.style.display="none";
@@ -1894,7 +1871,6 @@ filterBtn.addEventListener("click", ()=>{
     filterBarLocation.value= filters.bar.location||"";
     filterBarType.value= filters.bar.type||"";
     filterBarProposed.value= filters.bar.proposed||"";
-
     filterModal.style.display="block";
 });
 filterApplyBtn.addEventListener("click", ()=>{
@@ -1913,7 +1889,7 @@ filterApplyBtn.addEventListener("click", ()=>{
     filters.bar.location= filterBarLocation.value.trim()||null;
     filters.bar.type= filterBarType.value.trim()||null;
     filters.bar.proposed= filterBarProposed.value.trim()||null;
-
+    // remove empty keys
     for(let k in filters.line){
         if(!filters.line[k]) delete filters.line[k];
     }
@@ -1935,9 +1911,9 @@ filterCancelBtn.addEventListener("click", ()=>{
 document.addEventListener("mousedown", e=>{
     if(filterModal.style.display==="block"){
         let rect= filterModal.getBoundingClientRect();
-        let inside= (
-            e.clientX>=rect.left && e.clientX<=rect.right &&
-            e.clientY>=rect.top && e.clientY<=rect.bottom
+        let inside=(
+            e.clientX>= rect.left && e.clientX<= rect.right &&
+            e.clientY>= rect.top && e.clientY<= rect.bottom
         );
         if(!inside){
             filterModal.style.display="none";
@@ -1952,10 +1928,10 @@ document.addEventListener("mousedown", e=>{
 */
 settingsBtn.addEventListener("click", ()=>{
     themeSelect.value= currentTheme;
-    securedColor.value= typeColors.secured||"#28a745";
-    proposedColor.value= typeColors.proposed||"#fd7e14";
-    opportunityColor.value= typeColors.opportunity||"#dc3545";
-    futureColor.value= typeColors.future||"#6f42c1";
+    securedColor.value= typeColors.secured;
+    proposedColor.value= typeColors.proposed;
+    opportunityColor.value= typeColors.opportunity;
+    futureColor.value= typeColors.future;
     settingsModal.style.display="block";
 });
 settingsOkBtn.addEventListener("click", ()=>{
@@ -1973,14 +1949,19 @@ settingsCancelBtn.addEventListener("click", ()=>{
 document.addEventListener("mousedown", e=>{
     if(settingsModal.style.display==="block"){
         let rect= settingsModal.getBoundingClientRect();
-        let inside=( e.clientX>=rect.left && e.clientX<=rect.right && e.clientY>=rect.top && e.clientY<=rect.bottom );
-        if(!inside) settingsModal.style.display="none";
+        let inside=(
+            e.clientX>= rect.left && e.clientX<= rect.right &&
+            e.clientY>= rect.top && e.clientY<= rect.bottom
+        );
+        if(!inside){
+            settingsModal.style.display="none";
+        }
     }
 });
 
 /*
     ---------------------------------------------------------------------------------------------
-    SEARCH
+    SEARCH => instant filter
     ---------------------------------------------------------------------------------------------
 */
 searchInput.addEventListener("input", ()=>{
@@ -1990,7 +1971,7 @@ searchInput.addEventListener("input", ()=>{
 
 /*
     ---------------------------------------------------------------------------------------------
-    ADD LINE => admin
+    Add line => admin
     ---------------------------------------------------------------------------------------------
 */
 addLineItemBtn.addEventListener("click", ()=>{
@@ -1998,15 +1979,15 @@ addLineItemBtn.addEventListener("click", ()=>{
     lineCounter++;
     lines.push({
         id: lineCounter,
-        name: "Line Item "+lineCounter,
-        discipline: "",
-        experience: "",
-        officeLocation: "",
-        geoLocation: "",
-        type: "",
-        bars: [],
-        selected: false,
-        dragging: false
+        name: "Line Item "+ lineCounter,
+        discipline:"",
+        experience:"",
+        officeLocation:"",
+        geoLocation:"",
+        type:"",
+        bars:[],
+        selected:false,
+        dragging:false
     });
     pushState();
     renderTable();
@@ -2015,7 +1996,7 @@ addLineItemBtn.addEventListener("click", ()=>{
 
 /*
     ---------------------------------------------------------------------------------------------
-    ADD BAR => admin
+    Add bar => admin
     ---------------------------------------------------------------------------------------------
 */
 addBarBtn.addEventListener("click", e=>{
@@ -2038,8 +2019,8 @@ addBarBtn.addEventListener("click", e=>{
     }
     barCounter++;
     let {displayStart}= getDisplayRange();
-    let nb={
-        id:barCounter,
+    let newBar= {
+        id: barCounter,
         label:"",
         projectName:"New Project",
         client:"",
@@ -2049,11 +2030,11 @@ addBarBtn.addEventListener("click", e=>{
         location:"",
         proposed:"no",
         type:"proposed",
-        startAbsWeek:displayStart,
+        startAbsWeek: displayStart,
         length:4,
         selected:false
     };
-    lines[lines.length-1].bars.push(nb);
+    lines[lines.length-1].bars.push(newBar);
     pushState();
     renderTable();
     saveToLocalStorage();
@@ -2061,11 +2042,11 @@ addBarBtn.addEventListener("click", e=>{
 
 /*
     ---------------------------------------------------------------------------------------------
-    EXPORT / IMPORT
+    EXPORT JSON
     ---------------------------------------------------------------------------------------------
 */
 exportJsonBtn.addEventListener("click", ()=>{
-    let dataStr= JSON.stringify({
+    const dataStr= JSON.stringify({
         lines,
         startYear,
         startWeek,
@@ -2078,60 +2059,72 @@ exportJsonBtn.addEventListener("click", ()=>{
         typeColors,
         currentTheme
     },null,2);
-    let blob= new Blob([dataStr], {type:"application/json"});
-    let url=URL.createObjectURL(blob);
-    let now=new Date();
+    const blob= new Blob([dataStr], {type:"application/json"});
+    const url= URL.createObjectURL(blob);
+    const now= new Date();
     let dateStr= now.toISOString().replace(/[:.]/g,"-");
-    let a=document.createElement("a");
-    a.download="Gantt_"+dateStr+".json";
-    a.href=url;
-    a.click();
-    URL.revokeObjectURL(url);
-});
-downloadCsvBtn.addEventListener("click", ()=>{
-    let csv="Line ID,Line Name,Line Discipline,Line Experience,Line OfficeLocation,Line GeoLocation,Line Type,"+
-            "Bar ID,Bar Label,Project Name,Client,Discipline,Experience,LOE,Location,Proposed,Type,"+
-            "Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
-    lines.forEach(line=>{
-        if(!line.bars.length){
-            csv+= `${line.id||""},"${line.name||""}","${line.discipline||""}","${line.experience||""}","${line.officeLocation||""}","${line.geoLocation||""}","${line.type||""}",,,,,,,,,,,,\n`;
-        } else {
-            line.bars.forEach(bar=>{
-                let {year:sy,week:sw} = fromAbsoluteWeek(bar.startAbsWeek);
-                let {year:ey,week:ew} = fromAbsoluteWeek(bar.startAbsWeek + bar.length-1);
-                csv+= `${line.id||""},"${line.name||""}","${line.discipline||""}","${line.experience||""}","${line.officeLocation||""}","${line.geoLocation||""}","${line.type||""}",`;
-                csv+= `${bar.id||""},"${bar.label||""}","${bar.projectName||""}","${bar.client||""}","${bar.discipline||""}","${bar.experience||""}","${bar.LOE||""}","${bar.location||""}","${bar.proposed||""}","${bar.type||""}",`;
-                csv+= `${sy},${sw},${ey},${ew},${bar.length}\n`;
-            });
-        }
-    });
-    let blob= new Blob([csv],{type:"text/csv;charset=utf-8;"});
-    let url= URL.createObjectURL(blob);
-    let a=document.createElement("a");
-    a.download="gantt-data.csv";
-    a.href=url;
+    const a= document.createElement("a");
+    a.download= "Gantt_"+ dateStr +".json";
+    a.href= url;
     a.click();
     URL.revokeObjectURL(url);
 });
 
+/*
+    ---------------------------------------------------------------------------------------------
+    CSV
+    ---------------------------------------------------------------------------------------------
+*/
+downloadCsvBtn.addEventListener("click", ()=>{
+    /* Only a single label field now, so we remove references to extra. */
+    let csv= "Line ID,Line Name,Line Discipline,Line Experience,Line OfficeLocation,Line GeoLocation,Line Type,"+
+             "Bar ID,Bar Label,Project Name,Client,Discipline,Experience,LOE,Location,Proposed,Type,"+
+             "Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
+    lines.forEach(line=>{
+       if(!line.bars.length){
+           csv+= `${line.id||""},"${line.name||""}","${line.discipline||""}","${line.experience||""}","${line.officeLocation||""}","${line.geoLocation||""}","${line.type||""}",,,,,,,,,,,,\n`;
+       } else {
+           line.bars.forEach(bar=>{
+               let {year:sy, week:sw}= fromAbsoluteWeek(bar.startAbsWeek);
+               let {year:ey, week:ew}= fromAbsoluteWeek(bar.startAbsWeek+ bar.length-1);
+               csv+= `${line.id||""},"${line.name||""}","${line.discipline||""}","${line.experience||""}","${line.officeLocation||""}","${line.geoLocation||""}","${line.type||""}",`;
+               csv+= `${bar.id||""},"${bar.label||""}","${bar.projectName||""}","${bar.client||""}","${bar.discipline||""}","${bar.experience||""}","${bar.LOE||""}","${bar.location||""}","${bar.proposed||""}","${bar.type||""}",`;
+               csv+= `${sy},${sw},${ey},${ew},${bar.length}\n`;
+           });
+       }
+    });
+    let blob= new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    let url= URL.createObjectURL(blob);
+    let a= document.createElement("a");
+    a.download="gantt-data.csv";
+    a.href= url;
+    a.click();
+    URL.revokeObjectURL(url);
+});
+
+/*
+    ---------------------------------------------------------------------------------------------
+    IMPORT => JSON/CSV
+    ---------------------------------------------------------------------------------------------
+*/
 importJsonBtn.addEventListener("click", ()=>{
     importFileInput.value="";
     importFileInput.click();
 });
 importFileInput.addEventListener("change", e=>{
-    let file=e.target.files[0];
+    let file= e.target.files[0];
     if(!file)return;
-    let reader=new FileReader();
+    let reader= new FileReader();
     reader.onload= ev=>{
         try{
             let imported;
             if(file.name.endsWith(".json")){
                 imported= JSON.parse(ev.target.result);
                 lines= imported.lines||[];
-                startYear= imported.startYear||startYear;
-                startWeek= imported.startWeek||startWeek;
-                endYear= imported.endYear||endYear;
-                endWeek= imported.endWeek||endWeek;
+                startYear= imported.startYear|| startYear;
+                startWeek= imported.startWeek|| startWeek;
+                endYear= imported.endYear|| endYear;
+                endWeek= imported.endWeek|| endWeek;
                 lineCounter= imported.lineCounter|| lineCounter;
                 barCounter= imported.barCounter|| barCounter;
                 cellWidth= imported.cellWidth|| cellWidth;
@@ -2143,15 +2136,15 @@ importFileInput.addEventListener("change", e=>{
                     l.dragging=false;
                     l.bars.forEach(b=>{
                         b.selected=false;
-                        if(b.type===undefined)b.type="proposed";
-                        if(b.label===undefined)b.label="";
+                        if(b.type===undefined) b.type="proposed";
+                        if(b.label===undefined) b.label="";
                     });
                 });
             } else if(file.name.endsWith(".csv")){
-                let parsed = parseCsv(ev.target.result);
-                lines=parsed.lines;
-                lineCounter=parsed.lineCounter;
-                barCounter=parsed.barCounter;
+                let parsed= parseCsv(ev.target.result);
+                lines= parsed.lines;
+                lineCounter= parsed.lineCounter;
+                barCounter= parsed.barCounter;
             } else {
                 throw new Error("Unsupported file type");
             }
@@ -2171,7 +2164,7 @@ importFileInput.addEventListener("change", e=>{
             renderTable();
             saveToLocalStorage();
             alert("Import successful!");
-        }catch(err){
+        } catch(err){
             console.error(err);
             alert("Import failed: "+ err.message);
         }
@@ -2181,15 +2174,15 @@ importFileInput.addEventListener("change", e=>{
 function parseCsv(csv){
     let rows= csv.trim().split("\n");
     let header= rows[0].toLowerCase();
-    if(!header.includes("bar id")) throw new Error("Invalid CSV (no 'Bar ID' column).");
+    if(!header.includes("bar id")) throw new Error("Invalid CSV (no 'Bar ID').");
     let newLines=[];
     let lineMap={};
     let maxLineId=0;
     let maxBarId=0;
 
-    for(let i=1;i<rows.length;i++){
-        let row=rows[i].trim();
-        if(!row)continue;
+    for(let i=1; i< rows.length; i++){
+        let row= rows[i].trim();
+        if(!row) continue;
         let parsed=[];
         let field="";
         let inQuote=false;
@@ -2198,13 +2191,13 @@ function parseCsv(csv){
             else if(c==="," && !inQuote){
                 parsed.push(field);
                 field="";
-            } else field+=c;
+            } else field+= c;
         }
         if(parsed.length<7) continue;
-        let lineId=parseInt(parsed[0])||0;
+        let lineId= parseInt(parsed[0])||0;
         if(!lineMap[lineId]){
             lineMap[lineId]={
-                id:lineId,
+                id: lineId,
                 name:(parsed[1]||""),
                 discipline:(parsed[2]||""),
                 experience:(parsed[3]||""),
@@ -2216,20 +2209,20 @@ function parseCsv(csv){
                 dragging:false
             };
             newLines.push(lineMap[lineId]);
-            maxLineId=Math.max(maxLineId,lineId);
+            maxLineId= Math.max(maxLineId, lineId);
         }
-        let barIdStr=parsed[7]||"";
+        let barIdStr= parsed[7]||"";
         if(!barIdStr) continue;
-        let barId=parseInt(barIdStr)||0;
-        let barLabel=(parsed[8]||"");
-        let barProj=(parsed[9]||"");
-        let barClient=(parsed[10]||"");
-        let barDisc=(parsed[11]||"");
-        let barExp=(parsed[12]||"");
-        let barLOE=(parsed[13]||"");
-        let barLoc=(parsed[14]||"");
-        let barProp=(parsed[15]||"no");
-        let barType=(parsed[16]||"proposed");
+        let barId= parseInt(barIdStr)||0;
+        let barLabel= parsed[8]||""; // single label
+        let barProj= parsed[9]||"";
+        let barClient= parsed[10]||"";
+        let barDis= parsed[11]||"";
+        let barExp= parsed[12]||"";
+        let barLOE= parsed[13]||"";
+        let barLoc= parsed[14]||"";
+        let barProp= parsed[15]||"no";
+        let barType= parsed[16]||"proposed";
         let sY= parseInt(parsed[17])||2025;
         let sW= parseInt(parsed[18])||1;
         let eY= parseInt(parsed[19])||2025;
@@ -2238,28 +2231,28 @@ function parseCsv(csv){
 
         let startAbs= toAbsoluteWeek(sY,sW);
         let endAbs= toAbsoluteWeek(eY,eW);
-        let length=endAbs- startAbs +1;
-        if(length<1) length=dur||1;
+        let length= endAbs- startAbs+1;
+        if(length<1) length= dur||1;
 
         let newBar={
-            id:barId,
+            id: barId,
             label: barLabel,
             projectName: barProj,
             client: barClient,
-            discipline: barDisc,
+            discipline: barDis,
             experience: barExp,
             LOE: barLOE,
             location: barLoc,
             proposed: barProp,
             type: barType,
             startAbsWeek: startAbs,
-            length:length,
+            length,
             selected:false
         };
         lineMap[lineId].bars.push(newBar);
-        maxBarId=Math.max(maxBarId, barId);
+        maxBarId= Math.max(maxBarId, barId);
     }
-    return {lines:newLines, lineCounter:maxLineId, barCounter:maxBarId};
+    return { lines: newLines, lineCounter: maxLineId, barCounter: maxBarId };
 }
 
 /*
@@ -2267,7 +2260,7 @@ function parseCsv(csv){
     PRINT
     ---------------------------------------------------------------------------------------------
 */
-printBtn.addEventListener("click", ()=>{ window.print(); });
+printBtn.addEventListener("click", ()=> window.print());
 
 /*
     ---------------------------------------------------------------------------------------------
@@ -2275,14 +2268,14 @@ printBtn.addEventListener("click", ()=>{ window.print(); });
     ---------------------------------------------------------------------------------------------
 */
 zoomSlider.addEventListener("input", e=>{
-    cellWidth=parseInt(e.target.value);
+    cellWidth= parseInt(e.target.value);
     pushState();
     updateCSSVariables();
     renderTable();
     saveToLocalStorage();
 });
 heightZoomSlider.addEventListener("input", e=>{
-    rowHeight=parseInt(e.target.value);
+    rowHeight= parseInt(e.target.value);
     pushState();
     updateCSSVariables();
     renderTable();
@@ -2291,7 +2284,7 @@ heightZoomSlider.addEventListener("input", e=>{
 
 /*
     ---------------------------------------------------------------------------------------------
-    HISTORY (UNDO/REDO)
+    UNDO/REDO
     ---------------------------------------------------------------------------------------------
 */
 function pushState(){
@@ -2339,7 +2332,7 @@ function undo(){
 function redo(){
     if(!adminMode)return;
     if(!redoStack.length)return;
-    let nxt=redoStack.pop();
+    let nxt= redoStack.pop();
     let cur= JSON.parse(JSON.stringify({
         lines,
         startYear,
@@ -2356,8 +2349,8 @@ function redo(){
     undoStack.push(cur);
     restoreState(nxt);
 }
-document.getElementById("undoBtn").addEventListener("click", ()=>undo());
-document.getElementById("redoBtn").addEventListener("click", ()=>redo());
+document.getElementById("undoBtn").addEventListener("click", ()=> undo());
+document.getElementById("redoBtn").addEventListener("click", ()=> redo());
 
 /*
     ---------------------------------------------------------------------------------------------
@@ -2365,24 +2358,12 @@ document.getElementById("redoBtn").addEventListener("click", ()=>redo());
     ---------------------------------------------------------------------------------------------
 */
 document.getElementById("helpBtn").addEventListener("click", ()=>{
-    alert(`Gantt Planner - Additional Help:
-
-• Enhanced Line Drag & Drop:
-  - Grab any line item from the left name cell and drag it up/down. It aligns with visible rows.
-
-• Additional Gridlines:
-  - Vertical and horizontal black grid lines ensure easy alignment of weeks, columns, and bars.
-
-• Bar Label, Re-organized Editor:
-  - "Bar Label" input field is now first. Then follows the other attributes.
-
-• Sticky Date Headers:
-  - The header row with year/week/month stays in view even when scrolling down.
-
-• Additional bar attribute "label" is now fully integrated.
-
-Enjoy your Gantt Planner!
-`);
+    alert(`Gantt Planner Quick Help:
+• Extra label removed, only one "label" remains for bars.
+• Background shading removed from the visualizer.
+• Bar label is editable in the bar editor, displayed inside the bar.
+• Black gridlines help align the headers and bar snaps to edges.
+Enjoy managing your Gantt!`);
 });
 
 /*
@@ -2394,17 +2375,17 @@ adminToggleBtn.addEventListener("click", ()=>{
     if(!adminMode){
         let pwd= prompt("Enter admin password:");
         if(pwd==="Password"){
-            adminMode=true;
+            adminMode= true;
             alert("Admin mode enabled.");
         } else {
             alert("Incorrect password. Remaining in user mode.");
             return;
         }
     } else {
-        adminMode=false;
+        adminMode= false;
         alert("Admin mode disabled.");
     }
-    csvEditToggleBtn.style.display= adminMode?"inline-block":"none";
+    csvEditToggleBtn.style.display= adminMode? "inline-block":"none";
     renderTable();
 });
 
@@ -2420,46 +2401,46 @@ csvEditToggleBtn.addEventListener("click", ()=>{
                 "Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
     lines.forEach(line=>{
         if(!line.bars.length){
-            csvStr+=`${line.id||""},"${line.name||""}","${line.discipline||""}","${line.experience||""}","${line.officeLocation||""}","${line.geoLocation||""}","${line.type||""}",,,,,,,,,,,,\n`;
+            csvStr+= `${line.id||""},"${line.name||""}","${line.discipline||""}","${line.experience||""}","${line.officeLocation||""}","${line.geoLocation||""}","${line.type||""}",,,,,,,,,,,,\n`;
         } else {
             line.bars.forEach(bar=>{
-                let {year:sy,week:sw}= fromAbsoluteWeek(bar.startAbsWeek);
-                let {year:ey,week:ew}= fromAbsoluteWeek(bar.startAbsWeek+bar.length-1);
-                csvStr+=`${line.id||""},"${line.name||""}","${line.discipline||""}","${line.experience||""}","${line.officeLocation||""}","${line.geoLocation||""}","${line.type||""}",`;
-                csvStr+=`${bar.id||""},"${bar.label||""}","${bar.projectName||""}","${bar.client||""}","${bar.discipline||""}","${bar.experience||""}","${bar.LOE||""}","${bar.location||""}","${bar.proposed||""}","${bar.type||""}",`;
-                csvStr+=`${sy},${sw},${ey},${ew},${bar.length}\n`;
+                let {year:sy, week:sw}= fromAbsoluteWeek(bar.startAbsWeek);
+                let {year:ey, week:ew}= fromAbsoluteWeek(bar.startAbsWeek+ bar.length -1);
+                csvStr+= `${line.id||""},"${line.name||""}","${line.discipline||""}","${line.experience||""}","${line.officeLocation||""}","${line.geoLocation||""}","${line.type||""}",`;
+                csvStr+= `${bar.id||""},"${bar.label||""}","${bar.projectName||""}","${bar.client||""}","${bar.discipline||""}","${bar.experience||""}","${bar.LOE||""}","${bar.location||""}","${bar.proposed||""}","${bar.type||""}",`;
+                csvStr+= `${sy},${sw},${ey},${ew},${bar.length}\n`;
             });
         }
     });
-    csvTextarea.value=csvStr;
-    csvEditModal.style.display="block";
+    csvTextarea.value= csvStr;
+    csvEditModal.style.display= "block";
 });
 csvEditApplyBtn.addEventListener("click", ()=>{
     if(!adminMode)return;
     let csvData= csvTextarea.value;
     try{
-        let parsed = parseCsv(csvData);
-        lines=parsed.lines;
-        lineCounter=parsed.lineCounter;
-        barCounter=parsed.barCounter;
+        let parsed= parseCsv(csvData);
+        lines= parsed.lines;
+        lineCounter= parsed.lineCounter;
+        barCounter= parsed.barCounter;
         pushState();
         renderTable();
         saveToLocalStorage();
         alert("CSV updated successfully.");
-        csvEditModal.style.display="none";
+        csvEditModal.style.display= "none";
     } catch(err){
-        alert("Error parsing CSV: "+err.message);
+        alert("Error parsing CSV: "+ err.message);
     }
 });
 csvEditCancelBtn.addEventListener("click", ()=>{
-    csvEditModal.style.display="none";
+    csvEditModal.style.display= "none";
 });
 document.addEventListener("mousedown", e=>{
     if(csvEditModal.style.display==="block"){
         let rect= csvEditModal.getBoundingClientRect();
         let inside= (
-            e.clientX>=rect.left && e.clientX<=rect.right &&
-            e.clientY>=rect.top && e.clientY<=rect.bottom
+            e.clientX>= rect.left && e.clientX<= rect.right &&
+            e.clientY>= rect.top && e.clientY<= rect.bottom
         );
         if(!inside){
             csvEditModal.style.display="none";
@@ -2469,7 +2450,7 @@ document.addEventListener("mousedown", e=>{
 
 /*
     ---------------------------------------------------------------------------------------------
-    APPLY TIMESCALE
+    APPLY TIMESCALE => read inputs, re-render
     ---------------------------------------------------------------------------------------------
 */
 applyTimescaleBtn.addEventListener("click", ()=>{
@@ -2484,10 +2465,10 @@ applyTimescaleBtn.addEventListener("click", ()=>{
 
 /*
     ---------------------------------------------------------------------------------------------
-    INIT
+    INIT => on window load
     ---------------------------------------------------------------------------------------------
 */
-function init(){
+function init() {
     loadFromLocalStorage();
     populateDateSelects();
     updateCSSVariables();
@@ -2506,26 +2487,30 @@ function init(){
     renderTable();
     pushState();
     csvEditToggleBtn.style.display="none";
+
     tableWrapper.addEventListener("scroll", ()=> updateBarTextPositions());
     window.addEventListener("resize", ()=> updateBarTextPositions());
 }
 window.addEventListener("load", init);
 
+/*
+    populateDateSelects => fill the year/week selects with sample range
+*/
 function populateDateSelects(){
     let years=[];
-    for(let y=2023;y<=2030;y++){
+    for(let y=2023; y<=2030; y++){
         years.push(y);
     }
     let weeks=[];
-    for(let w=1;w<=52;w++){
+    for(let w=1; w<=52; w++){
         weeks.push(w);
     }
     [startYearSelect,endYearSelect].forEach(sel=>{
         sel.innerHTML="";
         years.forEach(Y=>{
             let opt=document.createElement("option");
-            opt.value=Y;
-            opt.textContent=Y;
+            opt.value= Y;
+            opt.textContent= Y;
             sel.appendChild(opt);
         });
     });
@@ -2533,8 +2518,8 @@ function populateDateSelects(){
         sel.innerHTML="";
         weeks.forEach(W=>{
             let opt=document.createElement("option");
-            opt.value=W;
-            opt.textContent=W;
+            opt.value= W;
+            opt.textContent= W;
             sel.appendChild(opt);
         });
     });
