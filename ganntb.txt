@@ -25,7 +25,7 @@
           "selected": false
         },
         {
-          "id": 112,
+          "id": 111,
           "label": "Fujifilm - 100%",
           "projectName": "Fujifilm Planning",
           "client": "Fujifilm",
@@ -53,7 +53,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 102,
+          "id": 112,
           "label": "Fujifilm - 100%",
           "projectName": "Fujifilm Planning",
           "client": "Fujifilm",
@@ -68,7 +68,7 @@
           "selected": false
         },
         {
-          "id": 103,
+          "id": 113,
           "label": "Fujifilm - 100%",
           "projectName": "Fujifilm Planning",
           "client": "Fujifilm",
@@ -96,7 +96,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 111,
+          "id": 114,
           "label": "Fujifilm - 100%",
           "projectName": "Fujifilm Planning",
           "client": "Fujifilm",
@@ -139,7 +139,7 @@
           "selected": false
         },
         {
-          "id": 1150,
+          "id": 116,
           "label": "Fujifilm - 100%",
           "projectName": "Fujifilm Planning",
           "client": "Fujifilm",
@@ -167,7 +167,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 116,
+          "id": 117,
           "label": "Fujifilm - 100%",
           "projectName": "Fujifilm Planning",
           "client": "Fujifilm",
@@ -182,7 +182,7 @@
           "selected": false
         },
         {
-          "id": 116,
+          "id": 118,
           "label": "Fujifilm - 100%",
           "projectName": "Fujifilm Planning",
           "client": "Fujifilm",
@@ -210,7 +210,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 117,
+          "id": 119,
           "label": "Fujifilm - 100%",
           "projectName": "Fujifilm Planning",
           "client": "Fujifilm",
@@ -225,7 +225,7 @@
           "selected": false
         },
         {
-          "id": 117,
+          "id": 120,
           "label": "Fujifilm - 100%",
           "projectName": "Fujifilm Planning",
           "client": "Fujifilm",
@@ -253,7 +253,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 114,
+          "id": 121,
           "label": "Fujifilm - 100%",
           "projectName": "Fujifilm Planning",
           "client": "Fujifilm",
@@ -268,7 +268,7 @@
           "selected": false
         },
         {
-          "id": 114,
+          "id": 122,
           "label": "Fujifilm - 100%",
           "projectName": "Fujifilm Planning",
           "client": "Fujifilm",
@@ -296,7 +296,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 1170,
+          "id": 123,
           "label": "Fujifilm - 100%",
           "projectName": "Fujifilm Planning",
           "client": "Fujifilm",
@@ -324,16 +324,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 157,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 124,
+          "label": "Indy K153 - Project Management - 100%",
+          "projectName": "Indy K153 - Project Management",
+          "client": "Lilly",
+          "discipline": "PM",
+          "experience": "Mid",
+          "LOE": "1",
+          "location": "Indy",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 71,
           "selected": false
@@ -352,7 +352,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 156,
+          "id": 125,
           "label": "FFEx Future QC Project - 50%",
           "projectName": "FFEx Future QC Project",
           "client": "Novo Nordisk",
@@ -380,7 +380,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 131,
+          "id": 126,
           "label": "Kendall Square Scheduling - 100%",
           "projectName": "Kendall Square Scheduling",
           "client": "AZ",
@@ -395,7 +395,7 @@
           "selected": false
         },
         {
-          "id": 170,
+          "id": 127,
           "label": "Kendall Square Scheduling - 100%",
           "projectName": "Kendall Square Scheduling",
           "client": "AZ",
@@ -423,7 +423,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 118,
+          "id": 128,
           "label": "Clinical 10X - Extension - 40%",
           "projectName": "Clinical 10X - Extension",
           "client": "Novo Nordisk",
@@ -451,7 +451,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 119,
+          "id": 129,
           "label": "Eli Lilly - Project Kennedy - 60%",
           "projectName": "Eli Lilly - Project Kennedy",
           "client": "Eli Lilly",
@@ -466,7 +466,7 @@
           "selected": false
         },
         {
-          "id": 124,
+          "id": 130,
           "label": "BDAF Planning Support - Extension - 10%",
           "projectName": "BDAF Planning Support - Extension",
           "client": "Novo Nordisk",
@@ -494,7 +494,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 128,
+          "id": 131,
           "label": "RTP Expansion - Cost Support - 40%",
           "projectName": "RTP Expansion - Cost Support",
           "client": "Lilly",
@@ -503,13 +503,13 @@
           "LOE": "0.4",
           "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105336,
           "length": 28,
           "selected": false
         },
         {
-          "id": 129,
+          "id": 132,
           "label": "Cost Support - Project Bruins - 10%",
           "projectName": "Cost Support - Project Bruins",
           "client": "Sarepta",
@@ -518,7 +518,7 @@
           "LOE": "0.1",
           "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105364,
           "length": 28,
           "selected": false
@@ -537,7 +537,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 127,
+          "id": 133,
           "label": "Eli Lilly - Project Kennedy - 60%",
           "projectName": "Eli Lilly - Project Kennedy",
           "client": "Eli Lilly",
@@ -546,7 +546,7 @@
           "LOE": "0.6",
           "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105336,
           "length": 28,
           "selected": false
@@ -565,7 +565,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 130,
+          "id": 134,
           "label": "Operational Management - 15%",
           "projectName": "Operational Management",
           "client": "Lilly",
@@ -574,7 +574,7 @@
           "LOE": "0.15",
           "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105336,
           "length": 3,
           "selected": false
@@ -593,7 +593,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 133,
+          "id": 135,
           "label": "RTP Expansion - Cost Support - 100%",
           "projectName": "RTP Expansion - Cost Support",
           "client": "Lilly",
@@ -621,7 +621,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 134,
+          "id": 136,
           "label": "200 SW New Control Area - Project Manager - 50%",
           "projectName": "200 SW New Control Area - Project Manager",
           "client": "Takeda",
@@ -630,13 +630,13 @@
           "LOE": "0.5",
           "location": "Boston",
           "proposed": "no",
-          "type": "Secured",
+          "type": "secured",
           "startAbsWeek": 105336,
           "length": 12,
           "selected": false
         },
         {
-          "id": 1340,
+          "id": 137,
           "label": "Groton Renovations - 100%",
           "projectName": "Groton Renovations",
           "client": "Pfizer",
@@ -645,8 +645,8 @@
           "LOE": "1",
           "location": "Boston",
           "proposed": "no",
-          "type": "Secured",
-          "startAbsWeek": 105336,
+          "type": "secured",
+          "startAbsWeek": 105348,
           "length": 12,
           "selected": false
         }
@@ -664,7 +664,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 136,
+          "id": 138,
           "label": "M3 IT/OT Planning Support - 100%",
           "projectName": "M3 IT/OT Planning Support",
           "client": "Novo Nordisk",
@@ -673,7 +673,7 @@
           "LOE": "1",
           "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 34,
           "selected": false
@@ -692,7 +692,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 137,
+          "id": 139,
           "label": "US Region BAU - Program Manager - 60%",
           "projectName": "US Region BAU - Program Manager",
           "client": "Takeda",
@@ -701,13 +701,13 @@
           "LOE": "0.6",
           "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105300,
           "length": 1,
           "selected": false
         },
         {
-          "id": 137,
+          "id": 140,
           "label": "US Region BAU - Program Manager - Extension - 50%",
           "projectName": "US Region BAU - Program Manager - Extension",
           "client": "Takeda",
@@ -716,7 +716,7 @@
           "LOE": "0.5",
           "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 30,
           "selected": false
@@ -735,7 +735,7 @@
       "type": "Person",
       "bars": [
         {
-          "id": 138,
+          "id": 141,
           "label": "WOW (Explore) - Program/PMO Coordinator - 40%",
           "projectName": "WOW (Explore) - Program/PMO Coordinator",
           "client": "Takeda",
@@ -744,13 +744,13 @@
           "LOE": "0.4",
           "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105300,
           "length": 1,
           "selected": false
         },
         {
-          "id": 138,
+          "id": 142,
           "label": "WOW (Explore) - Program/PMO Coordinator - Extension - 25%",
           "projectName": "WOW (Explore) - Program/PMO Coordinator - Extension",
           "client": "Takeda",
@@ -759,7 +759,7 @@
           "LOE": "0.25",
           "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 30,
           "selected": false
@@ -778,16 +778,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 139,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 143,
+          "label": "RTP Expansion - Cost Support - 50%",
+          "projectName": "RTP Expansion - Cost Support",
+          "client": "Lilly",
+          "discipline": "Planning",
+          "experience": "Mid",
+          "LOE": "0.5",
+          "location": "Indy",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105336,
           "length": 11,
           "selected": false
@@ -806,16 +806,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 140,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 144,
+          "label": "Infrastructure Portfolio - Andover Campus - 20%",
+          "projectName": "Infrastructure Portfolio - Andover Campus",
+          "client": "Pfizer",
+          "discipline": "PM",
+          "experience": "Senior",
+          "LOE": "0.2",
+          "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105336,
           "length": 8,
           "selected": false
@@ -834,16 +834,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 142,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 145,
+          "label": "Stoke - PM Services for Relocation- 20%",
+          "projectName": "Stoke - PM Services for Relocation",
+          "client": "Stoke",
+          "discipline": "PM",
+          "experience": "Senior",
+          "LOE": "0.2",
+          "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105338,
           "length": 6,
           "selected": false
@@ -862,19 +862,19 @@
       "type": "Person",
       "bars": [
         {
-          "id": 143,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 146,
+          "label": "Indy Expansion - Cost Support - 100%",
+          "projectName": "Indy Expansion - Cost Support",
+          "client": "Lilly",
+          "discipline": "Cost",
+          "experience": "Senior",
+          "LOE": "1",
+          "location": "Raleigh",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 38,
-          "selected": false
+          "selected": true
         }
       ],
       "selected": false,
@@ -890,16 +890,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 144,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 147,
+          "label": "Indy IDAP Facility - Cost Management - 50%",
+          "projectName": "Indy IDAP Facility - Cost Management",
+          "client": "Lilly",
+          "discipline": "Cost",
+          "experience": "Senior",
+          "LOE": "0.5",
+          "location": "Raleigh",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 30,
           "selected": false
@@ -918,16 +918,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 145,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 148,
+          "label": "K116 Scheduling Support (Indy) - 50%",
+          "projectName": "K116 Scheduling Support (Indy)",
+          "client": "Lilly",
+          "discipline": "Planning",
+          "experience": "Mid",
+          "LOE": "0.5",
+          "location": "Raleigh",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 48,
           "selected": false
@@ -946,16 +946,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 146,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 149,
+          "label": "Lilly RTP Expansion ASRS Scheduler - 50%",
+          "projectName": "Lilly RTP Expansion ASRS Scheduler",
+          "client": "Lilly",
+          "discipline": "Planning",
+          "experience": "Mid",
+          "LOE": "0.5",
+          "location": "Raleigh",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 37,
           "selected": false
@@ -974,16 +974,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 148,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 150,
+          "label": "700 Progress Way - Biocentre Project Scheduling Support - 50%",
+          "projectName": "700 Progress Way - Biocentre Project Scheduling Support",
+          "client": "AZ",
+          "discipline": "Planning",
+          "experience": "Senior",
+          "LOE": "0.5",
+          "location": "Indy",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 12,
           "selected": false
@@ -1002,16 +1002,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 149,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 151,
+          "label": "700 Progress Way - CAR-T Project Scheduling Support - 25%",
+          "projectName": "700 Progress Way - CAR-T Project Scheduling Support",
+          "client": "AZ",
+          "discipline": "Planning",
+          "experience": "Senior",
+          "LOE": "0.25",
+          "location": "Indy",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 12,
           "selected": false
@@ -1030,16 +1030,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 150,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 152,
+          "label": "700 Progress Way - MSW Project Scheduling Support - 25%",
+          "projectName": "700 Progress Way - MSW Project Scheduling Support",
+          "client": "AZ",
+          "discipline": "Planning",
+          "experience": "Senior",
+          "LOE": "0.25",
+          "location": "Indy",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 12,
           "selected": false
@@ -1058,16 +1058,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 151,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 153,
+          "label": "Coppell Krystal T7 - Project Controls - 10%",
+          "projectName": "Coppell Krystal T7 - Project Controls",
+          "client": "AZ",
+          "discipline": "PM",
+          "experience": "Senior",
+          "LOE": "0.1",
+          "location": "Indy",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 13,
           "selected": false
@@ -1086,16 +1086,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 152,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 154,
+          "label": "Coppell TF - Project Controls - 60%",
+          "projectName": "Coppell TF - Project Controls",
+          "client": "AZ",
+          "discipline": "PM",
+          "experience": "Senior",
+          "LOE": "0.6",
+          "location": "Indy",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 13,
           "selected": false
@@ -1114,16 +1114,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 153,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 155,
+          "label": "Coppell Krystal T8 - Project Controls - 20%",
+          "projectName": "Coppell Krystal T8 - Project Controls",
+          "client": "AZ",
+          "discipline": "PM",
+          "experience": "Senior",
+          "LOE": "0.2",
+          "location": "Indy",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 13,
           "selected": false
@@ -1142,16 +1142,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 159,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 156,
+          "label": "FFEx Future QC Project - 50%",
+          "projectName": "FFEx Future QC Project",
+          "client": "Novo Nordisk",
+          "discipline": "Cost",
+          "experience": "Senior",
+          "LOE": "0.5",
+          "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105336,
           "length": 11,
           "selected": false
@@ -1170,16 +1170,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 160,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 157,
+          "label": "Portfolio Planning Support - Extension - 100%",
+          "projectName": "Portfolio Planning Support - Extension",
+          "client": "Google",
+          "discipline": "Planning",
+          "experience": "Senior",
+          "LOE": "1",
+          "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 18,
           "selected": false
@@ -1198,16 +1198,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 162,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 158,
+          "label": "NH Admin Building Project Controls Support - 30%",
+          "projectName": "NH Admin Building Project Controls Support",
+          "client": "Novo Nordisk",
+          "discipline": "ICA",
+          "experience": "Senior",
+          "LOE": "0.3",
+          "location": "NH",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 66,
           "selected": false
@@ -1226,16 +1226,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 161,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 159,
+          "label": "NH Boiler Project Controls Support - 30%",
+          "projectName": "NH Boiler Project Controls Support",
+          "client": "Novo Nordisk",
+          "discipline": "ICA",
+          "experience": "Senior",
+          "LOE": "0.3",
+          "location": "NH",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 37,
           "selected": false
@@ -1254,16 +1254,16 @@
       "type": "Person",
       "bars": [
         {
-          "id": 163,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 160,
+          "label": "BDAF Planning Support - Extension - 100%",
+          "projectName": "BDAF Planning Support - Extension",
+          "client": "Novo Nordisk",
+          "discipline": "ICA",
+          "experience": "Senior",
+          "LOE": "1",
+          "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 12,
           "selected": false
@@ -1282,33 +1282,18 @@
       "type": "Person",
       "bars": [
         {
-          "id": 164,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
+          "id": 161,
+          "label": "BDAF Planning Support - Extension - 100%",
+          "projectName": "BDAF Planning Support - Extension",
+          "client": "Novo Nordisk",
+          "discipline": "ICA",
+          "experience": "Senior",
+          "LOE": "1",
+          "location": "Boston",
           "proposed": "no",
-          "type": "proposed",
+          "type": "secured",
           "startAbsWeek": 105334,
           "length": 12,
-          "selected": false
-        },
-        {
-          "id": 165,
-          "label": "",
-          "projectName": "",
-          "client": "",
-          "discipline": "",
-          "experience": "",
-          "LOE": "",
-          "location": "",
-          "proposed": "no",
-          "type": "proposed",
-          "startAbsWeek": 105346,
-          "length": 18,
           "selected": false
         }
       ],
@@ -1426,14 +1411,14 @@
     {
       "id": 100,
       "name": "O-053 - R-078 Merck Controls Support",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Mid",
       "officeLocation": "St Louis",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 166,
+          "id": 162,
           "label": "O-053 - R-078 Merck Controls Support",
           "projectName": "R-078 Merck Controls Support",
           "client": "",
@@ -1454,14 +1439,14 @@
     {
       "id": 101,
       "name": "O-053 - R-098 Merck Controls Support",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Mid",
       "officeLocation": "St. Louis",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 167,
+          "id": 163,
           "label": "O-053 - R-098 Merck Controls Support",
           "projectName": "R-098 Merck Controls Support",
           "client": "",
@@ -1482,14 +1467,14 @@
     {
       "id": 102,
       "name": "O-074 - R-117 Sr. Planner",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Boston",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 168,
+          "id": 164,
           "label": "O-074 - R-117 Sr. Planner",
           "projectName": "R-117 Sr. Planner",
           "client": "",
@@ -1510,14 +1495,14 @@
     {
       "id": 103,
       "name": "O-082 - R-131 Planning Support",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Washington, DC",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 169,
+          "id": 165,
           "label": "O-082 - R-131 Planning Support",
           "projectName": "R-131 Planning Support",
           "client": "",
@@ -1538,14 +1523,14 @@
     {
       "id": 104,
       "name": "O-073 - R-116 Sr. Planner",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Wilson",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 170,
+          "id": 166,
           "label": "O-073 - R-116 Sr. Planner",
           "projectName": "R-116 Sr. Planner",
           "client": "",
@@ -1566,14 +1551,14 @@
     {
       "id": 105,
       "name": "O-083 - R-132 Backend Planner",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Mid",
       "officeLocation": "Kalindborg",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 171,
+          "id": 167,
           "label": "O-083 - R-132 Backend Planner",
           "projectName": "R-132 Backend Planner",
           "client": "",
@@ -1594,14 +1579,14 @@
     {
       "id": 106,
       "name": "O-099 - R-153 IDAP - Sr Project Manager",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Senior",
       "officeLocation": "Indianapolis",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 172,
+          "id": 168,
           "label": "O-099 - R-153 IDAP - Sr Project Manager",
           "projectName": "R-153 IDAPSr Project Manager",
           "client": "",
@@ -1622,14 +1607,14 @@
     {
       "id": 107,
       "name": "O-105 - R-160 Jr. Cost Resource - Lilly",
-      "discipline": "Junior",
-      "experience": "",
+      "discipline": "Cost",
+      "experience": "Junior",
       "officeLocation": "Indianapolis",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 173,
+          "id": 169,
           "label": "O-105 - R-160 Jr. Cost Resource - Lilly",
           "projectName": "R-160 Jr. Cost ResourceLilly",
           "client": "",
@@ -1650,14 +1635,14 @@
     {
       "id": 108,
       "name": "O-106 - R-161 PM Support - Lilly",
-      "discipline": "Junior",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Junior",
       "officeLocation": "Indianapolis",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 174,
+          "id": 170,
           "label": "O-106 - R-161 PM Support - Lilly",
           "projectName": "R-161 PM SupportLilly",
           "client": "",
@@ -1678,14 +1663,14 @@
     {
       "id": 109,
       "name": "O-111 - R-171 Scheduler",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Mid",
       "officeLocation": "Irvine, CA",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 175,
+          "id": 171,
           "label": "O-111 - R-171 Scheduler",
           "projectName": "R-171 Scheduler",
           "client": "",
@@ -1706,14 +1691,14 @@
     {
       "id": 110,
       "name": "O-067 - R-105 Controls Specialist (Cost & Schedule)",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Mid",
       "officeLocation": "San Diego",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 176,
+          "id": 172,
           "label": "O-067 - R-105 Controls Specialist (Cost & Schedule)",
           "projectName": "R-105 Controls Specialist (Cost & Schedule)",
           "client": "",
@@ -1734,14 +1719,14 @@
     {
       "id": 111,
       "name": "O-084 - R-133 Senior Scheduler",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Lebanon",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 177,
+          "id": 173,
           "label": "O-084 - R-133 Senior Scheduler",
           "projectName": "R-133 Senior Scheduler",
           "client": "",
@@ -1762,14 +1747,14 @@
     {
       "id": 112,
       "name": "O-085 - R-134 Boston - Sr. PM (Bench)",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Senior",
       "officeLocation": "Boston",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 178,
+          "id": 174,
           "label": "O-085 - R-134 Boston - Sr. PM (Bench)",
           "projectName": "R-134 BostonSr. PM (Bench)",
           "client": "",
@@ -1790,14 +1775,14 @@
     {
       "id": 113,
       "name": "O-095 - R-149 Philip Morris - PC Support",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Mid",
       "officeLocation": "",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 179,
+          "id": 175,
           "label": "O-095 - R-149 Philip Morris - PC Support",
           "projectName": "R-149 Philip MorrisPC Support",
           "client": "",
@@ -1818,14 +1803,14 @@
     {
       "id": 114,
       "name": "O-096 - R-150 Amazon Planners (3)",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Mid",
       "officeLocation": "",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 180,
+          "id": 176,
           "label": "O-096 - R-150 Amazon Planners (3)",
           "projectName": "R-150 Amazon Planners (3)",
           "client": "",
@@ -1846,14 +1831,14 @@
     {
       "id": 115,
       "name": "O-107 - R-162 Sr. Planner - AZ Kendall Sq",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Cambridge",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 181,
+          "id": 177,
           "label": "O-107 - R-162 Sr. Planner - AZ Kendall Sq",
           "projectName": "R-162 Sr. PlannerAZ Kendall Sq",
           "client": "",
@@ -1874,14 +1859,14 @@
     {
       "id": 116,
       "name": "O-110 - R-170 Cost Lead",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Cost",
+      "experience": "Mid",
       "officeLocation": "Indy",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 182,
+          "id": 178,
           "label": "O-110 - R-170 Cost Lead",
           "projectName": "R-170 Cost Lead",
           "client": "",
@@ -1902,14 +1887,14 @@
     {
       "id": 117,
       "name": "O-112 - R-172 Scheduler",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Mid",
       "officeLocation": "DC",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 183,
+          "id": 179,
           "label": "O-112 - R-172 Scheduler",
           "projectName": "R-172 Scheduler",
           "client": "",
@@ -1930,14 +1915,14 @@
     {
       "id": 118,
       "name": "O-113 - R-173 Thales Scheduler",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Mid",
       "officeLocation": "Ontario",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 184,
+          "id": 180,
           "label": "O-113 - R-173 Thales Scheduler",
           "projectName": "R-173 Thales Scheduler",
           "client": "",
@@ -1958,14 +1943,14 @@
     {
       "id": 119,
       "name": "O-097 - R-151 Encoded - PM",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Senior",
       "officeLocation": "",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 185,
+          "id": 181,
           "label": "O-097 - R-151 Encoded - PM",
           "projectName": "R-151 EncodedPM",
           "client": "",
@@ -1986,14 +1971,14 @@
     {
       "id": 120,
       "name": "O-098 - R-152 Lilly Kenosha - Project Controls",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Senior",
       "officeLocation": "Kenosha",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 186,
+          "id": 182,
           "label": "O-098 - R-152 Lilly Kenosha - Project Controls",
           "projectName": "R-152 Lilly KenoshaProject Controls",
           "client": "",
@@ -2014,14 +1999,14 @@
     {
       "id": 121,
       "name": "O-100 - R-154 J&J BioNC - Cost Support",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Cost",
+      "experience": "Mid",
       "officeLocation": "Wilson, NC",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 187,
+          "id": 183,
           "label": "O-100 - R-154 J&J BioNC - Cost Support",
           "projectName": "R-154 J&J BioNCCost Support",
           "client": "",
@@ -2042,14 +2027,14 @@
     {
       "id": 122,
       "name": "O-100 - R-155 J&J BioNC - Progress Support",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Mid",
       "officeLocation": "Wilson, NC",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 188,
+          "id": 184,
           "label": "O-100 - R-155 J&J BioNC - Progress Support",
           "projectName": "R-155 J&J BioNCProgress Support",
           "client": "",
@@ -2070,14 +2055,14 @@
     {
       "id": 123,
       "name": "O-109 - R-165 DSM 3 Planner",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Holly Springs",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 189,
+          "id": 185,
           "label": "O-109 - R-165 DSM 3 Planner",
           "projectName": "R-165 DSM 3 Planner",
           "client": "",
@@ -2098,14 +2083,14 @@
     {
       "id": 124,
       "name": "O-109 - R-166 DSM 3 Planner",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Mid",
       "officeLocation": "Holly Springs",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 190,
+          "id": 186,
           "label": "O-109 - R-166 DSM 3 Planner",
           "projectName": "R-166 DSM 3 Planner",
           "client": "",
@@ -2126,14 +2111,14 @@
     {
       "id": 125,
       "name": "O-037 - R-050 Project Kennedy - Contracts Admin",
-      "discipline": "Junior",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Junior",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 191,
+          "id": 187,
           "label": "O-037 - R-050 Project Kennedy - Contracts Admin",
           "projectName": "R-050 Project KennedyContracts Admin",
           "client": "",
@@ -2154,14 +2139,14 @@
     {
       "id": 126,
       "name": "O-037 - R-052 Project Kennedy - 2nd Planning Lead",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Mid",
       "officeLocation": "Midwest",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 192,
+          "id": 188,
           "label": "O-037 - R-052 Project Kennedy - 2nd Planning Lead",
           "projectName": "R-052 Project Kennedy2nd Planning Lead",
           "client": "",
@@ -2182,14 +2167,14 @@
     {
       "id": 127,
       "name": "O-037 - R-054 Project Kennedy - 2nd Cost Lead",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Cost",
+      "experience": "Mid",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 193,
+          "id": 189,
           "label": "O-037 - R-054 Project Kennedy - 2nd Cost Lead",
           "projectName": "R-054 Project Kennedy2nd Cost Lead",
           "client": "",
@@ -2210,14 +2195,14 @@
     {
       "id": 128,
       "name": "O-037 - R-055 Project Kennedy - Progress Lead",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Mid",
       "officeLocation": "Midwest",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 194,
+          "id": 190,
           "label": "O-037 - R-055 Project Kennedy - Progress Lead",
           "projectName": "R-055 Project KennedyProgress Lead",
           "client": "",
@@ -2238,14 +2223,14 @@
     {
       "id": 129,
       "name": "O-037 - R-087 Project Kennedy - 2nd Cost Support",
-      "discipline": "Junior",
-      "experience": "",
+      "discipline": "Cost",
+      "experience": "Junior",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 195,
+          "id": 191,
           "label": "O-037 - R-087 Project Kennedy - 2nd Cost Support",
           "projectName": "R-087 Project Kennedy2nd Cost Support",
           "client": "",
@@ -2266,14 +2251,14 @@
     {
       "id": 130,
       "name": "O-037 - R-090 Project Kennedy - Change / RIsk",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Cost",
+      "experience": "Mid",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 196,
+          "id": 192,
           "label": "O-037 - R-090 Project Kennedy - Change / RIsk",
           "projectName": "R-090 Project KennedyChange / RIsk",
           "client": "",
@@ -2294,14 +2279,14 @@
     {
       "id": 131,
       "name": "O-037 - R-091 Project Kennedy - 3rd Cost Support",
-      "discipline": "Junior",
-      "experience": "",
+      "discipline": "Cost",
+      "experience": "Junior",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 197,
+          "id": 193,
           "label": "O-037 - R-091 Project Kennedy - 3rd Cost Support",
           "projectName": "R-091 Project Kennedy3rd Cost Support",
           "client": "",
@@ -2322,14 +2307,14 @@
     {
       "id": 132,
       "name": "O-037 - R-092 Project Kennedy - 3rd Planning Lead",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Midwest",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 198,
+          "id": 194,
           "label": "O-037 - R-092 Project Kennedy - 3rd Planning Lead",
           "projectName": "R-092 Project Kennedy3rd Planning Lead",
           "client": "",
@@ -2350,14 +2335,14 @@
     {
       "id": 133,
       "name": "O-062 - R-099 Construction Scheduler/Planner",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Andover",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 199,
+          "id": 195,
           "label": "O-062 - R-099 Construction Scheduler/Planner",
           "projectName": "R-099 Construction Scheduler/Planner",
           "client": "",
@@ -2378,14 +2363,14 @@
     {
       "id": 134,
       "name": "O-088 - R-141 Cost & Schedule Support",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Senior",
       "officeLocation": "Coppell, TX",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 200,
+          "id": 196,
           "label": "O-088 - R-141 Cost & Schedule Support",
           "projectName": "R-141 Cost & Schedule Support",
           "client": "",
@@ -2406,14 +2391,14 @@
     {
       "id": 135,
       "name": "O-091 - R-145 AZ - Kendall Square Planner - Extension",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Cambridge",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 201,
+          "id": 197,
           "label": "O-091 - R-145 AZ - Kendall Square Planner - Extension",
           "projectName": "R-145 AZKendall Square PlannerExtension",
           "client": "",
@@ -2434,14 +2419,14 @@
     {
       "id": 136,
       "name": "O-092 - R-146 AZ - Sr Scheduler",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Virginia",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 202,
+          "id": 198,
           "label": "O-092 - R-146 AZ - Sr Scheduler",
           "projectName": "R-146 AZSr Scheduler",
           "client": "",
@@ -2462,14 +2447,14 @@
     {
       "id": 137,
       "name": "O-108 - R-163 NN - BDAF On Site Planner",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Denmark",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 203,
+          "id": 199,
           "label": "O-108 - R-163 NN - BDAF On Site Planner",
           "projectName": "R-163 NNBDAF On Site Planner",
           "client": "",
@@ -2490,14 +2475,14 @@
     {
       "id": 138,
       "name": "O-108 - R-164 NN - BDAF Remote Planner",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Boston",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 204,
+          "id": 200,
           "label": "O-108 - R-164 NN - BDAF Remote Planner",
           "projectName": "R-164 NNBDAF Remote Planner",
           "client": "",
@@ -2518,14 +2503,14 @@
     {
       "id": 139,
       "name": "O-109 - R-167 DSM 4 Planner",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Holly Springs",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 205,
+          "id": 201,
           "label": "O-109 - R-167 DSM 4 Planner",
           "projectName": "R-167 DSM 4 Planner",
           "client": "",
@@ -2546,14 +2531,14 @@
     {
       "id": 140,
       "name": "O-089 - R-142 Sr. Planner Clinical 10X Novo",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Boston",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 206,
+          "id": 202,
           "label": "O-089 - R-142 Sr. Planner Clinical 10X Novo",
           "projectName": "R-142 Sr. Planner Clinical 10X Novo",
           "client": "",
@@ -2574,14 +2559,14 @@
     {
       "id": 141,
       "name": "O-101 - R-156 FA Wilhelm - LMF Schedule Director",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 207,
+          "id": 203,
           "label": "O-101 - R-156 FA Wilhelm - LMF Schedule Director",
           "projectName": "R-156 FA WilhelmLMF Schedule Director",
           "client": "",
@@ -2602,14 +2587,14 @@
     {
       "id": 142,
       "name": "O-109 - R-168 DSM 4 Planner",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Mid",
       "officeLocation": "Holly Springs",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 208,
+          "id": 204,
           "label": "O-109 - R-168 DSM 4 Planner",
           "projectName": "R-168 DSM 4 Planner",
           "client": "",
@@ -2630,14 +2615,14 @@
     {
       "id": 143,
       "name": "O-109 - R-169 PSE / Support Planner",
-      "discipline": "Junior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Junior",
       "officeLocation": "Holly Springs",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 209,
+          "id": 205,
           "label": "O-109 - R-169 PSE / Support Planner",
           "projectName": "R-169 PSE / Support Planner",
           "client": "",
@@ -2658,14 +2643,14 @@
     {
       "id": 144,
       "name": "O-114 - R-174 NN - OFP Cost Support",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Cost",
+      "experience": "Mid",
       "officeLocation": "Durham",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 210,
+          "id": 206,
           "label": "O-114 - R-174 NN - OFP Cost Support",
           "projectName": "R-174 NNOFP Cost Support",
           "client": "",
@@ -2686,14 +2671,14 @@
     {
       "id": 145,
       "name": "O-037 - R-053 Project Kennedy - Planning Support",
-      "discipline": "Junior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Junior",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 211,
+          "id": 207,
           "label": "O-037 - R-053 Project Kennedy - Planning Support",
           "projectName": "R-053 Project KennedyPlanning Support",
           "client": "",
@@ -2714,14 +2699,14 @@
     {
       "id": 146,
       "name": "O-037 - R-089 Project Kennedy - Contracts Manager",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Senior",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 212,
+          "id": 208,
           "label": "O-037 - R-089 Project Kennedy - Contracts Manager",
           "projectName": "R-089 Project KennedyContracts Manager",
           "client": "",
@@ -2742,14 +2727,14 @@
     {
       "id": 147,
       "name": "O-037 - R-093 Project Kennedy - 4th Planning Lead",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Midwest",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 213,
+          "id": 209,
           "label": "O-037 - R-093 Project Kennedy - 4th Planning Lead",
           "projectName": "R-093 Project Kennedy4th Planning Lead",
           "client": "",
@@ -2770,14 +2755,14 @@
     {
       "id": 148,
       "name": "O-037 - R-094 Project Kennedy - 2nd Planning Support",
-      "discipline": "Junior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Junior",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 214,
+          "id": 210,
           "label": "O-037 - R-094 Project Kennedy - 2nd Planning Support",
           "projectName": "R-094 Project Kennedy2nd Planning Support",
           "client": "",
@@ -2798,14 +2783,14 @@
     {
       "id": 149,
       "name": "O-037 - R-095 Project Kennedy - 3rd Cost Lead",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Cost",
+      "experience": "Mid",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 215,
+          "id": 211,
           "label": "O-037 - R-095 Project Kennedy - 3rd Cost Lead",
           "projectName": "R-095 Project Kennedy3rd Cost Lead",
           "client": "",
@@ -2826,14 +2811,14 @@
     {
       "id": 150,
       "name": "O-037 - R-096 Project Kennedy - 5th Planning Lead",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 216,
+          "id": 212,
           "label": "O-037 - R-096 Project Kennedy - 5th Planning Lead",
           "projectName": "R-096 Project Kennedy5th Planning Lead",
           "client": "",
@@ -2854,14 +2839,14 @@
     {
       "id": 151,
       "name": "O-037 - R-097 Project Kennedy - Cost Capitalization",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Cost",
+      "experience": "Mid",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 217,
+          "id": 213,
           "label": "O-037 - R-097 Project Kennedy - Cost Capitalization",
           "projectName": "R-097 Project KennedyCost Capitalization",
           "client": "",
@@ -2882,14 +2867,14 @@
     {
       "id": 152,
       "name": "O-115 - R-175 NN M3 IT/OT Planner",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Denmark",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 218,
+          "id": 214,
           "label": "O-115 - R-175 NN M3 IT/OT Planner",
           "projectName": "R-175 NN M3 IT/OT Planner",
           "client": "",
@@ -2910,14 +2895,14 @@
     {
       "id": 153,
       "name": "O-070 - R-113 Phase 3 Initial Project Planner",
-      "discipline": "Mid",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Mid",
       "officeLocation": "Holly Springs",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 219,
+          "id": 215,
           "label": "O-070 - R-113 Phase 3 Initial Project Planner",
           "projectName": "R-113 Phase 3 Initial Project Planner",
           "client": "",
@@ -2938,14 +2923,14 @@
     {
       "id": 154,
       "name": "O-037 - R-047 Project Kennedy - Cost Lead",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Cost",
+      "experience": "Senior",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 220,
+          "id": 216,
           "label": "O-037 - R-047 Project Kennedy - Cost Lead",
           "projectName": "R-047 Project KennedyCost Lead",
           "client": "",
@@ -2966,14 +2951,14 @@
     {
       "id": 155,
       "name": "O-037 - R-048 Project Kennedy - Planning Lead",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "Planning",
+      "experience": "Senior",
       "officeLocation": "Midwest",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 221,
+          "id": 217,
           "label": "O-037 - R-048 Project Kennedy - Planning Lead",
           "projectName": "R-048 Project KennedyPlanning Lead",
           "client": "",
@@ -2994,14 +2979,14 @@
     {
       "id": 156,
       "name": "O-037 - R-049 Project Kennedy - Project Controls Manager",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Senior",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 222,
+          "id": 218,
           "label": "O-037 - R-049 Project Kennedy - Project Controls Manager",
           "projectName": "R-049 Project KennedyProject Controls Manager",
           "client": "",
@@ -3022,14 +3007,14 @@
     {
       "id": 157,
       "name": "O-037 - R-051 Project Kennedy - Cost Support",
-      "discipline": "Junior",
-      "experience": "",
+      "discipline": "Cost",
+      "experience": "Junior",
       "officeLocation": "Any",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 223,
+          "id": 219,
           "label": "O-037 - R-051 Project Kennedy - Cost Support",
           "projectName": "R-051 Project KennedyCost Support",
           "client": "",
@@ -3050,14 +3035,14 @@
     {
       "id": 158,
       "name": "O-037 - R-088 Project Kennedy - Planning Manager",
-      "discipline": "Senior",
-      "experience": "",
+      "discipline": "PM",
+      "experience": "Senior",
       "officeLocation": "Midwest",
       "geoLocation": "",
       "type": "Opportunity",
       "bars": [
         {
-          "id": 224,
+          "id": 220,
           "label": "O-037 - R-088 Project Kennedy - Planning Manager",
           "projectName": "R-088 Project KennedyPlanning Manager",
           "client": "",
@@ -3077,13 +3062,13 @@
     }
   ],
   "startYear": 2024,
-  "startWeek": 1,
+  "startWeek": 34,
   "endYear": 2027,
   "endWeek": 52,
   "lineCounter": 158,
-  "barCounter": 1340,
-  "cellWidth": 110,
-  "rowHeight": 45,
+  "barCounter": 220,
+  "cellWidth": 50,
+  "rowHeight": 40,
   "typeColors": {
     "secured": "#28a745",
     "proposed": "#fd7e14",
