@@ -725,6 +725,13 @@
         <label for="barLocationInput">Location:</label>
         <input type="text" id="barLocationInput" placeholder="Location..." />
     </div>
+
+    <!-- Custom field between Location and Type -->
+    <div class="attribute-row">
+        <label for="barCustomInput">Assigned To:</label>
+        <input type="text" id="barCustomInput" placeholder="Assigned To..." />
+    </div>
+
     <div class="attribute-row">
         <label for="barTypeSelect">Type (affects color):</label>
         <select id="barTypeSelect">
@@ -841,6 +848,11 @@
             <label for="filterBarLocation">Location:</label>
             <input type="text" id="filterBarLocation" placeholder="Location..." />
 
+            <!-- BEGIN: Added new custom field filter input -->
+            <label for="filterBarCustom">Assigned To:</label>
+            <input type="text" id="filterBarCustom" placeholder="Custom..." />
+            <!-- END: new custom field filter -->
+
             <label for="filterBarType">Type:</label>
             <input type="text" id="filterBarType" placeholder="Type..." />
 
@@ -935,6 +947,8 @@ let lines = [
                 experience: "",
                 LOE: "",
                 location: "",
+                /* custom => new user input field */
+                custom: "",
                 proposed: "no",
                 type: "secured",
                 startAbsWeek: toAbsoluteWeek(2025, 2),
@@ -963,6 +977,8 @@ let lines = [
                 experience: "",
                 LOE: "",
                 location: "",
+                /* custom => new user input field */
+                custom: "",
                 proposed: "yes",
                 type: "proposed",
                 startAbsWeek: toAbsoluteWeek(2025, 10),
@@ -1097,6 +1113,8 @@ function loadFromLocalStorage(){
                 bar.selected= false;
                 if(bar.type===undefined) bar.type="proposed";
                 if(bar.label===undefined) bar.label="";
+                // Ensure new custom field is present even if older data lacks it
+                if(bar.custom===undefined) bar.custom="";
             });
         });
         startYear= parsed.startYear||2025;
@@ -1274,7 +1292,11 @@ function renderTable(){
             const condLoc= (!filters.bar.location|| (b.location && b.location.toLowerCase().includes(filters.bar.location.toLowerCase())));
             const condType= (!filters.bar.type|| (b.type && b.type.toLowerCase().includes(filters.bar.type.toLowerCase())));
             const condProp= (!filters.bar.proposed|| (b.proposed && b.proposed.toLowerCase().includes(filters.bar.proposed.toLowerCase())));
-            return(condProj && condClient && condDis && condExp && condLOE && condLoc && condType && condProp);
+            /* BEGIN: new condition for custom field */
+            const condCustom= (!filters.bar.custom || (b.custom && b.custom.toLowerCase().includes(filters.bar.custom.toLowerCase())));
+            /* END: new condition for custom field */
+
+            return(condProj && condClient && condDis && condExp && condLOE && condLoc && condType && condProp && condCustom);
         });
         if(!linePass)return false;
         if(!barPass && line.bars.length>0)return false;
@@ -1299,7 +1321,8 @@ function renderTable(){
                     (b.LOE||"").toLowerCase(),
                     (b.location||"").toLowerCase(),
                     (b.type||"").toLowerCase(),
-                    (b.proposed||"").toLowerCase()
+                    (b.proposed||"").toLowerCase(),
+                    (b.custom||"").toLowerCase() // also search in bar.custom
                 ];
                 return bFields.some(f=> f.includes(lowerSearch));
             });
@@ -1357,6 +1380,7 @@ function renderTable(){
                         experience:"",
                         LOE:"",
                         location:"",
+                        custom:"",
                         proposed:"no",
                         type:"proposed",
                         startAbsWeek: displayStart+ weeksFromStart,
@@ -1386,7 +1410,11 @@ function renderTable(){
             barDiv.classList.add("bar");
             if(bar.selected) barDiv.classList.add("selected");
 
-            if(lowerSearch && bar.projectName.toLowerCase().includes(lowerSearch)){
+            // highlight if search matches projectName, custom field, etc.
+            if(lowerSearch && (
+                (bar.projectName||"").toLowerCase().includes(lowerSearch) || 
+                (bar.custom||"").toLowerCase().includes(lowerSearch)
+            )){
                 barDiv.classList.add("highlighted");
             }
             barDiv.style.left= barLeftPx+"px";
@@ -1657,6 +1685,7 @@ function showBarEditor(bar, line, x, y){
     barExperienceInput.value= bar.experience||"";
     barLOEInput.value= bar.LOE||"";
     barLocationInput.value= bar.location||"";
+    barCustomInput.value= bar.custom||"";
     barTypeSelect.value= bar.type||"proposed";
     barProposedSelect.value= bar.proposed||"no";
 
@@ -1676,6 +1705,7 @@ function showBarEditor(bar, line, x, y){
     barExperienceInput.disabled= ro;
     barLOEInput.disabled= ro;
     barLocationInput.disabled= ro;
+    barCustomInput.disabled= ro;
     barTypeSelect.disabled= ro;
     barProposedSelect.disabled= ro;
     startYearSelect.disabled= ro;
@@ -1698,6 +1728,7 @@ function showBarEditor(bar, line, x, y){
         currentEditorBar.experience= barExperienceInput.value;
         currentEditorBar.LOE= barLOEInput.value;
         currentEditorBar.location= barLocationInput.value;
+        currentEditorBar.custom= barCustomInput.value;
         currentEditorBar.type= barTypeSelect.value;
         currentEditorBar.proposed= barProposedSelect.value;
 
@@ -1720,6 +1751,7 @@ function showBarEditor(bar, line, x, y){
     barExperienceInput.oninput= autosave;
     barLOEInput.oninput= autosave;
     barLocationInput.oninput= autosave;
+    barCustomInput.oninput= autosave;
     barTypeSelect.onchange= autosave;
     barProposedSelect.onchange= autosave;
     startYearSelect.onchange= autosave;
@@ -1870,10 +1902,10 @@ const filterBarLOE = document.getElementById("filterBarLOE");
 const filterBarLocation = document.getElementById("filterBarLocation");
 const filterBarType = document.getElementById("filterBarType");
 const filterBarProposed = document.getElementById("filterBarProposed");
+/* BEGIN: new reference for custom bar filter */
+const filterBarCustom = document.getElementById("filterBarCustom");
+/* END: new reference */
 
-/**
- * autoRefreshFilters => triggered on user input, updates filters and re-renders
- */
 function autoRefreshFilters(){
     filters.line.name= filterLineName.value.trim()|| null;
     filters.line.discipline= filterLineDiscipline.value.trim()|| null;
@@ -1890,6 +1922,9 @@ function autoRefreshFilters(){
     filters.bar.location= filterBarLocation.value.trim()|| null;
     filters.bar.type= filterBarType.value.trim()|| null;
     filters.bar.proposed= filterBarProposed.value.trim()|| null;
+    /* BEGIN: set filters.bar.custom from new field */
+    filters.bar.custom= filterBarCustom.value.trim()|| null;
+    /* END: set custom filter */
 
     // Remove empty keys
     for(let k in filters.line){
@@ -1915,7 +1950,9 @@ function autoRefreshFilters(){
   filterBarLOE,
   filterBarLocation,
   filterBarType,
-  filterBarProposed
+  filterBarProposed,
+  /* add the new custom field */
+  filterBarCustom
 ].forEach(el => {
   el.addEventListener("input", autoRefreshFilters);
 });
@@ -1941,6 +1978,9 @@ filterBtn.addEventListener("click", ()=>{
     filterBarLocation.value= filters.bar.location||"";
     filterBarType.value= filters.bar.type||"";
     filterBarProposed.value= filters.bar.proposed||"";
+    /* populate the new filter input if used */
+    filterBarCustom.value= filters.bar.custom||"";
+
     filterModal.style.display="block";
 });
 filterApplyBtn.addEventListener("click", ()=>{
@@ -2086,8 +2126,9 @@ const csvEditCancelBtn= document.getElementById("csvEditCancelBtn");
  */
 csvEditToggleBtn.addEventListener("click", ()=>{
     if(!adminMode)return;
+    // Updated CSV header to include new "Custom" column
     let csvStr= "Line ID,Line Name,Line Discipline,Line Experience,Line OfficeLocation,Line GeoLocation,Line Type,"+
-                "Bar ID,Bar Label,Project Name,Client,Discipline,Experience,LOE,Location,Proposed,Type,"+
+                "Bar ID,Bar Label,Project Name,Client,Discipline,Experience,LOE,Location,Custom,Proposed,Type,"+
                 "Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
     lines.forEach(line=>{
         if(!line.bars.length){
@@ -2097,7 +2138,7 @@ csvEditToggleBtn.addEventListener("click", ()=>{
                 let {year:sy,week:sw}= fromAbsoluteWeek(bar.startAbsWeek);
                 let {year:ey,week:ew}= fromAbsoluteWeek(bar.startAbsWeek+ bar.length-1);
                 csvStr+= `${line.id||""},"${line.name||""}","${line.discipline||""}","${line.experience||""}","${line.officeLocation||""}","${line.geoLocation||""}","${line.type||""}",`;
-                csvStr+= `${bar.id||""},"${bar.label||""}","${bar.projectName||""}","${bar.client||""}","${bar.discipline||""}","${bar.experience||""}","${bar.LOE||""}","${bar.location||""}","${bar.proposed||""}","${bar.type||""}",`;
+                csvStr+= `${bar.id||""},"${bar.label||""}","${bar.projectName||""}","${bar.client||""}","${bar.discipline||""}","${bar.experience||""}","${bar.LOE||""}","${bar.location||""}","${bar.custom||""}","${bar.proposed||""}","${bar.type||""}",`;
                 csvStr+= `${sy},${sw},${ey},${ew},${bar.length}\n`;
             });
         }
@@ -2176,6 +2217,7 @@ importFileInput.addEventListener("change", e=>{
                         b.selected=false;
                         if(b.type===undefined) b.type="proposed";
                         if(b.label===undefined) b.label="";
+                        if(b.custom===undefined) b.custom="";
                     });
                 });
             } else if(file.name.endsWith(".csv")){
@@ -2217,8 +2259,9 @@ importFileInput.addEventListener("change", e=>{
 */
 const downloadCsvBtn= document.getElementById("downloadCsvBtn");
 downloadCsvBtn.addEventListener("click", ()=>{
+    // Updated CSV header to include new "Custom" column
     let csv= "Line ID,Line Name,Line Discipline,Line Experience,Line OfficeLocation,Line GeoLocation,Line Type,"+
-             "Bar ID,Bar Label,Project Name,Client,Discipline,Experience,LOE,Location,Proposed,Type,"+
+             "Bar ID,Bar Label,Project Name,Client,Discipline,Experience,LOE,Location,Custom,Proposed,Type,"+
              "Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
     lines.forEach(line=>{
        if(!line.bars.length){
@@ -2228,7 +2271,7 @@ downloadCsvBtn.addEventListener("click", ()=>{
                let {year:sy,week:sw}= fromAbsoluteWeek(bar.startAbsWeek);
                let {year:ey,week:ew}= fromAbsoluteWeek(bar.startAbsWeek+ bar.length-1);
                csv+= `${line.id||""},"${line.name||""}","${line.discipline||""}","${line.experience||""}","${line.officeLocation||""}","${line.geoLocation||""}","${line.type||""}",`;
-               csv+= `${bar.id||""},"${bar.label||""}","${bar.projectName||""}","${bar.client||""}","${bar.discipline||""}","${bar.experience||""}","${bar.LOE||""}","${bar.location||""}","${bar.proposed||""}","${bar.type||""}",`;
+               csv+= `${bar.id||""},"${bar.label||""}","${bar.projectName||""}","${bar.client||""}","${bar.discipline||""}","${bar.experience||""}","${bar.LOE||""}","${bar.location||""}","${bar.custom||""}","${bar.proposed||""}","${bar.type||""}",`;
                csv+= `${sy},${sw},${ey},${ew},${bar.length}\n`;
            });
        }
@@ -2506,6 +2549,8 @@ function parseCsv(csvString){
                 experience: stripQuotes(r["Experience"]||""),
                 LOE: stripQuotes(r["LOE"]||""),
                 location: stripQuotes(r["Location"]||""),
+                // parse new custom column
+                custom: stripQuotes(r["Custom"]||""),
                 proposed: stripQuotes(r["Proposed"]||"no").toLowerCase(),
                 type: stripQuotes(r["Type"]||"proposed").toLowerCase(),
                 startAbsWeek: startAbs,
