@@ -52,12 +52,67 @@
             font-size: 2rem;
             margin-right: 0.5rem;
         }
+        /* Lyrics Dropdown Styling */
+        .lyrics-dropdown {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(12px);
+            margin-bottom: 2rem;
+        }
+        .lyrics-btn {
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+            border: none;
+            border-radius: 50px;
+            padding: 0.75rem 1.5rem;
+            font-weight: bold;
+            color: white;
+            width: 100%;
+            text-align: left;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        .lyrics-btn:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(161, 140, 209, 0.3);
+        }
+        .lyrics-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease, padding 0.5s ease;
+            padding: 0 1rem;
+        }
+        .lyrics-content.show {
+            max-height: 1200px;
+            padding: 1.5rem 1rem;
+        }
+        .lyrics-text {
+            font-family: 'Georgia', serif;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #4a5568;
+            background: #f8f9fa;
+            padding: 1.2rem;
+            border-radius: 0.75rem;
+            border-left: 4px solid #a18cd1;
+        }
+        .dropdown-icon {
+            float: right;
+            transition: transform 0.3s ease;
+        }
+        .dropdown-icon.rotate {
+            transform: rotate(180deg);
+        }
         @media (max-width: 768px) {
             .section-title {
                 font-size: 1.5rem;
             }
             .playlist-card {
                 margin-bottom: 1rem;
+            }
+            .lyrics-btn {
+                font-size: 1rem;
             }
         }
     </style>
@@ -83,6 +138,293 @@
                 </h2>
             </div>
         </div>
+
+        <!-- Lyrics Dropdown Menu -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-lg-8 col-md-10">
+                <div class="lyrics-dropdown">
+                    <h4 class="mb-3 text-center" style="color: #764ba2;">
+                        <i class="fas fa-book-open me-2"></i>Sing-Along Lyrics
+                    </h4>
+
+                    <!-- Twinkle Twinkle Little Star -->
+                    <button class="lyrics-btn mb-2" data-target="lyrics-twinkle">
+                        <i class="fas fa-star me-2"></i>Twinkle Twinkle Little Star
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </button>
+                    <div id="lyrics-twinkle" class="lyrics-content">
+                        <div class="lyrics-text">
+                            Twinkle, twinkle, little star,<br>
+                            How I wonder what you are!<br>
+                            Up above the world so high,<br>
+                            Like a diamond in the sky.<br><br>
+                            When the blazing sun is gone,<br>
+                            When he nothing shines upon,<br>
+                            Then you show your little light,<br>
+                            Twinkle, twinkle, all the night.<br><br>
+                            Then the traveler in the dark,<br>
+                            Thanks you for your tiny spark,<br>
+                            He could not see which way to go,<br>
+                            If you did not twinkle so.
+                        </div>
+                    </div>
+
+                    <!-- Mary Had a Little Lamb (FULL EXTENDED) -->
+                    <button class="lyrics-btn mb-2" data-target="lyrics-mary">
+                        <i class="fas fa-sheep me-2"></i>Mary Had a Little Lamb (Full)
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </button>
+                    <div id="lyrics-mary" class="lyrics-content">
+                        <div class="lyrics-text">
+                            Mary had a little lamb,<br>
+                            Little lamb, little lamb,<br>
+                            Mary had a little lamb,<br>
+                            Its fleece was white as snow.<br><br>
+
+                            And everywhere that Mary went,<br>
+                            Mary went, Mary went,<br>
+                            Everywhere that Mary went,<br>
+                            The lamb was sure to go.<br><br>
+
+                            It followed her to school one day,<br>
+                            School one day, school one day,<br>
+                            It followed her to school one day,<br>
+                            Which was against the rule.<br><br>
+
+                            It made the children laugh and play,<br>
+                            Laugh and play, laugh and play,<br>
+                            It made the children laugh and play,<br>
+                            To see a lamb at school.<br><br>
+
+                            And so the teacher turned it out,<br>
+                            Turned it out, turned it out,<br>
+                            And so the teacher turned it out,<br>
+                            But still it lingered near.<br><br>
+
+                            And waited patiently about,<br>
+                            Patiently about, patiently about,<br>
+                            And waited patiently about,<br>
+                            Till Mary did appear.<br><br>
+
+                            "Why does the lamb love Mary so?"<br>
+                            Love Mary so? Love Mary so?<br>
+                            "Why does the lamb love Mary so?"<br>
+                            The eager children cry.<br><br>
+
+                            "Why, Mary loves the lamb, you know,"<br>
+                            The lamb, you know, the lamb, you know,<br>
+                            "Why, Mary loves the lamb, you know,"<br>
+                            The teacher did reply.
+                        </div>
+                    </div>
+
+                    <!-- Row Row Row Your Boat -->
+                    <button class="lyrics-btn mb-2" data-target="lyrics-row">
+                        <i class="fas fa-ship me-2"></i>Row Row Row Your Boat
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </button>
+                    <div id="lyrics-row" class="lyrics-content">
+                        <div class="lyrics-text">
+                            Row, row, row your boat,<br>
+                            Gently down the stream.<br>
+                            Merrily, merrily, merrily, merrily,<br>
+                            Life is but a dream.<br><br>
+
+                            Row, row, row your boat,<br>
+                            Gently up the creek,<br>
+                            If you see a little mouse,<br>
+                            Don’t forget to squeak!<br><br>
+
+                            Row, row, row your boat,<br>
+                            Gently down the stream,<br>
+                            If you see a crocodile,<br>
+                            Don’t forget to scream!
+                        </div>
+                    </div>
+
+                    <!-- Itsy Bitsy Spider -->
+                    <button class="lyrics-btn mb-2" data-target="lyrics-spider">
+                        <i class="fas fa-spider me-2"></i>Itsy Bitsy Spider
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </button>
+                    <div id="lyrics-spider" class="lyrics-content">
+                        <div class="lyrics-text">
+                            The itsy bitsy spider climbed up the water spout.<br>
+                            Down came the rain and washed the spider out.<br>
+                            Out came the sun and dried up all the rain,<br>
+                            And the itsy bitsy spider climbed up the spout again.<br><br>
+
+                            The itsy bitsy spider climbed up the kitchen wall,<br>
+                            Swoosh! went the fan and made the spider fall.<br>
+                            Out came the sun and dried up all the rain,<br>
+                            And the itsy bitsy spider climbed up the wall again.
+                        </div>
+                    </div>
+
+                    <!-- Old MacDonald -->
+                    <button class="lyrics-btn mb-2" data-target="lyrics-oldmac">
+                        <i class="fas fa-tractor me-2"></i>Old MacDonald Had a Farm
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </button>
+                    <div id="lyrics-oldmac" class="lyrics-content">
+                        <div class="lyrics-text">
+                            Old MacDonald had a farm, E-I-E-I-O!<br>
+                            And on that farm he had a cow, E-I-E-I-O!<br>
+                            With a moo-moo here, and a moo-moo there,<br>
+                            Here a moo, there a moo, everywhere a moo-moo,<br>
+                            Old MacDonald had a farm, E-I-E-I-O!<br><br>
+
+                            And on that farm he had a pig, E-I-E-I-O!<br>
+                            With an oink-oink here, and an oink-oink there...<br><br>
+
+                            And on that farm he had a duck, E-I-E-I-O!<br>
+                            With a quack-quack here, and a quack-quack there...<br><br>
+
+                            And on that farm he had a horse, E-I-E-I-O!<br>
+                            With a neigh-neigh here, and a neigh-neigh there...
+                        </div>
+                    </div>
+
+                    <!-- Baby Beluga -->
+                    <button class="lyrics-btn mb-2" data-target="lyrics-beluga">
+                        <i class="fas fa-whale me-2"></i>Baby Beluga
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </button>
+                    <div id="lyrics-beluga" class="lyrics-content">
+                        <div class="lyrics-text">
+                            Baby Beluga in the deep blue sea,<br>
+                            Swim so wild and you swim so free.<br>
+                            Heaven above and the sea below,<br>
+                            And a little white whale on the go.<br><br>
+
+                            Baby Beluga, Baby Beluga,<br>
+                            Is the water warm? Is your mama home with you, so happy?<br><br>
+
+                            Way down yonder where the dolphins play,<br>
+                            Where you dive and splash all day.<br>
+                            Waves roll in and the waves roll out,<br>
+                            See the water squirting out of your spout.<br><br>
+
+                            Baby Beluga, oh, Baby Beluga,<br>
+                            Sing your little song, sing for all your friends, we like to hear you!
+                        </div>
+                    </div>
+
+                    <!-- Down by the Bay (RAFFI FULL EXTENDED) -->
+                    <button class="lyrics-btn mb-2" data-target="lyrics-downbay">
+                        <i class="fas fa-water me-2"></i>Down by the Bay (Raffi Full)
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </button>
+                    <div id="lyrics-downbay" class="lyrics-content">
+                        <div class="lyrics-text">
+                            Down by the bay, where the watermelons grow,<br>
+                            Back to my home, I dare not go.<br>
+                            For if I do, my mother will say:<br><br>
+
+                            "Did you ever see a goose kissing a moose?"<br>
+                            Down by the bay!<br><br>
+
+                            "Did you ever see a whale with a polka dot tail?"<br>
+                            Down by the bay!<br><br>
+
+                            "Did you ever see a fly wearing a tie?"<br>
+                            Down by the bay!<br><br>
+
+                            "Did you ever see a bear combing his hair?"<br>
+                            Down by the bay!<br><br>
+
+                            "Did you ever see llamas eating their pajamas?"<br>
+                            Down by the bay!<br><br>
+
+                            "Did you ever have a time when you couldn’t make a rhyme?"<br>
+                            Down by the bay!
+                        </div>
+                    </div>
+
+                    <!-- Hickory Dickory Dock -->
+                    <button class="lyrics-btn mb-2" data-target="lyrics-hickory">
+                        <i class="fas fa-clock me-2"></i>Hickory Dickory Dock
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </button>
+                    <div id="lyrics-hickory" class="lyrics-content">
+                        <div class="lyrics-text">
+                            Hickory, dickory, dock,<br>
+                            The mouse ran up the clock.<br>
+                            The clock struck one,<br>
+                            The mouse ran down,<br>
+                            Hickory, dickory, dock.<br><br>
+
+                            Hickory, dickory, dock,<br>
+                            The mouse ran up the clock.<br>
+                            The clock struck two,<br>
+                            And down he flew,<br>
+                            Hickory, dickory, dock.<br><br>
+
+                            The clock struck three,<br>
+                            He skinned his knee...<br><br>
+
+                            The clock struck four,<br>
+                            He hit the floor...<br><br>
+
+                            The clock struck five,<br>
+                            He took a dive...
+                        </div>
+                    </div>
+
+                    <!-- Jack and Jill -->
+                    <button class="lyrics-btn mb-2" data-target="lyrics-jackjill">
+                        <i class="fas fa-hiking me-2"></i>Jack and Jill
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </button>
+                    <div id="lyrics-jackjill" class="lyrics-content">
+                        <div class="lyrics-text">
+                            Jack and Jill went up the hill,<br>
+                            To fetch a pail of water.<br>
+                            Jack fell down and broke his crown,<br>
+                            And Jill came tumbling after.<br><br>
+
+                            Up Jack got, and home did trot,<br>
+                            As fast as he could caper.<br>
+                            He went to bed and bound his head,<br>
+                            With vinegar and brown paper.<br><br>
+
+                            Then Jill came in, and she did grin,<br>
+                            To see Jack’s paper plaster.<br>
+                            Her mother, vexed, did whip her next,<br>
+                            For causing Jack’s disaster.
+                        </div>
+                    </div>
+
+                    <!-- Head, Shoulders, Knees and Toes (FULL EXTENDED) -->
+                    <button class="lyrics-btn mb-2" data-target="lyrics-head">
+                        <i class="fas fa-child me-2"></i>Head, Shoulders, Knees and Toes (Full)
+                        <i class="fas fa-chevron-down dropdown-icon"></i>
+                    </button>
+                    <div id="lyrics-head" class="lyrics-content">
+                        <div class="lyrics-text">
+                            Head, shoulders, knees and toes,<br>
+                            Knees and toes.<br>
+                            Head, shoulders, knees and toes,<br>
+                            Knees and toes.<br>
+                            And eyes and ears and mouth and nose,<br>
+                            Head, shoulders, knees and toes,<br>
+                            Knees and toes.<br><br>
+
+                            Ankles, elbows, feet and seat, feet and seat,<br>
+                            Ankles, elbows, feet and seat, feet and seat.<br>
+                            And hair and hips and chin and cheeks,<br>
+                            Ankles, elbows, feet and seat, feet and seat.<br><br>
+
+                            Faster Version:<br>
+                            Headshoulderskneesandtoeskneesandtoes...<br>
+                            (Repeat with increasing speed!)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nursery Rhyme Playlists -->
         <div class="row justify-content-center">
             <div class="col-lg-8 col-md-10">
                 <div class="playlist-card">
@@ -321,6 +663,112 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- New Gentle Classical Additions -->
+                <div class="playlist-card">
+                    <div class="playlist-header">
+                        <h4 class="mb-0"><i class="fas fa-list me-2"></i>Mozart for Babies: Piano Sonata No. 16 "Sonata Facile"</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="card-text">Light, playful, and simple—perfect for tiny ears and developing minds.</p>
+                        <div class="text-center">
+                            <a href="https://www.youtube.com/watch?v=2i8v3uG8_uA" target="_blank" class="btn btn-play">
+                                <i class="fab fa-youtube me-2"></i>Play on YouTube
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="playlist-card">
+                    <div class="playlist-header">
+                        <h4 class="mb-0"><i class="fas fa-list me-2"></i>Debussy: Clair de Lune (Piano Solo)</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="card-text">Soft, flowing moonlight in sound—calming and magical.</p>
+                        <div class="text-center">
+                            <a href="https://www.youtube.com/watch?v=CvFH_6DNRCY" target="_blank" class="btn btn-play">
+                                <i class="fab fa-youtube me-2"></i>Play on YouTube
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="playlist-card">
+                    <div class="playlist-header">
+                        <h4 class="mb-0"><i class="fas fa-list me-2"></i>Chopin: Nocturne in E-flat Major, Op. 9 No. 2</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="card-text">Warm, lyrical, and soothing—ideal for winding down.</p>
+                        <div class="text-center">
+                            <a href="https://www.youtube.com/watch?v=wg7rM5G_4dM" target="_blank" class="btn btn-play">
+                                <i class="fab fa-youtube me-2"></i>Play on YouTube
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="playlist-card">
+                    <div class="playlist-header">
+                        <h4 class="mb-0"><i class="fas fa-list me-2"></i>Mozart: Eine Kleine Nachtmusik (Serenade for Strings)</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="card-text">Gentle string orchestra—cheerful yet peaceful, never overwhelming.</p>
+                        <div class="text-center">
+                            <a href="https://www.youtube.com/watch?v=Qb_jQBgzU-I" target="_blank" class="btn btn-play">
+                                <i class="fab fa-youtube me-2"></i>Play on YouTube
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="playlist-card">
+                    <div class="playlist-header">
+                        <h4 class="mb-0"><i class="fas fa-list me-2"></i>Debussy: Rêverie (Piano)</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="card-text">Dreamy, impressionistic piano—perfect for naptime or quiet play.</p>
+                        <div class="text-center">
+                            <a href="https://www.youtube.com/watch?v=2i8v3uG8_uA" target="_blank" class="btn btn-play">
+                                <i class="fab fa-youtube me-2"></i>Play on YouTube
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="playlist-card">
+                    <div class="playlist-header">
+                        <h4 class="mb-0"><i class="fas fa-list me-2"></i>Chopin: Prelude in E Minor, Op. 28 No. 4</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="card-text">Melancholic yet tender—slow and deeply calming.</p>
+                        <div class="text-center">
+                            <a href="https://www.youtube.com/watch?v=efzR7O1F5F8" target="_blank" class="btn btn-play">
+                                <i class="fab fa-youtube me-2"></i>Play on YouTube
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="playlist-card">
+                    <div class="playlist-header">
+                        <h4 class="mb-0"><i class="fas fa-list me-2"></i>Mozart: Piano Concerto No. 21 "Andante" (Elvira Madigan)</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="card-text">Heavenly, flowing melody—pure serenity in orchestral form.</p>
+                        <div class="text-center">
+                            <a href="https://www.youtube.com/watch?v=4JwvW1M3QwA" target="_blank" class="btn btn-play">
+                                <i class="fab fa-youtube me-2"></i>Play on YouTube
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="playlist-card">
+                    <div class="playlist-header">
+                        <h4 class="mb-0"><i class="fas fa-list me-2"></i>Bach: Air on the G String (Orchestral)</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="card-text">Silky smooth strings—timeless peace for little souls.</p>
+                        <div class="text-center">
+                            <a href="https://www.youtube.com/watch?v=E2j-frfK-yg" target="_blank" class="btn btn-play">
+                                <i class="fab fa-youtube me-2"></i>Play on YouTube
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -332,5 +780,18 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+        // Lyrics Dropdown Toggle
+        document.querySelectorAll('.lyrics-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const targetId = this.getAttribute('data-target');
+                const content = document.getElementById(targetId);
+                const icon = this.querySelector('.dropdown-icon');
+
+                content.classList.toggle('show');
+                icon.classList.toggle('rotate');
+            });
+        });
+    </script>
 </body>
 </html>
