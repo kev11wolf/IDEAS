@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" /> <!-- Character set -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/> <!-- Responsive scaling -->
   <title>Critical Path Tracer</title>
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
@@ -11,22 +11,81 @@
   <!-- Chart.js for Gantt -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    body { padding: 1.5rem; background-color: #f8f9fa; font-size: 0.9rem; }
-    .log-container { max-height: 150px; overflow-y: auto; background: #f1f1f1; padding: 8px; border-radius: 5px; font-family: monospace; font-size: 0.8rem; }
-    .activity-card { cursor: pointer; transition: 0.2s; }
-    .activity-card:hover { background-color: #e9ecef; }
-    .critical-path-list { min-height: 80px; }
-    .search-results { max-height: 200px; overflow-y: auto; }
-    .sortable { cursor: pointer; }
-    .sortable::after { content: ' [sort]'; font-size: 0.75em; color: #666; }
-    .gantt-container, .final-gantt-container { height: 250px; margin-top: 15px; }
-    .predecessor-table th, .predecessor-table td { font-size: 0.8rem; padding: 4px; }
-    .final-path-table th, .final-path-table td { font-size: 0.8rem; padding: 4px; }
-    .card { margin-bottom: 1rem; }
-    .card-body { padding: 0.75rem; }
-    .card-header { padding: 0.5rem 0.75rem; font-size: 0.9rem; }
-    .table-sm th, .table-sm td { padding: 0.25rem; }
-    .btn-sm { padding: 0.15rem 0.3rem; font-size: 0.75rem; }
+    body { 
+      padding: 1.5rem; 
+      background-color: #f8f9fa; 
+      font-size: 0.9rem; 
+    }
+    .log-container { 
+      max-height: 150px; 
+      overflow-y: auto; 
+      background: #f1f1f1; 
+      padding: 8px; 
+      border-radius: 5px; 
+      font-family: monospace; 
+      font-size: 0.8rem; 
+    }
+    .activity-card { 
+      cursor: pointer; 
+      transition: 0.2s; 
+    }
+    .activity-card:hover { 
+      background-color: #e9ecef; 
+    }
+    .critical-path-list { 
+      min-height: 80px; 
+    }
+    .search-results { 
+      max-height: 200px; 
+      overflow-y: auto; 
+    }
+    .sortable { 
+      cursor: pointer; 
+    }
+    .sortable::after { 
+      content: ' [sort]'; 
+      font-size: 0.75em; 
+      color: #666; 
+    }
+    .sortable.sort-asc::after { 
+      content: ' [asc]'; 
+      font-size: 0.75em; 
+      color: #666; 
+    }
+    .sortable.sort-desc::after { 
+      content: ' [desc]'; 
+      font-size: 0.75em; 
+      color: #666; 
+    }
+    .gantt-container, .final-gantt-container { 
+      height: 250px; 
+      margin-top: 15px; 
+    }
+    .predecessor-table th, .predecessor-table td { 
+      font-size: 0.8rem; 
+      padding: 4px; 
+    }
+    .final-path-table th, .final-path-table td { 
+      font-size: 0.8rem; 
+      padding: 4px; 
+    }
+    .card { 
+      margin-bottom: 1rem; 
+    }
+    .card-body { 
+      padding: 0.75rem; 
+    }
+    .card-header { 
+      padding: 0.5rem 0.75rem; 
+      font-size: 0.9rem; 
+    }
+    .table-sm th, .table-sm td { 
+      padding: 0.25rem; 
+    }
+    .btn-sm { 
+      padding: 0.15rem 0.3rem; 
+      font-size: 0.75rem; 
+    }
   </style>
 </head>
 <body>
@@ -41,7 +100,14 @@
             <h6 class="mb-0">1. Upload Schedule (CSV)</h6>
           </div>
           <div class="card-body">
-            <input type="file" id="csvUpload" accept=".csv" class="form-control form-control-sm"/>
+            <!-- Input for CSV upload -->
+            <input 
+              type="file" 
+              id="csvUpload" 
+              accept=".csv" 
+              class="form-control form-control-sm"
+              aria-label="Upload your schedule CSV file here to begin"
+            />
             <small class="text-muted">Headers: Activity ID, Start, Finish, Predecessors, Predecessor Details...</small>
           </div>
         </div>
@@ -50,10 +116,19 @@
         <div class="card shadow-sm" id="searchSection" style="display:none;">
           <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
             <h6 class="mb-0">2. Start Tracing</h6>
+            <!-- Button for automatic detection of critical path -->
             <button id="autoDetectBtn" class="btn btn-outline-light btn-sm" disabled>Auto-Detect</button>
           </div>
           <div class="card-body">
-            <input type="text" id="activitySearch" class="form-control form-control-sm mb-2" placeholder="Search ID or Name..."/>
+            <!-- Input for searching activities -->
+            <input 
+              type="text" 
+              id="activitySearch" 
+              class="form-control form-control-sm mb-2" 
+              placeholder="Search ID or Name..."
+              aria-label="Search activities by ID or name"
+            />
+            <!-- Results area for search matches -->
             <div id="searchResults" class="search-results border p-2 bg-white small"></div>
           </div>
         </div>
@@ -64,7 +139,9 @@
             <h6 class="mb-0">3. Click Predecessor to Add</h6>
           </div>
           <div class="card-body">
+            <!-- Dynamic predecessor listing -->
             <div id="predecessorList" class="mb-2"></div>
+            <!-- Gantt chart container -->
             <div class="gantt-container">
               <canvas id="ganttChart"></canvas>
             </div>
@@ -80,16 +157,20 @@
             <h6 class="mb-0">Final Critical Path</h6>
           </div>
           <div class="card-body">
+            <!-- Table listing the final critical path -->
             <table class="table table-sm table-hover final-path-table mb-2">
               <thead>
                 <tr>
                   <th>ID</th>
                   <th>Name</th>
+                  <th>Start</th>
+                  <th>Finish</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody id="criticalPathList"></tbody>
             </table>
+            <!-- Export button for CSV of final critical path -->
             <button id="exportBtn" class="btn btn-success w-100 btn-sm" disabled>Export CSV</button>
           </div>
         </div>
@@ -100,6 +181,7 @@
             <h6 class="mb-0">Final Gantt View (Gaps Visible)</h6>
           </div>
           <div class="card-body p-0">
+            <!-- Separate container for final Gantt chart -->
             <div class="final-gantt-container">
               <canvas id="finalGanttChart"></canvas>
             </div>
@@ -112,6 +194,7 @@
             <h6 class="mb-0">Log</h6>
           </div>
           <div class="card-body p-0">
+            <!-- Text area for logs -->
             <pre id="log" class="log-container m-0 p-2"></pre>
           </div>
         </div>
@@ -119,17 +202,17 @@
     </div>
   </div>
 
-  <!-- Bootstrap JS -->
+  <!-- Bootstrap JS bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Global data
-    let activities = []; // Full parsed data
-    let activityMap = {}; // Activity ID → object
-    let criticalPath = []; // Final ordered list
-    let ganttChart = null; // Chart.js instance for tracing
-    let finalGanttChart = null; // Chart.js instance for final output
+    let activities = []; // Full parsed data from CSV
+    let activityMap = {}; // Map of Activity ID → object
+    let criticalPath = []; // Final ordered list for critical path
+    let ganttChart = null; // Chart.js instance for the tracing Gantt
+    let finalGanttChart = null; // Chart.js instance for the final Gantt
     let predSortField = 'Activity Status'; // Default sort field
-    let predSortAsc = true; // Default: ascending (Not Started → In Progress → Completed)
+    let predSortAsc = true; // Default: ascending for the sort
 
     // DOM Elements
     const csvUpload = document.getElementById('csvUpload');
@@ -145,28 +228,58 @@
     const finalGanttCanvas = document.getElementById('finalGanttChart');
     const autoDetectBtn = document.getElementById('autoDetectBtn');
 
-    // Log helper
+    // Log helper function: appends messages with a timestamp
     function addLog(message) {
       const timestamp = new Date().toLocaleTimeString();
       log.innerHTML += `[${timestamp}] ${message}\n`;
       log.scrollTop = log.scrollHeight;
     }
 
-    // Clean date string: remove exactly " A" (space + A) and "*" — preserve month "A" in dates like "Aug"
+    // Utility to clean date strings: remove " A" and "*" from date strings
     function cleanDate(dateStr) {
       if (!dateStr) return '';
       return dateStr.toString().replace(/ A/g, '').replace(/\*/g, '').trim();
     }
 
+    /**
+     * Checks if required columns exist in the CSV. If not, logs an error and alerts the user.
+     * This ensures the necessary columns are present for the script to function.
+     */
+    function validateColumns(data) {
+      // Required columns for the script
+      const requiredColumns = ['Activity ID', 'Start', 'Finish', 'Predecessors', 'Predecessor Details'];
+      
+      // If no data rows are found
+      if (data.length === 0) {
+        addLog('No data found in CSV.');
+        alert('CSV is empty. Please upload a valid file.');
+        return false;
+      }
+      
+      // Check if all columns exist in the first row
+      const firstRow = Object.keys(data[0]);
+      const missingColumns = requiredColumns.filter(col => !firstRow.includes(col));
+      
+      if (missingColumns.length > 0) {
+        addLog('Missing columns: ' + missingColumns.join(', '));
+        alert('Some required columns are missing: ' + missingColumns.join(', '));
+        return false;
+      }
+      
+      return true;
+    }
+
     // CSV Upload Handler
     csvUpload.addEventListener('change', (e) => {
       const file = e.target.files[0];
-      if (!file) return;
+      if (!file) return; // If user didn't select a file, exit
 
       addLog(`File selected: ${file.name}`);
+      // Use worker for better performance on large files
       Papa.parse(file, {
         header: true,
         skipEmptyLines: true,
+        worker: true, // Use Web Worker to avoid blocking the main thread
         complete: (result) => {
           if (result.errors.length) {
             addLog(`Parse errors: ${result.errors.map(e => e.message).join('; ')}`);
@@ -174,19 +287,27 @@
             return;
           }
 
+          // Validate columns after parsing
+          if (!validateColumns(result.data)) {
+            return; 
+          }
+
+          // Clean up activity data (removing " A" and "*" from date strings)
           activities = result.data.map(act => ({
             ...act,
             'Start': cleanDate(act['Start']),
             'Finish': cleanDate(act['Finish'])
           }));
 
+          // Build map of Activity ID → object
           activityMap = {};
           activities.forEach(act => {
             const id = act['Activity ID']?.trim();
             if (id) activityMap[id] = act;
           });
 
-          addLog(`Loaded ${activities.length} activities. Cleaned " A" and "*".`);
+          addLog(`Loaded ${activities.length} activities. Cleaned date artifacts.`);
+          // Show search section and reset the trace section
           searchSection.style.display = 'block';
           traceSection.style.display = 'none';
           criticalPath = [];
@@ -202,17 +323,18 @@
       });
     });
 
-    // Search Activities
+    // Searching for activities
     activitySearch.addEventListener('input', () => {
       const query = activitySearch.value.trim().toLowerCase();
-      searchResults.innerHTML = '';
+      searchResults.innerHTML = ''; // Clear old results
 
-      if (!query) return;
+      if (!query) return; // If user clears the input, do nothing
 
+      // Match by ID or Name, limit to first 10
       const matches = activities.filter(act => {
         const id = act['Activity ID']?.toLowerCase();
         const name = act['Activity Name']?.toLowerCase();
-        return id?.includes(query) || name?.includes(query);
+        return (id && id.includes(query)) || (name && name.includes(query));
       }).slice(0, 10);
 
       if (matches.length === 0) {
@@ -220,6 +342,7 @@
         return;
       }
 
+      // Populate search results
       matches.forEach(act => {
         const div = document.createElement('div');
         div.className = 'activity-card p-1 border-bottom small';
@@ -229,10 +352,10 @@
       });
     });
 
-    // Start tracing from selected activity
+    // Initiate tracing from the selected activity
     function startCriticalPath(startAct) {
       addLog(`Starting trace from: ${startAct['Activity ID']}`);
-      criticalPath = [startAct];
+      criticalPath = [startAct]; // Begin new path
       updateCriticalPathUI();
       showPredecessors(startAct);
       traceSection.style.display = 'block';
@@ -242,16 +365,21 @@
       updateFinalGanttChart();
     }
 
-    // Show predecessors with custom status + finish sort
+    // Show the predecessors for the current activity
     function showPredecessors(currentAct) {
       predecessorList.innerHTML = '';
-      const predDetails = (currentAct['Predecessor Details'] || '').split(';').map(s => s.trim()).filter(Boolean);
+      // Parse Predecessor Details for relationship types
+      const predDetails = (currentAct['Predecessor Details'] || '')
+        .split(';')
+        .map(s => s.trim())
+        .filter(Boolean);
       const predMap = {};
       predDetails.forEach(d => {
         const [id, type] = d.split(':');
         if (id && type) predMap[id.trim()] = type.trim();
       });
 
+      // Split Predecessors by comma or semicolon
       const predIds = (currentAct.Predecessors || '')
         .split(/[,;]/)
         .map(s => s.trim())
@@ -263,8 +391,9 @@
         return;
       }
 
-      addLog(`Found ${predIds.length} predecessor(s).`);
+      addLog(`Found ${predIds.length} predecessor(s) for ${currentAct['Activity ID']}.`);
 
+      // Build table structure for predecessors
       const table = document.createElement('table');
       table.className = 'table table-sm table-bordered predecessor-table';
       table.innerHTML = `
@@ -287,47 +416,63 @@
       const tbody = table.querySelector('#predTableBody');
       const headers = table.querySelectorAll('.sortable');
 
+      // Attach click handlers for sortable columns
       headers.forEach(th => {
         th.addEventListener('click', () => {
+          // Which field are we sorting by
           const field = th.dataset.sort;
+
+          // Toggle or set ascending/descending
           if (predSortField === field) {
             predSortAsc = !predSortAsc;
           } else {
             predSortField = field;
             predSortAsc = true;
           }
+
+          // Remove old ASC/DESC classes
+          headers.forEach(h => {
+            h.classList.remove('sort-asc', 'sort-desc');
+          });
+          th.classList.add(predSortAsc ? 'sort-asc' : 'sort-desc');
+
+          // Re-render rows with the new sort
           renderPredecessorRows(tbody, predIds, predMap);
         });
       });
 
+      // Initial render
       renderPredecessorRows(tbody, predIds, predMap);
       predecessorList.appendChild(table);
     }
 
-    // Custom sort: Status (Not Started → In Progress → Completed), then Finish desc
+    // Our custom sort function, then rendering the table rows
     function renderPredecessorRows(tbody, predIds, predMap) {
       tbody.innerHTML = '';
       let sortedPreds = predIds.map(id => activityMap[id]);
 
-      // Status priority: Not Started = 0, In Progress = 1, Completed = 2
+      // For status sorting logic: Not Started => 0, In Progress => 1, Completed => 2
       const statusOrder = { 'Not Started': 0, 'In Progress': 1, 'Completed': 2 };
 
+      // Sort by status, then by finish date descending
       sortedPreds.sort((a, b) => {
         const statusA = a['Activity Status'] || '';
         const statusB = b['Activity Status'] || '';
         const orderA = statusOrder[statusA] ?? 3;
         const orderB = statusOrder[statusB] ?? 3;
 
+        // Order by status first
         if (orderA !== orderB) {
-          return orderA - orderB; // Not Started first
+          return orderA - orderB;
         }
 
-        // Within same status, sort by Finish descending
+        // Then by finish date descending (later finish first)
         const finishA = new Date(a['Finish'] || '') || 0;
         const finishB = new Date(b['Finish'] || '') || 0;
         return finishB - finishA;
       });
 
+      // Now populate the rows
       sortedPreds.forEach(pred => {
         const relType = predMap[pred['Activity ID']] || '—';
         const row = document.createElement('tr');
@@ -344,13 +489,15 @@
           <td>${pred['Activity Status'] || '—'}</td>
           <td>${relType}</td>
         `;
+        // On click, add this predecessor to the path
         row.onclick = () => addToCriticalPath(pred);
         tbody.appendChild(row);
       });
     }
 
-    // Add predecessor to critical path
+    // Adding a predecessor (predAct) into the critical path
     function addToCriticalPath(predAct) {
+      // Prevent duplicates in the critical path
       if (criticalPath.some(a => a['Activity ID'] === predAct['Activity ID'])) {
         alert('Already in path.');
         return;
@@ -358,13 +505,28 @@
 
       criticalPath.unshift(predAct);
       addLog(`Added: ${predAct['Activity ID']}`);
+
+      // Update UI
       updateCriticalPathUI();
-      showPredecessors(predAct); // Update to show new predecessor's predecessors
+      showPredecessors(predAct); // Show new front's predecessors
       updateGanttChart();
       updateFinalGanttChart();
     }
 
-    // Update final critical path UI
+    // Color function for the bars based on activity status
+    function getColorByStatus(status = '') {
+      const s = status.trim().toLowerCase();
+      if (s === 'not started') {
+        return 'rgba(0, 128, 0, 0.7)'; // Green
+      } else if (s === 'in progress') {
+        return 'rgba(255, 165, 0, 0.7)'; // Orange
+      } else if (s === 'completed') {
+        return 'rgba(128, 128, 128, 0.7)'; // Gray
+      } 
+      return 'rgba(54, 162, 235, 0.7)'; // Default fallback color (blue)
+    }
+
+    // Refresh the critical path UI table
     function updateCriticalPathUI() {
       criticalPathList.innerHTML = '';
       criticalPath.forEach((act, i) => {
@@ -372,68 +534,112 @@
         tr.innerHTML = `
           <td><strong>${act['Activity ID']}</strong></td>
           <td>${act['Activity Name'] || 'N/A'}</td>
-          <td><button class="btn btn-sm btn-outline-danger" onclick="removeFromPath(${i})">[cross]</button></td>
+          <td>${act['Start'] || 'N/A'}</td>
+          <td>${act['Finish'] || 'N/A'}</td>
+          <td><button class="btn btn-sm btn-outline-danger" onclick="removeFromPath(${i})">[Remove]</button></td>
         `;
         criticalPathList.appendChild(tr);
       });
-      exportBtn.disabled = criticalPath.length === 0;
+      exportBtn.disabled = (criticalPath.length === 0);
     }
 
-    // Remove from path — now updates predecessor list to the new "front" activity
+    // Remove an item from the path by index
     window.removeFromPath = (index) => {
       const removed = criticalPath.splice(index, 1)[0];
       addLog(`Removed: ${removed['Activity ID']}`);
+      // Update UI and charts
       updateCriticalPathUI();
       updateGanttChart();
       updateFinalGanttChart();
 
-      // If path not empty, show predecessors of the *new first* activity
+      // If path still has items, revert to the last item’s predecessors
+      // so the user can continue from that item without redoing everything.
       if (criticalPath.length > 0) {
-        showPredecessors(criticalPath[0]);
+        const lastItem = criticalPath[criticalPath.length - 1];
+        showPredecessors(lastItem);
       } else {
+        // If no items left, hide the trace section
         predecessorList.innerHTML = '';
         traceSection.style.display = 'none';
       }
     };
 
-    // Update Gantt Chart (tracing)
+    // Update the Gantt Chart in the tracing area
     function updateGanttChart() {
       if (!criticalPath.length) {
+        // Destroy existing chart if no items
         if (ganttChart) ganttChart.destroy();
         ganttChart = null;
         return;
       }
 
+      // Gather labels and dates
       const labels = criticalPath.map(a => `${a['Activity ID']}`);
-      const startDates = criticalPath.map(a => a['Start'] ? new Date(a['Start']) : null);
-      const endDates = criticalPath.map(a => a['Finish'] ? new Date(a['Finish']) : null);
+      const startDates = criticalPath.map(a => {
+        const d = new Date(a['Start']);
+        return isNaN(d) ? null : d; // Null if invalid date
+      });
+      const endDates = criticalPath.map(a => {
+        const d = new Date(a['Finish']);
+        return isNaN(d) ? null : d; // Null if invalid date
+      });
 
+      // Map statuses to colors
+      const barColors = criticalPath.map(a => getColorByStatus(a['Activity Status']));
+
+      // Floating bars: xMin + xMax along the horizontal axis
       const datasets = [{
         label: 'Duration',
-        data: criticalPath.map((a, i) => ({
-          x: [startDates[i], endDates[i]],
-          y: labels[i]
+        data: criticalPath.map((act, i) => ({
+          y: labels[i],
+          xMin: startDates[i] || 0,
+          xMax: endDates[i] || 0
         })),
-        backgroundColor: 'rgba(54, 162, 235, 0.8)',
-        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: barColors,
+        borderColor: 'rgba(0,0,0,0.2)',
         borderWidth: 1
       }];
 
+      // Destroy old chart if exists
       const ctx = ganttCanvas.getContext('2d');
       if (ganttChart) ganttChart.destroy();
 
+      // Create new Chart.js bar chart
       ganttChart = new Chart(ctx, {
         type: 'bar',
         data: { labels, datasets },
         options: {
           indexAxis: 'y',
-          scales: {
-            x: { type: 'time', time: { unit: 'day' }, title: { display: true, text: 'Timeline' } },
-            y: { title: { display: true, text: 'Activities' } }
+          parsing: {
+            xMin: 'xMin',
+            xMax: 'xMax'
           },
           plugins: {
-            tooltip: { mode: 'index', intersect: false },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                label: function(context) {
+                  const act = criticalPath[context.dataIndex];
+                  return `ID: ${act['Activity ID']} | Status: ${act['Activity Status'] || 'N/A'}`;
+                }
+              }
+            },
             legend: { display: false }
+          },
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                unit: 'day'
+              },
+              title: { display: true, text: 'Timeline' }
+            },
+            y: {
+              type: 'category',
+              labels: labels,
+              title: { display: true, text: 'Activities' }
+            }
           },
           responsive: true,
           maintainAspectRatio: false
@@ -444,41 +650,79 @@
     // Update Final Gantt Chart
     function updateFinalGanttChart() {
       if (!criticalPath.length) {
+        // Destroy existing chart if no items
         if (finalGanttChart) finalGanttChart.destroy();
         finalGanttChart = null;
         return;
       }
 
+      // Gather data
       const labels = criticalPath.map(a => `${a['Activity ID']}`);
-      const startDates = criticalPath.map(a => a['Start'] ? new Date(a['Start']) : null);
-      const endDates = criticalPath.map(a => a['Finish'] ? new Date(a['Finish']) : null);
+      const startDates = criticalPath.map(a => {
+        const d = new Date(a['Start']);
+        return isNaN(d) ? null : d;
+      });
+      const endDates = criticalPath.map(a => {
+        const d = new Date(a['Finish']);
+        return isNaN(d) ? null : d;
+      });
 
+      // Colors by status
+      const barColors = criticalPath.map(a => getColorByStatus(a['Activity Status']));
+
+      // Range data for floating bars
       const datasets = [{
         label: 'Duration',
-        data: criticalPath.map((a, i) => ({
-          x: [startDates[i], endDates[i]],
-          y: labels[i]
+        data: criticalPath.map((act, i) => ({
+          y: labels[i],
+          xMin: startDates[i] || 0,
+          xMax: endDates[i] || 0
         })),
-        backgroundColor: 'rgba(220, 53, 69, 0.8)',
-        borderColor: 'rgba(220, 53, 69, 1)',
+        backgroundColor: barColors,
+        borderColor: 'rgba(0,0,0,0.2)',
         borderWidth: 1
       }];
 
+      // Destroy old chart if exists
       const ctx = finalGanttCanvas.getContext('2d');
       if (finalGanttChart) finalGanttChart.destroy();
 
+      // Create new Chart.js bar chart for final
       finalGanttChart = new Chart(ctx, {
         type: 'bar',
         data: { labels, datasets },
         options: {
           indexAxis: 'y',
-          scales: {
-            x: { type: 'time', time: { unit: 'day' }, title: { display: true, text: 'Final Path' } },
-            y: { title: { display: true, text: 'Activities' } }
+          parsing: {
+            xMin: 'xMin',
+            xMax: 'xMax'
           },
           plugins: {
-            tooltip: { mode: 'index', intersect: false },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                label: function(context) {
+                  const act = criticalPath[context.dataIndex];
+                  return `ID: ${act['Activity ID']} | Status: ${act['Activity Status'] || 'N/A'}`;
+                }
+              }
+            },
             legend: { display: false }
+          },
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                unit: 'day'
+              },
+              title: { display: true, text: 'Final Path' }
+            },
+            y: {
+              type: 'category',
+              labels: labels,
+              title: { display: true, text: 'Activities' }
+            }
           },
           responsive: true,
           maintainAspectRatio: false
@@ -486,32 +730,47 @@
       });
     }
 
-    // Auto-Detect Critical Path
+    // Auto-detect the critical path using only zero Total Float
     autoDetectBtn.addEventListener('click', () => {
       addLog('Running auto-detect...');
+      // Filter activities with 0 float
       const zeroFloatActs = activities.filter(a => {
         const tf = parseFloat(a['Total Float'] || '');
         return !isNaN(tf) && tf === 0;
       });
 
       if (zeroFloatActs.length === 0) {
-        addLog('No zero-float activities.');
+        addLog('No zero-float activities found.');
         alert('No critical path found.');
         return;
       }
 
+      // Build adjacency for zero-float activities
       const graph = {};
       const indegree = {};
       zeroFloatActs.forEach(a => {
         const id = a['Activity ID'];
-        graph[id] = (a.Successors || '').split(/[,;]/).map(s => s.trim()).filter(s => s && activityMap[s] && parseFloat(activityMap[s]['Total Float'] || '') === 0);
+        // Parse successors with 0 float
+        graph[id] = (a.Successors || '')
+          .split(/[,;]/)
+          .map(s => s.trim())
+          .filter(s => s && activityMap[s] && parseFloat(activityMap[s]['Total Float'] || '') === 0);
         indegree[id] = 0;
       });
-      Object.values(graph).flat().forEach(s => indegree[s] = (indegree[s] || 0) + 1);
 
+      // Compute indegrees
+      Object.values(graph).flat().forEach(s => {
+        indegree[s] = (indegree[s] || 0) + 1;
+      });
+
+      // Identify start activities (no incoming edges)
       const starts = zeroFloatActs.filter(a => !indegree[a['Activity ID']]);
-      if (starts.length === 0) return;
+      if (starts.length === 0) {
+        addLog('No valid start activity found for auto-detect.');
+        return;
+      }
 
+      // Simple BFS to form the path
       const path = [];
       const queue = [starts[0]['Activity ID']];
       const visited = new Set();
@@ -522,7 +781,7 @@
         visited.add(id);
         const act = activityMap[id];
         if (act) path.push(act);
-        graph[id]?.forEach(succ => queue.push(succ));
+        (graph[id] || []).forEach(succ => queue.push(succ));
       }
 
       if (path.length < 2) {
@@ -530,8 +789,9 @@
         return;
       }
 
+      // Assign the discovered path to criticalPath
       criticalPath = path;
-      addLog(`Auto-detected ${path.length} activities.`);
+      addLog(`Auto-detected ${path.length} activities in the critical path.`);
       updateCriticalPathUI();
       showPredecessors(criticalPath[0]);
       traceSection.style.display = 'block';
@@ -539,20 +799,24 @@
       updateFinalGanttChart();
     });
 
-    // Export Critical Path as CSV
+    // Export the critical path to a CSV file
     exportBtn.addEventListener('click', () => {
       if (criticalPath.length === 0) return;
 
+      // Restrict columns to these for the output
       const headers = [
         'Project ID', 'Activity ID', 'Activity Name', 'Original Duration', 'At Completion Duration',
         'Remaining Duration', 'Early Start', 'Early Finish', 'Start', 'Finish', 'Late Start', 'Late Finish',
         'Predecessors', 'Successors', 'Activity Status', 'Total Float', 'Activity Type'
       ];
 
+      // Build rows from each activity
       const rows = criticalPath.map(act => headers.map(h => act[h] || ''));
 
+      // Convert rows to CSV string
       let csvContent = headers.join(',') + '\n' + rows.map(r => r.join(',')).join('\n');
 
+      // Create a Blob and download
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -561,7 +825,7 @@
       a.click();
       URL.revokeObjectURL(url);
 
-      addLog(`Exported ${criticalPath.length} activities.`);
+      addLog(`Exported ${criticalPath.length} activities to CSV.`);
     });
   </script>
 </body>
