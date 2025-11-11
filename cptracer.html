@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <title>Step-by-Step Critical Path Tracer</title>
 
+  <!-- 
+    We are preserving all original functionality while making the predecessor viewer 
+    more compact and table-based, including a path stack on the left and a scrollable
+    sortable list of predecessors on the right. 
+  -->
+
   <!-- Bootstrap CSS (CDN) -->
   <link
     rel="stylesheet"
@@ -40,17 +46,6 @@
       margin-bottom: 20px;
     }
 
-    /* Activity predecessor list style */
-    .activity-card {
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      padding: 10px;
-      margin-bottom: 10px;
-    }
-    .selected-activity {
-      background-color: #e9ecef;
-    }
-
     /* Log area styling */
     #logArea {
       height: 150px;
@@ -70,6 +65,43 @@
       width: 100%;
     }
     #searchResults .list-group-item {
+      cursor: pointer;
+    }
+
+    /* 
+      Container for left (path stack) & right (predecessor table) 
+      We'll place them in a row, each in a column.
+    */
+    #predecessorInfo .row {
+      margin-top: 10px;
+    }
+
+    /* Path stack items style */
+    .path-activity {
+      padding: 5px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .path-activity.active-path {
+      background-color: #e9ecef;
+    }
+
+    /* Make table wrapper scrollable */
+    #predecessorTableContainer {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+    }
+
+    /* Table styling for better readability */
+    #predecessorTable thead th {
+      cursor: pointer;
+      background-color: #f8f9fa;
+    }
+    #predecessorTable tbody tr:hover {
+      background-color: #f1f1f1;
       cursor: pointer;
     }
   </style>
@@ -130,15 +162,47 @@
     <!-- Network diagram area for dependencies -->
     <div id="dependency_graph"></div>
 
-    <!-- Predecessor details -->
+    <!-- 
+      Predecessor Info: 
+      We re-purpose this area into two columns:
+        - Left:  path stack
+        - Right: the table of predecessors
+    -->
     <div id="predecessorInfo">
-      <h4>Activity Predecessors</h4>
-      <p>Select a predecessor to continue tracing.</p>
-      <div id="predecessorList" class="mb-3"></div>
+      <div class="row">
+        <!-- Left column: Path stack -->
+        <div class="col-md-4" id="pathStackCol">
+          <h5>Traced Path</h5>
+          <div id="pathStack"></div>
+        </div>
+        <!-- Right column: Current activity & predecessor table -->
+        <div class="col-md-8" id="predecessorTableCol">
+          <h5 id="currentActivityHeader">Current Activity</h5>
+          <p id="currentActivityDetails">No activity selected.</p>
+          <div id="predecessorTableContainer">
+            <!-- Scrollable container for the predecessor table -->
+            <table class="table table-sm" id="predecessorTable">
+              <thead>
+                <tr>
+                  <th data-sortcol="Activity ID">Pred. ID</th>
+                  <th data-sortcol="Start">Start</th>
+                  <th data-sortcol="Finish">Finish</th>
+                  <th data-sortcol="Total Float">Total Float</th>
+                  <th data-sortcol="Relationship Free Float">Rel. Free Float</th>
+                  <th data-sortcol="Primary Constraint">Primary Constraint</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Predecessor rows inserted here dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- What-If scenario adjustments for the user to test changes -->
-    <div class="form-group">
+    <div class="form-group mt-3">
       <label for="whatIfInput"><strong>What-If: Modify Remaining Duration</strong></label>
       <input
         type="number"
@@ -187,11 +251,15 @@
 
   <script>
     // Global state variables
-    let projectData = [];       // All activities from CSV
-    let currentPath = [];       // Activities traced in order
-    let currentActivity = null; // Currently selected/traced activity
-    let stepIndex = -1;         // Tracks which predecessor step we are on
-    let commentsLog = [];       // Collaboration notes
+    let projectData = [];         // All activities from CSV
+    let currentPath = [];         // Activities traced in order
+    let currentActivity = null;   // Currently selected/traced activity
+    let stepIndex = -1;           // Tracks which predecessor step we are on
+    let commentsLog = [];         // Collaboration notes
+
+    // We store a sort state for the predecessor table
+    let predecessorSortColumn = null;
+    let predecessorSortDir = 1;   // 1 for ascending, -1 for descending
 
     // Load Google Gantt Charts from Google
     google.charts.load('current', { packages: ['gantt'] });
@@ -217,6 +285,15 @@
       document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
       // Search field keyup event
       document.getElementById('activitySearch').addEventListener('keyup', handleActivitySearch);
+
+      // Add click listeners to the table headers for sorting
+      const headers = document.querySelectorAll('#predecessorTable thead th');
+      headers.forEach((th) => {
+        th.addEventListener('click', () => {
+          const colName = th.getAttribute('data-sortcol');
+          sortPredecessors(colName);
+        });
+      });
 
       // Log message indicating script is loaded
       logMessage('Script loaded. Please upload a CSV file to begin.');
@@ -425,18 +502,26 @@
     }
 
     /**
-     * stepForward: Move forward in the path based on the selected predecessor
+     * stepForward: Move forward in the path based on the selected predecessor from the table
      */
     function stepForward() {
-      // Check if user selected a predecessor from the UI
-      const predecessorDivs = document.querySelectorAll('.pred-card.selected-activity');
-      if (!predecessorDivs.length) {
-        logMessage('Please select a predecessor from the list before stepping forward.');
+      // 
+      // This action is triggered by the stepForward button, 
+      // but in practice we can allow direct table click instead if needed.
+      // We'll still keep this function consistent with the existing logic.
+      //
+      // Check if we have a predecessor "selected" in some manner. 
+      // We can re-use a highlight or store a reference to the chosen predecessor.
+      // For simplicity, let's see if we have a 'selected' row in the table:
+      const selectedRow = document.querySelector('#predecessorTable tbody tr.selected-activity');
+      if (!selectedRow) {
         alert('Please select a predecessor from the list first.');
+        logMessage('No predecessor selected. Cannot step forward.');
         return;
       }
+
       // The ID of the selected predecessor
-      const selectedPredecessorId = predecessorDivs[0].getAttribute('data-activityid');
+      const selectedPredecessorId = selectedRow.getAttribute('data-activityid');
       // Find that activity in projectData
       const nextActivity = projectData.find((act) => act['Activity ID'] === selectedPredecessorId);
       // If not in the current path yet, push it
@@ -481,12 +566,15 @@
       stepIndex = -1;
       // Clear the current activity
       currentActivity = null;
-      // Clear predecessor list from UI
-      document.getElementById('predecessorList').innerHTML = '';
       // Disable export
       document.getElementById('exportCsvBtn').disabled = true;
       // Turn off tracing buttons
       toggleTracingButtons(false);
+      // Re-render UI
+      document.getElementById('pathStack').innerHTML = '';
+      document.getElementById('predecessorTable').querySelector('tbody').innerHTML = '';
+      document.getElementById('currentActivityHeader').innerText = 'Current Activity';
+      document.getElementById('currentActivityDetails').innerText = 'No activity selected.';
     }
 
     /**
@@ -507,60 +595,227 @@
     }
 
     /**
-     * renderStepInfo: Displays predecessor activities for the current activity in the UI
+     * renderStepInfo: 
+     *   Updates the left side path stack and the right side predecessor table 
+     *   based on the currentActivity and path.
      */
     function renderStepInfo() {
-      // Reference to the predecessor list
-      const predListDiv = document.getElementById('predecessorList');
-      // Clear previous content
-      predListDiv.innerHTML = '';
-      // If no current activity, do nothing
+      // First, render the path stack on the left
+      renderPathStack();
+      // Then, render the current activity details
+      renderCurrentActivity();
+      // Finally, render the predecessor table for the current activity
+      renderPredecessorTable();
+    }
+
+    /**
+     * renderPathStack:
+     *   Displays the currentPath as a stacked list of activities on the left.
+     *   Clicking on an activity here should jump back to that path index 
+     *   and re-display the predecessors.
+     */
+    function renderPathStack() {
+      // Reference to path stack container
+      const stackDiv = document.getElementById('pathStack');
+      // Clear existing content
+      stackDiv.innerHTML = '';
+
+      // Iterate over currentPath, create a div for each
+      currentPath.forEach((act, idx) => {
+        // Create the element
+        const div = document.createElement('div');
+        div.className = 'path-activity';
+        // If idx == stepIndex, highlight
+        if (idx === stepIndex) {
+          div.classList.add('active-path');
+        }
+        // Label the activity
+        div.innerText = `${act['Activity ID']} - ${act['Activity Name']}`;
+        // On click, jump to that index
+        div.addEventListener('click', () => {
+          stepIndex = idx;
+          currentActivity = currentPath[idx];
+          renderStepInfo();
+          renderGanttChart(currentPath);
+          renderDependencyGraph();
+          logMessage(`Jumped back to path index: ${idx}, Activity: ${act['Activity ID']}`);
+        });
+        // Append to stack
+        stackDiv.appendChild(div);
+      });
+    }
+
+    /**
+     * renderCurrentActivity:
+     *   Updates the top of the right column to show which activity is being analyzed
+     */
+    function renderCurrentActivity() {
+      // If no currentActivity, just show placeholders
+      if (!currentActivity) {
+        document.getElementById('currentActivityHeader').innerText = 'Current Activity';
+        document.getElementById('currentActivityDetails').innerText = 'No activity selected.';
+        return;
+      }
+      // Otherwise, show current activity ID and name
+      const header = document.getElementById('currentActivityHeader');
+      const details = document.getElementById('currentActivityDetails');
+
+      header.innerText = `Current Activity: ${currentActivity['Activity ID']}`;
+      const start = currentActivity['Start'] || 'N/A';
+      const finish = currentActivity['Finish'] || 'N/A';
+      details.innerText = `Name: ${currentActivity['Activity Name']}, Start: ${start}, Finish: ${finish}`;
+    }
+
+    /**
+     * renderPredecessorTable:
+     *   Builds a table of the currentActivity's predecessors, 
+     *   with columns: ID, Start, Finish, Total Float, Relationship Free Float, Primary Constraint
+     *   Each row is clickable to "select" a predecessor, 
+     *   which is used by stepForward() to add to path.
+     */
+    function renderPredecessorTable() {
+      // Reference to table body
+      const tbody = document.querySelector('#predecessorTable tbody');
+      // Clear old rows
+      tbody.innerHTML = '';
+
       if (!currentActivity) return;
 
-      // Split the Predecessors field
-      const predString = currentActivity['Predecessors'] || '';
-      const predecessors = predString.split(',').map((pred) => pred.trim()).filter(Boolean);
+      // Parse the predecessor IDs
+      const predecessorIDs = (currentActivity['Predecessors'] || '')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
 
-      // If no predecessors, let the user know
-      if (!predecessors.length) {
-        predListDiv.innerHTML = '<p>No predecessors found for this activity.</p>';
-        logMessage(`No predecessors for Activity ID: ${currentActivity['Activity ID']}`);
+      // If no predecessors, nothing to display
+      if (!predecessorIDs.length) {
+        // We can put a single row indicating no predecessors
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 6;
+        cell.innerText = 'No predecessors found.';
+        row.appendChild(cell);
+        tbody.appendChild(row);
         return;
       }
 
-      // For each predecessor ID, display key info
-      predecessors.forEach((predId) => {
-        // Find that activity in projectData
-        const predActivity = projectData.find((act) => act['Activity ID'] === predId);
-        // If not found, skip
-        if (!predActivity) return;
+      // Build an array of predecessor data objects
+      const predData = [];
+      predecessorIDs.forEach(predId => {
+        const predAct = projectData.find(a => a['Activity ID'] === predId);
+        if (predAct) {
+          // Attempt to parse a "Relationship Free Float" from "Predecessor Details" 
+          // if available. Otherwise, show "N/A".
+          let relFreeFloat = 'N/A';
 
-        // Create a card
-        const card = document.createElement('div');
-        card.className = 'activity-card pred-card';
-        card.setAttribute('data-activityid', predActivity['Activity ID']);
+          // If you have a specific logic or data parse for relationship free float, set it here:
+          // Example: if predAct['Predecessor Details'] includes something, parse it.
+          // We'll keep it simple: 
+          if (predAct['Predecessor Details'] && typeof predAct['Predecessor Details'] === 'string') {
+            // Basic example parse (not guaranteed real data)
+            relFreeFloat = parseRelationshipFreeFloat(predAct['Predecessor Details']);
+          }
 
-        // Build the card HTML
-        card.innerHTML = `
-          <strong>${predActivity['Activity ID']} - ${predActivity['Activity Name']}</strong><br/>
-          Start: ${predActivity['Start']} | Finish: ${predActivity['Finish']}<br/>
-          Total Float: ${predActivity['Total Float']}<br/>
-          Primary Constraint: ${predActivity['Primary Constraint']} - ${predActivity['Primary Constraint Date']}
-        `;
+          predData.push({
+            'Activity ID': predAct['Activity ID'],
+            'Start': predAct['Start'] || 'N/A',
+            'Finish': predAct['Finish'] || 'N/A',
+            'Total Float': predAct['Total Float'] || 'N/A',
+            'Relationship Free Float': relFreeFloat,
+            'Primary Constraint': predAct['Primary Constraint'] || 'N/A',
+          });
+        }
+      });
 
-        // On click, mark this predecessor as selected
-        card.addEventListener('click', () => {
-          // Remove selection from any other card
-          document.querySelectorAll('.pred-card').forEach((c) => c.classList.remove('selected-activity'));
-          // Add selection style
-          card.classList.add('selected-activity');
+      // If we have a sort column, sort the data
+      if (predecessorSortColumn) {
+        predData.sort((a, b) => {
+          const valA = a[predecessorSortColumn] || '';
+          const valB = b[predecessorSortColumn] || '';
+          // For numeric sort, parse float if possible
+          const numA = parseFloat(valA);
+          const numB = parseFloat(valB);
+          // If both are numeric
+          if (!isNaN(numA) && !isNaN(numB)) {
+            return (numA - numB) * predecessorSortDir;
+          } else {
+            // Otherwise do string comparison
+            return valA.toString().localeCompare(valB.toString()) * predecessorSortDir;
+          }
+        });
+      }
+
+      // Create table rows for each predecessor
+      predData.forEach(item => {
+        const row = document.createElement('tr');
+        // Store activity id in an attribute for selection
+        row.setAttribute('data-activityid', item['Activity ID']);
+
+        // On click, highlight and mark it as selected
+        row.addEventListener('click', () => {
+          // Remove selected state from any existing row
+          document.querySelectorAll('#predecessorTable tbody tr').forEach(r => {
+            r.classList.remove('selected-activity');
+          });
+          // Add to this row
+          row.classList.add('selected-activity');
           // Log
-          logMessage(`Predecessor selected: ${predActivity['Activity ID']}`);
+          logMessage(`Predecessor row clicked: ${item['Activity ID']}`);
         });
 
-        // Append card to the predecessor list
-        predListDiv.appendChild(card);
+        // Build cells
+        const cells = [
+          item['Activity ID'],
+          item['Start'],
+          item['Finish'],
+          item['Total Float'],
+          item['Relationship Free Float'],
+          item['Primary Constraint'],
+        ];
+        cells.forEach(val => {
+          const td = document.createElement('td');
+          td.innerText = val;
+          row.appendChild(td);
+        });
+
+        // Append row to tbody
+        tbody.appendChild(row);
       });
+    }
+
+    /**
+     * sortPredecessors: 
+     *   Toggles sort direction on a given column (by name) and re-renders the table.
+     * @param {String} colName - column name to sort by
+     */
+    function sortPredecessors(colName) {
+      // If user clicks again on the same header, reverse direction; 
+      // otherwise set to ascending
+      if (predecessorSortColumn === colName) {
+        predecessorSortDir = -predecessorSortDir;
+      } else {
+        predecessorSortDir = 1;
+      }
+      predecessorSortColumn = colName;
+      // Re-render the table
+      renderPredecessorTable();
+      // Log
+      logMessage(`Sorting predecessors by column: ${colName}, direction: ${predecessorSortDir > 0 ? 'ASC' : 'DESC'}`);
+    }
+
+    /**
+     * parseRelationshipFreeFloat: Example parser for Relationship Free Float string
+     * @param {String} details 
+     * @returns {String} or 'N/A'
+     */
+    function parseRelationshipFreeFloat(details) {
+      // Implement custom logic if your "Predecessor Details" column has actual data for RFF
+      // We'll do a naive example search for 'FF='
+      const match = details.match(/FF\s*=\s*(\d+)/);
+      if (match) {
+        return match[1]; // numeric value
+      }
+      return 'N/A';
     }
 
     /**
