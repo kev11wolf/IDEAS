@@ -1,0 +1,62 @@
+**Summary for AI Agent Recreation:**
+
+**Objective:**  
+Generate a **fantasy football Strength of Record dashboard** for **Sleeper League ID: 1257480275340828672** (Weeks 1–10, 2025 season) that shows:  
+1. **Each manager’s actual, best-case, and worst-case record**  
+2. **Max possible points** if they started their optimal lineup each week  
+3. **Points left on bench** and **games flippable** due to lineup decisions  
+4. **Interactive visualizations** using **Bootstrap 5 + Chart.js**
+
+---
+
+**Data Logic (Per Manager, Per Week):**
+
+- **Actual Record**: Wins/losses based on real starting lineup vs opponent  
+- **Best Case Record**: Highest-scoring *valid* lineup (1 QB, 2 RB, 2 WR, 1 TE, 1 FLEX, 1 K, 1 DST) each week → re-simulate win/loss  
+- **Worst Case Record**: Lowest-scoring *valid* lineup each week → re-simulate win/loss  
+- **Max Points**: Sum of best possible lineup scores across all 10 weeks  
+- **Actual Points**: Sum of points from actual starters  
+- **Bench Points Lost**: Max Points – Actual Points  
+- **Games Flippable**: Number of losses that would’ve been wins with optimal lineup
+
+---
+
+**UI Requirements (HTML Output):**
+
+- **Responsive Bootstrap 5 grid** (3 cards per row on desktop)  
+- **Card per manager** showing:  
+  - Current Record  
+  - Best Case (green)  
+  - Worst Case (red)  
+- **Bar Chart 1**: Actual vs Best vs Worst Wins (stacked or grouped)  
+- **Bar Chart 2**: Actual Points vs Max Possible Points  
+- **Sortable Table** with:  
+  - Manager  
+  - Actual Record  
+  - Best/Worst Case  
+  - Flippable Games  
+  - Max / Actual / Bench Points  
+  - Optimal Win %  
+- **Footer** with league link and methodology
+
+---
+
+**Data Source:**  
+- **Sleeper API** (or manual export)  
+- League ID: `1257480275340828672`  
+- Weeks: 1–10  
+- Validate roster constraints per week
+
+---
+
+**Output Format:**  
+Single **self-contained HTML file** with:  
+- CDN Bootstrap 5  
+- CDN Chart.js  
+- No external dependencies  
+- Works offline
+
+---
+
+**Agent Instructions:**  
+> "Using Sleeper League ID 1257480275340828672, generate a complete HTML dashboard (Bootstrap + Chart.js) showing actual, best-case, and worst-case records for each manager over Weeks 1–10. Include max possible points, points left on bench, flippable games, and two interactive bar charts. Ensure all lineup logic respects valid starting positions. Output one complete, runnable HTML file."
