@@ -2,1192 +2,471 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Step-by-Step Critical Path Tracer</title>
-
-  <!-- 
-    We are preserving all original functionality while making the predecessor viewer 
-    more compact and table-based, including a path stack on the left and a scrollable
-    sortable list of predecessors on the right. 
-  -->
-
-  <!-- Bootstrap CSS (CDN) -->
-  <link
-    rel="stylesheet"
-    href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-  />
-
-  <!-- Google Charts (for Gantt) -->
-  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-
-  <!-- Papa Parse (for CSV parsing) -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
-
-  <!-- D3.js (for dependency visualization) -->
-  <script src="https://d3js.org/d3.v5.min.js"></script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Critical Path Tracer</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <!-- PapaParse for CSV parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <!-- Chart.js for Gantt -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    /* Basic page padding */
-    body {
-      padding: 20px;
-    }
-
-    /* Gantt chart container style */
-    #gantt_chart_area {
-      width: 100%;
-      height: 400px;
-      margin-bottom: 20px;
-    }
-
-    /* Dependency graph container style */
-    #dependency_graph {
-      width: 100%;
-      height: 400px;
-      border: 1px solid #ccc;
-      margin-bottom: 20px;
-    }
-
-    /* Log area styling */
-    #logArea {
-      height: 150px;
-      overflow-y: auto;
-      background: #f8f9fa;
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin-top: 10px;
-      margin-bottom: 20px;
-      font-size: 0.9rem;
-    }
-
-    /* Style for list-group of search results */
-    #searchResults {
-      position: absolute;
-      z-index: 999;
-      width: 100%;
-    }
-    #searchResults .list-group-item {
-      cursor: pointer;
-    }
-
-    /* 
-      Container for left (path stack) & right (predecessor table) 
-      We'll place them in a row, each in a column.
-    */
-    #predecessorInfo .row {
-      margin-top: 10px;
-    }
-
-    /* Path stack items style */
-    .path-activity {
-      padding: 5px;
-      margin: 5px 0;
-      border: 1px solid #ccc;
-      border-radius: 3px;
-      cursor: pointer;
-    }
-    .path-activity.active-path {
-      background-color: #e9ecef;
-    }
-
-    /* Make table wrapper scrollable */
-    #predecessorTableContainer {
-      max-height: 300px;
-      overflow-y: auto;
-      border: 1px solid #ccc;
-    }
-
-    /* Table styling for better readability */
-    #predecessorTable thead th {
-      cursor: pointer;
-      background-color: #f8f9fa;
-    }
-    #predecessorTable tbody tr:hover {
-      background-color: #f1f1f1;
-      cursor: pointer;
-    }
+    body { padding: 2rem; background-color: #f8f9fa; }
+    .log-container { max-height: 200px; overflow-y: auto; background: #f1f1f1; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 0.9rem; }
+    .activity-card { cursor: pointer; transition: 0.2s; }
+    .activity-card:hover { background-color: #e9ecef; }
+    .critical-path-list { min-height: 100px; }
+    .search-results { max-height: 300px; overflow-y: auto; }
+    .sortable { cursor: pointer; }
+    .sortable::after { content: ' [sort]'; font-size: 0.8em; color: #666; }
+    .gantt-container { height: 300px; margin-top: 20px; }
+    .predecessor-table th { font-size: 0.8rem; }
+    .predecessor-table td { font-size: 0.85rem; }
+    .final-path-table th { font-size: 0.85rem; }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Page Title -->
-    <h1 class="mb-4">Step-by-Step Critical Path Tracer</h1>
-
-    <!-- File Upload Section -->
-    <div class="form-group">
-      <label for="csvFileInput"><strong>Upload CSV File (with Required Headers)</strong></label>
-      <!-- File input to let user upload CSV -->
-      <input
-        type="file"
-        class="form-control-file"
-        id="csvFileInput"
-        accept=".csv"
-      />
-    </div>
-
-    <!-- Dynamic search field for large dataset -->
-    <div class="form-group">
-      <label for="activitySearch"><strong>Search for an Activity</strong></label>
-      <!-- Text input for typing an activity search string -->
-      <input
-        type="text"
-        class="form-control"
-        id="activitySearch"
-        placeholder="Type Activity ID or Name to search..."
-        disabled
-      />
-      <!-- A container for search result suggestions -->
-      <div id="searchResults" class="list-group" style="display:none;"></div>
-    </div>
-
-    <!-- Traditional dropdown remains for backward compatibility (not removed) -->
-    <div class="form-group">
-      <label for="activitySelect"><strong>Select Activity to Trace (Legacy Dropdown)</strong></label>
-      <!-- Standard dropdown for selecting an activity (kept as is) -->
-      <select class="form-control" id="activitySelect" disabled></select>
-    </div>
-
-    <!-- Buttons for path tracing actions -->
-    <div class="mb-3">
-      <button class="btn btn-primary" id="tracePathBtn" disabled>Trace Path</button>
-      <button class="btn btn-secondary" id="stepBackBtn" disabled>Step Back</button>
-      <button class="btn btn-info" id="stepForwardBtn" disabled>Step Forward</button>
-      <button class="btn btn-danger" id="stopBtn" disabled>Stop</button>
-    </div>
-
-    <!-- Section to show real-time log messages -->
-    <div id="logArea"></div>
-
-    <!-- Gantt chart area -->
-    <div id="gantt_chart_area"></div>
-
-    <!-- Network diagram area for dependencies -->
-    <div id="dependency_graph"></div>
-
-    <!-- 
-      Predecessor Info: 
-      We re-purpose this area into two columns:
-        - Left:  path stack
-        - Right: the table of predecessors
-    -->
-    <div id="predecessorInfo">
-      <div class="row">
-        <!-- Left column: Path stack -->
-        <div class="col-md-4" id="pathStackCol">
-          <h5>Traced Path</h5>
-          <div id="pathStack"></div>
+    <h1 class="mb-4 text-primary">Critical Path Tracer</h1>
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">1. Upload Project Schedule (CSV)</h5>
+          </div>
+          <div class="card-body">
+            <input type="file" id="csvUpload" accept=".csv" class="form-control"/>
+            <small class="text-muted">Expected headers: Project ID, Activity ID, Activity Name, Predecessors, etc.</small>
+          </div>
         </div>
-        <!-- Right column: Current activity & predecessor table -->
-        <div class="col-md-8" id="predecessorTableCol">
-          <h5 id="currentActivityHeader">Current Activity</h5>
-          <p id="currentActivityDetails">No activity selected.</p>
-          <div id="predecessorTableContainer">
-            <!-- Scrollable container for the predecessor table -->
-            <table class="table table-sm" id="predecessorTable">
+
+        <div class="card shadow-sm mb-4" id="searchSection" style="display:none;">
+          <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">2. Select Starting Activity</h5>
+            <button id="autoDetectBtn" class="btn btn-outline-light btn-sm" disabled>Auto-Detect Critical Path</button>
+          </div>
+          <div class="card-body">
+            <input type="text" id="activitySearch" class="form-control mb-3" placeholder="Type to search Activity ID or Name..."/>
+            <div id="searchResults" class="search-results border p-2 bg-white"></div>
+          </div>
+        </div>
+
+        <div class="card shadow-sm mb-4" id="traceSection" style="display:none;">
+          <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">3. Trace Critical Path (Click Predecessor to Add)</h5>
+          </div>
+          <div class="card-body">
+            <div id="predecessorList"></div>
+            <!-- Gantt Chart Preview -->
+            <div class="gantt-container">
+              <canvas id="ganttChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Activity Log</h5>
+          </div>
+          <div class="card-body p-0">
+            <pre id="log" class="log-container m-0 p-3"></pre>
+          </div>
+        </div>
+
+        <div class="card shadow-sm">
+          <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Critical Path (Final Output)</h5>
+          </div>
+          <div class="card-body">
+            <table class="table table-sm table-hover final-path-table">
               <thead>
                 <tr>
-                  <th data-sortcol="Activity ID">Pred. ID</th>
-                  <th data-sortcol="Start">Start</th>
-                  <th data-sortcol="Finish">Finish</th>
-                  <th data-sortcol="Total Float">Total Float</th>
-                  <th data-sortcol="Relationship Free Float">Rel. Free Float</th>
-                  <th data-sortcol="Primary Constraint">Primary Constraint</th>
+                  <th>Activity ID</th>
+                  <th>Activity Name</th>
+                  <th></th>
                 </tr>
               </thead>
-              <tbody>
-                <!-- Predecessor rows inserted here dynamically -->
-              </tbody>
+              <tbody id="criticalPathList"></tbody>
             </table>
+            <button id="exportBtn" class="btn btn-success w-100" disabled>Export Critical Path as CSV</button>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- What-If scenario adjustments for the user to test changes -->
-    <div class="form-group mt-3">
-      <label for="whatIfInput"><strong>What-If: Modify Remaining Duration</strong></label>
-      <input
-        type="number"
-        class="form-control"
-        id="whatIfInput"
-        placeholder="Enter new Remaining Duration for the selected activity"
-      />
-      <small class="text-muted"
-        >Changing the remaining duration of the current activity will update the path data.</small
-      >
-      <button class="btn btn-warning mt-2" id="applyWhatIfBtn" disabled>
-        Apply What-If
-      </button>
-    </div>
-
-    <!-- Comments/Collaboration features -->
-    <div class="form-group">
-      <label for="notesTextarea">
-        <strong>Collaboration Notes</strong>
-      </label>
-      <!-- Text area for user notes -->
-      <textarea
-        class="form-control"
-        id="notesTextarea"
-        rows="3"
-        placeholder="Enter any notes or reasons to document your path tracing choices..."
-      ></textarea>
-      <button class="btn btn-secondary mt-2" id="addCommentBtn" disabled>
-        Add Note
-      </button>
-    </div>
-
-    <!-- Display comments in a simple list -->
-    <div id="commentsArea">
-      <h5>Comments Log</h5>
-      <ul id="commentsList" class="list-group"></ul>
-    </div>
-
-    <!-- Export final path to CSV -->
-    <div class="mt-3">
-      <button class="btn btn-success" id="exportCsvBtn" disabled>
-        Export Final Path to CSV
-      </button>
-    </div>
   </div>
 
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Global state variables
-    let projectData = [];         // All activities from CSV
-    let currentPath = [];         // Activities traced in order
-    let currentActivity = null;   // Currently selected/traced activity
-    let stepIndex = -1;           // Tracks which predecessor step we are on
-    let commentsLog = [];         // Collaboration notes
+    // Global data
+    let activities = []; // Full parsed data
+    let activityMap = {}; // Activity ID → object
+    let criticalPath = []; // Final ordered list
+    let ganttChart = null; // Chart.js instance
+    let predSortField = null; // Sort field for predecessor table
+    let predSortAsc = true; // Sort direction for predecessor table
 
-    // We store a sort state for the predecessor table
-    let predecessorSortColumn = null;
-    let predecessorSortDir = 1;   // 1 for ascending, -1 for descending
+    // DOM Elements
+    const csvUpload = document.getElementById('csvUpload');
+    const searchSection = document.getElementById('searchSection');
+    const traceSection = document.getElementById('traceSection');
+    const activitySearch = document.getElementById('activitySearch');
+    const searchResults = document.getElementById('searchResults');
+    const predecessorList = document.getElementById('predecessorList');
+    const criticalPathList = document.getElementById('criticalPathList');
+    const exportBtn = document.getElementById('exportBtn');
+    const log = document.getElementById('log');
+    const ganttCanvas = document.getElementById('ganttChart');
+    const autoDetectBtn = document.getElementById('autoDetectBtn');
 
-    // Load Google Gantt Charts from Google
-    google.charts.load('current', { packages: ['gantt'] });
+    // Log helper
+    function addLog(message) {
+      const timestamp = new Date().toLocaleTimeString();
+      log.innerHTML += `[${timestamp}] ${message}\n`;
+      log.scrollTop = log.scrollHeight;
+    }
 
-    /**
-     * Event listener for DOM loaded
-     */
-    document.addEventListener('DOMContentLoaded', () => {
-      // When file changes, parse CSV
-      document.getElementById('csvFileInput').addEventListener('change', handleFileUpload);
-      // Activity dropdown event
-      document.getElementById('activitySelect').addEventListener('change', handleActivityChange);
-      // Buttons for path tracing
-      document.getElementById('tracePathBtn').addEventListener('click', startTracing);
-      document.getElementById('stepBackBtn').addEventListener('click', stepBack);
-      document.getElementById('stepForwardBtn').addEventListener('click', stepForward);
-      document.getElementById('stopBtn').addEventListener('click', stopTracing);
-      // Apply What-If scenario
-      document.getElementById('applyWhatIfBtn').addEventListener('click', applyWhatIfChange);
-      // Comments
-      document.getElementById('addCommentBtn').addEventListener('click', addComment);
-      // Export final path
-      document.getElementById('exportCsvBtn').addEventListener('click', exportCsv);
-      // Search field keyup event
-      document.getElementById('activitySearch').addEventListener('keyup', handleActivitySearch);
+    // CSV Upload Handler
+    csvUpload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
 
-      // Add click listeners to the table headers for sorting
-      const headers = document.querySelectorAll('#predecessorTable thead th');
-      headers.forEach((th) => {
-        th.addEventListener('click', () => {
-          const colName = th.getAttribute('data-sortcol');
-          sortPredecessors(colName);
-        });
+      addLog(`File selected: ${file.name}`);
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (result) => {
+          if (result.errors.length) {
+            addLog(`Parse errors: ${result.errors.map(e => e.message).join('; ')}`);
+            alert('CSV parsing failed. Check log.');
+            return;
+          }
+
+          activities = result.data;
+          activityMap = {};
+          activities.forEach(act => {
+            const id = act['Activity ID']?.trim();
+            if (id) activityMap[id] = act;
+          });
+
+          addLog(`Successfully loaded ${activities.length} activities.`);
+          searchSection.style.display = 'block';
+          traceSection.style.display = 'none';
+          criticalPath = [];
+          updateCriticalPathUI();
+          updateGanttChart();
+          autoDetectBtn.disabled = false;
+        },
+        error: (err) => {
+          addLog(`Parse error: ${err}`);
+          alert('Failed to parse CSV.');
+        }
       });
-
-      // Log message indicating script is loaded
-      logMessage('Script loaded. Please upload a CSV file to begin.');
     });
 
-    /**
-     * handleFileUpload: Called when user selects a CSV file
-     * @param {Event} event - file input event
-     */
-    function handleFileUpload(event) {
-      // If no file selected, do nothing
-      const file = event.target.files[0];
-      if (!file) {
-        logMessage('No file selected.');
+    // Search Activities
+    activitySearch.addEventListener('input', () => {
+      const query = activitySearch.value.trim().toLowerCase();
+      searchResults.innerHTML = '';
+
+      if (!query) return;
+
+      const matches = activities.filter(act => {
+        const id = act['Activity ID']?.toLowerCase();
+        const name = act['Activity Name']?.toLowerCase();
+        return id?.includes(query) || name?.includes(query);
+      }).slice(0, 10);
+
+      if (matches.length === 0) {
+        searchResults.innerHTML = '<div class="text-muted p-2">No activities found.</div>';
         return;
       }
 
-      logMessage('CSV file selected. Parsing...');
-
-      // Clear old data in case user re-uploads
-      projectData = [];
-
-      // Use Papa Parse with chunking and worker enabled for large datasets
-      Papa.parse(file, {
-        header: true,            // Use first row as header
-        dynamicTyping: true,     // Convert numeric strings to numbers if possible
-        worker: true,            // Parse in a separate thread
-        chunk: (results) => {
-          // For each chunk, filter out blank rows and push into projectData
-          const filtered = results.data.filter(row => row['Activity ID']);
-          projectData.push(...filtered);
-        },
-        complete: () => {
-          // Once parsing is complete, populate choice fields
-          populateActivityDropdown(projectData);
-          // Enable search input
-          document.getElementById('activitySearch').disabled = false;
-          logMessage(`CSV file has been fully parsed. Total activities loaded: ${projectData.length}.`);
-        },
-        // Optional: error callback for debug
-        error: (err) => {
-          logMessage(`Error parsing CSV file: ${err}`);
-        },
-      });
-    }
-
-    /**
-     * populateActivityDropdown: Fills the legacy dropdown with all activities
-     * @param {Array} data - the entire project data array
-     */
-    function populateActivityDropdown(data) {
-      // Reference to the select element
-      const activitySelect = document.getElementById('activitySelect');
-      // Clear existing options
-      activitySelect.innerHTML = '<option value="">-- Select an Activity --</option>';
-
-      // Loop over each row in data
-      data.forEach((row) => {
-        // Create an <option> element
-        const option = document.createElement('option');
-        // Value is the Activity ID
-        option.value = row['Activity ID'];
-        // Display text is ID and Name
-        option.textContent = `${row['Activity ID']} - ${row['Activity Name']}`;
-        // Append option to the dropdown
-        activitySelect.appendChild(option);
-      });
-
-      // Enable the dropdown
-      activitySelect.disabled = false;
-      // Log a message
-      logMessage('Populated legacy dropdown with all activities.');
-    }
-
-    /**
-     * handleActivitySearch: Dynamically searches activities by ID/Name
-     */
-    function handleActivitySearch() {
-      // Get the search input's value
-      const query = document.getElementById('activitySearch').value.trim().toLowerCase();
-      // The result container
-      const resultsDiv = document.getElementById('searchResults');
-
-      // If user cleared the field, hide the results
-      if (!query) {
-        resultsDiv.style.display = 'none';
-        resultsDiv.innerHTML = '';
-        return;
-      }
-
-      // Filter projectData looking for partial matches in Activity ID or Activity Name
-      const matched = projectData.filter(act => {
-        const id = (act['Activity ID'] || '').toString().toLowerCase();
-        const name = (act['Activity Name'] || '').toLowerCase();
-        return id.includes(query) || name.includes(query);
-      });
-
-      // If no matches found, hide the results
-      if (!matched.length) {
-        resultsDiv.style.display = 'none';
-        resultsDiv.innerHTML = '';
-        return;
-      }
-
-      // Build list of matched results
-      let listItems = '';
-      matched.forEach(act => {
-        // We'll create a list-group item
-        listItems += `
-          <a href="#" class="list-group-item list-group-item-action" data-actid="${act['Activity ID']}">
-            ${act['Activity ID']} - ${act['Activity Name']}
-          </a>
-        `;
-      });
-
-      // Populate the search results
-      resultsDiv.innerHTML = listItems;
-      resultsDiv.style.display = 'block';
-
-      // Add click event to each item for selection
-      Array.from(resultsDiv.querySelectorAll('.list-group-item')).forEach(item => {
-        item.addEventListener('click', () => {
-          // Grab the activity ID from dataset
-          const selectedId = item.getAttribute('data-actid');
-          // Set the legacy dropdown to match
-          document.getElementById('activitySelect').value = selectedId;
-          // Trigger the legacy dropdown change to set currentActivity
-          handleActivityChange();
-          // Hide results after selection
-          resultsDiv.style.display = 'none';
-          resultsDiv.innerHTML = '';
-          // Also show in search input the selected ID
-          document.getElementById('activitySearch').value = `${selectedId} selected`;
-          // Log the selection
-          logMessage(`Activity selected from search: ${selectedId}`);
-        });
-      });
-    }
-
-    /**
-     * handleActivityChange: Called when user changes the legacy dropdown
-     */
-    function handleActivityChange() {
-      // Reference to the dropdown
-      const select = document.getElementById('activitySelect');
-      // The user-selected ID
-      const selectedId = select.value;
-      // If none selected, disable trace path
-      if (!selectedId) {
-        document.getElementById('tracePathBtn').disabled = true;
-        return;
-      }
-      // Reset the path tracing if new activity chosen
-      resetTracing();
-      // Find the activity in projectData
-      const selectedActivity = projectData.find((act) => act['Activity ID'] === selectedId);
-      // Set current activity
-      currentActivity = selectedActivity;
-      // Enable the trace path button
-      document.getElementById('tracePathBtn').disabled = false;
-      // Log the selection
-      logMessage(`Legacy dropdown selection: ${selectedId}`);
-    }
-
-    /**
-     * startTracing: Initiate the path tracing for the currently selected activity
-     */
-    function startTracing() {
-      // If no currentActivity, do nothing
-      if (!currentActivity) return;
-      // Start a new path array with the selected activity
-      currentPath = [ currentActivity ];
-      // Reset step index
-      stepIndex = 0;
-      // Enable relevant buttons
-      toggleTracingButtons(true);
-      // Render step info
-      renderStepInfo();
-      // Render Gantt chart with the current path
-      renderGanttChart(currentPath);
-      // Render dependency graph
-      renderDependencyGraph();
-      // Log
-      logMessage(`Tracing started with Activity ID: ${currentActivity['Activity ID']}`);
-    }
-
-    /**
-     * stepBack: Move one step backward in the path if possible
-     */
-    function stepBack() {
-      // If we are at the beginning, can't go back
-      if (stepIndex <= 0) {
-        logMessage('Cannot step back any further.');
-        return;
-      }
-      // Decrement step index
-      stepIndex--;
-      // The new currentActivity is the one in the path at that index
-      currentActivity = currentPath[stepIndex];
-      // Update UI
-      renderStepInfo();
-      renderGanttChart(currentPath);
-      renderDependencyGraph();
-      // Log
-      logMessage(`Stepped back. Current index in path: ${stepIndex}. Activity: ${currentActivity['Activity ID']}`);
-    }
-
-    /**
-     * stepForward: Move forward in the path based on the selected predecessor from the table
-     */
-    function stepForward() {
-      // 
-      // This action is triggered by the stepForward button, 
-      // but in practice we can allow direct table click instead if needed.
-      // We'll still keep this function consistent with the existing logic.
-      //
-      // Check if we have a predecessor "selected" in some manner. 
-      // We can re-use a highlight or store a reference to the chosen predecessor.
-      // For simplicity, let's see if we have a 'selected' row in the table:
-      const selectedRow = document.querySelector('#predecessorTable tbody tr.selected-activity');
-      if (!selectedRow) {
-        alert('Please select a predecessor from the list first.');
-        logMessage('No predecessor selected. Cannot step forward.');
-        return;
-      }
-
-      // The ID of the selected predecessor
-      const selectedPredecessorId = selectedRow.getAttribute('data-activityid');
-      // Find that activity in projectData
-      const nextActivity = projectData.find((act) => act['Activity ID'] === selectedPredecessorId);
-      // If not in the current path yet, push it
-      if (!currentPath.includes(nextActivity)) {
-        currentPath.push(nextActivity);
-        stepIndex++;
-      } else {
-        // If it already exists, set stepIndex to that activity
-        stepIndex = currentPath.indexOf(nextActivity);
-      }
-      // Make that activity the current one
-      currentActivity = nextActivity;
-      // Re-render everything
-      renderStepInfo();
-      renderGanttChart(currentPath);
-      renderDependencyGraph();
-      // Log
-      logMessage(`Stepped forward to predecessor: ${nextActivity['Activity ID']}`);
-    }
-
-    /**
-     * stopTracing: Stop the path tracing process
-     */
-    function stopTracing() {
-      // Disable tracing buttons
-      toggleTracingButtons(false);
-      // Let user know they can export now
-      alert('Path tracing has been stopped. You can export the path now.');
-      // Enable export
-      document.getElementById('exportCsvBtn').disabled = false;
-      // Log
-      logMessage('Tracing stopped. Ready to export.');
-    }
-
-    /**
-     * resetTracing: Clears current path, step index, and UI states
-     */
-    function resetTracing() {
-      // Clear the path
-      currentPath = [];
-      // Reset step index
-      stepIndex = -1;
-      // Clear the current activity
-      currentActivity = null;
-      // Disable export
-      document.getElementById('exportCsvBtn').disabled = true;
-      // Turn off tracing buttons
-      toggleTracingButtons(false);
-      // Re-render UI
-      document.getElementById('pathStack').innerHTML = '';
-      document.getElementById('predecessorTable').querySelector('tbody').innerHTML = '';
-      document.getElementById('currentActivityHeader').innerText = 'Current Activity';
-      document.getElementById('currentActivityDetails').innerText = 'No activity selected.';
-    }
-
-    /**
-     * toggleTracingButtons: Enables or disables tracing-related buttons
-     * @param {Boolean} isTracing - whether to enable or disable
-     */
-    function toggleTracingButtons(isTracing) {
-      // Step back button
-      document.getElementById('stepBackBtn').disabled = !isTracing;
-      // Step forward button
-      document.getElementById('stepForwardBtn').disabled = !isTracing;
-      // Stop button
-      document.getElementById('stopBtn').disabled = !isTracing;
-      // Apply What-If
-      document.getElementById('applyWhatIfBtn').disabled = !isTracing;
-      // Add Comment
-      document.getElementById('addCommentBtn').disabled = !isTracing;
-    }
-
-    /**
-     * renderStepInfo: 
-     *   Updates the left side path stack and the right side predecessor table 
-     *   based on the currentActivity and path.
-     */
-    function renderStepInfo() {
-      // First, render the path stack on the left
-      renderPathStack();
-      // Then, render the current activity details
-      renderCurrentActivity();
-      // Finally, render the predecessor table for the current activity
-      renderPredecessorTable();
-    }
-
-    /**
-     * renderPathStack:
-     *   Displays the currentPath as a stacked list of activities on the left.
-     *   Clicking on an activity here should jump back to that path index 
-     *   and re-display the predecessors.
-     */
-    function renderPathStack() {
-      // Reference to path stack container
-      const stackDiv = document.getElementById('pathStack');
-      // Clear existing content
-      stackDiv.innerHTML = '';
-
-      // Iterate over currentPath, create a div for each
-      currentPath.forEach((act, idx) => {
-        // Create the element
+      matches.forEach(act => {
         const div = document.createElement('div');
-        div.className = 'path-activity';
-        // If idx == stepIndex, highlight
-        if (idx === stepIndex) {
-          div.classList.add('active-path');
-        }
-        // Label the activity
-        div.innerText = `${act['Activity ID']} - ${act['Activity Name']}`;
-        // On click, jump to that index
-        div.addEventListener('click', () => {
-          stepIndex = idx;
-          currentActivity = currentPath[idx];
-          renderStepInfo();
-          renderGanttChart(currentPath);
-          renderDependencyGraph();
-          logMessage(`Jumped back to path index: ${idx}, Activity: ${act['Activity ID']}`);
-        });
-        // Append to stack
-        stackDiv.appendChild(div);
+        div.className = 'activity-card p-2 border-bottom';
+        div.innerHTML = `<strong>${act['Activity ID']}</strong> - ${act['Activity Name'] || 'N/A'}`;
+        div.onclick = () => startCriticalPath(act);
+        searchResults.appendChild(div);
       });
+    });
+
+    // Start tracing from selected activity
+    function startCriticalPath(startAct) {
+      addLog(`Starting critical path trace from: ${startAct['Activity ID']}`);
+      criticalPath = [startAct];
+      updateCriticalPathUI();
+      showPredecessors(startAct);
+      traceSection.style.display = 'block';
+      activitySearch.value = '';
+      searchResults.innerHTML = '';
+      updateGanttChart();
     }
 
-    /**
-     * renderCurrentActivity:
-     *   Updates the top of the right column to show which activity is being analyzed
-     */
-    function renderCurrentActivity() {
-      // If no currentActivity, just show placeholders
-      if (!currentActivity) {
-        document.getElementById('currentActivityHeader').innerText = 'Current Activity';
-        document.getElementById('currentActivityDetails').innerText = 'No activity selected.';
-        return;
-      }
-      // Otherwise, show current activity ID and name
-      const header = document.getElementById('currentActivityHeader');
-      const details = document.getElementById('currentActivityDetails');
-
-      header.innerText = `Current Activity: ${currentActivity['Activity ID']}`;
-      const start = currentActivity['Start'] || 'N/A';
-      const finish = currentActivity['Finish'] || 'N/A';
-      details.innerText = `Name: ${currentActivity['Activity Name']}, Start: ${start}, Finish: ${finish}`;
-    }
-
-    /**
-     * renderPredecessorTable:
-     *   Builds a table of the currentActivity's predecessors, 
-     *   with columns: ID, Start, Finish, Total Float, Relationship Free Float, Primary Constraint
-     *   Each row is clickable to "select" a predecessor, 
-     *   which is used by stepForward() to add to path.
-     */
-    function renderPredecessorTable() {
-      // Reference to table body
-      const tbody = document.querySelector('#predecessorTable tbody');
-      // Clear old rows
-      tbody.innerHTML = '';
-
-      if (!currentActivity) return;
-
-      // Parse the predecessor IDs
-      const predecessorIDs = (currentActivity['Predecessors'] || '')
-        .split(',')
+    // Show predecessors in sortable table
+    function showPredecessors(currentAct) {
+      predecessorList.innerHTML = '';
+      const predIds = (currentAct.Predecessors || '')
+        .split(/[,;]/)
         .map(s => s.trim())
-        .filter(Boolean);
+        .filter(id => id && activityMap[id]);
 
-      // If no predecessors, nothing to display
-      if (!predecessorIDs.length) {
-        // We can put a single row indicating no predecessors
-        const row = document.createElement('tr');
-        const cell = document.createElement('td');
-        cell.colSpan = 6;
-        cell.innerText = 'No predecessors found.';
-        row.appendChild(cell);
-        tbody.appendChild(row);
+      if (predIds.length === 0) {
+        predecessorList.innerHTML = '<p class="text-muted">No predecessors found.</p>';
+        addLog(`Activity ${currentAct['Activity ID']} has no predecessors.`);
         return;
       }
 
-      // Build an array of predecessor data objects
-      const predData = [];
-      predecessorIDs.forEach(predId => {
-        const predAct = projectData.find(a => a['Activity ID'] === predId);
-        if (predAct) {
-          // Attempt to parse a "Relationship Free Float" from "Predecessor Details" 
-          // if available. Otherwise, show "N/A".
-          let relFreeFloat = 'N/A';
+      addLog(`Found ${predIds.length} predecessor(s) for ${currentAct['Activity ID']}`);
 
-          // If you have a specific logic or data parse for relationship free float, set it here:
-          // Example: if predAct['Predecessor Details'] includes something, parse it.
-          // We'll keep it simple: 
-          if (predAct['Predecessor Details'] && typeof predAct['Predecessor Details'] === 'string') {
-            // Basic example parse (not guaranteed real data)
-            relFreeFloat = parseRelationshipFreeFloat(predAct['Predecessor Details']);
+      const table = document.createElement('table');
+      table.className = 'table table-sm table-bordered predecessor-table';
+      table.innerHTML = `
+        <thead class="table-light">
+          <tr>
+            <th class="sortable" data-sort="Activity ID">Activity ID</th>
+            <th class="sortable" data-sort="Activity Name">Name</th>
+            <th class="sortable" data-sort="Start">Start</th>
+            <th class="sortable" data-sort="Finish">Finish</th>
+            <th class="sortable" data-sort="Total Float">Total Float</th>
+            <th class="sortable" data-sort="Relationship Free Float">Rel. Float</th>
+            <th class="sortable" data-sort="Primary Constraint">Constraint</th>
+          </tr>
+        </thead>
+        <tbody id="predTableBody"></tbody>
+      `;
+
+      const tbody = table.querySelector('#predTableBody');
+      const headers = table.querySelectorAll('.sortable');
+
+      // Sort handler for predecessor table
+      headers.forEach(th => {
+        th.addEventListener('click', () => {
+          const field = th.dataset.sort;
+          if (predSortField === field) {
+            predSortAsc = !predSortAsc;
+          } else {
+            predSortField = field;
+            predSortAsc = true;
           }
+          renderPredecessorRows(tbody, predIds);
+        });
+      });
 
-          predData.push({
-            'Activity ID': predAct['Activity ID'],
-            'Start': predAct['Start'] || 'N/A',
-            'Finish': predAct['Finish'] || 'N/A',
-            'Total Float': predAct['Total Float'] || 'N/A',
-            'Relationship Free Float': relFreeFloat,
-            'Primary Constraint': predAct['Primary Constraint'] || 'N/A',
-          });
+      renderPredecessorRows(tbody, predIds);
+      predecessorList.appendChild(table);
+    }
+
+    // Render sorted predecessor rows
+    function renderPredecessorRows(tbody, predIds) {
+      tbody.innerHTML = '';
+      let sortedPreds = predIds.map(id => activityMap[id]);
+      if (predSortField) {
+        sortedPreds.sort((a, b) => {
+          let valA = a[predSortField] || '';
+          let valB = b[predSortField] || '';
+          if (predSortField.includes('Date') || predSortField.includes('Start') || predSortField.includes('Finish')) {
+            valA = new Date(valA) || 0;
+            valB = new Date(valB) || 0;
+          } else {
+            valA = isNaN(valA) ? valA : Number(valA);
+            valB = isNaN(valB) ? valB : Number(valB);
+          }
+          return (valA < valB ? -1 : 1) * (predSortAsc ? 1 : -1);
+        });
+      }
+
+      sortedPreds.forEach(pred => {
+        const row = document.createElement('tr');
+        row.className = 'activity-card';
+        row.style.cursor = 'pointer';
+        row.innerHTML = `
+          <td><strong>${pred['Activity ID']}</strong></td>
+          <td>${pred['Activity Name'] || '—'}</td>
+          <td>${pred['Start'] || '—'}</td>
+          <td>${pred['Finish'] || '—'}</td>
+          <td>${pred['Total Float'] || '—'}</td>
+          <td>${pred['Relationship Free Float'] || '—'}</td>
+          <td>${pred['Primary Constraint'] || '—'}</td>
+        `;
+        row.onclick = () => addToCriticalPath(pred);
+        tbody.appendChild(row);
+      });
+    }
+
+    // Add predecessor to critical path
+    function addToCriticalPath(predAct) {
+      if (criticalPath.some(a => a['Activity ID'] === predAct['Activity ID'])) {
+        alert('Activity already in critical path.');
+        return;
+      }
+
+      criticalPath.unshift(predAct);
+      addLog(`Added predecessor: ${predAct['Activity ID']}`);
+      updateCriticalPathUI();
+      showPredecessors(predAct);
+      updateGanttChart();
+    }
+
+    // Update final critical path UI (only ID + Name)
+    function updateCriticalPathUI() {
+      criticalPathList.innerHTML = '';
+      criticalPath.forEach((act, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${act['Activity ID']}</strong></td>
+          <td>${act['Activity Name'] || 'N/A'}</td>
+          <td><button class="btn btn-sm btn-outline-danger" onclick="removeFromPath(${i})">[cross]</button></td>
+        `;
+        criticalPathList.appendChild(tr);
+      });
+      exportBtn.disabled = criticalPath.length === 0;
+    }
+
+    // Remove from path
+    window.removeFromPath = (index) => {
+      const removed = criticalPath.splice(index, 1)[0];
+      addLog(`Removed from path: ${removed['Activity ID']}`);
+      updateCriticalPathUI();
+      updateGanttChart();
+      if (criticalPath.length > 0) {
+        showPredecessors(criticalPath[0]);
+      } else {
+        predecessorList.innerHTML = '';
+        traceSection.style.display = 'none';
+      }
+    };
+
+    // Update Gantt Chart
+    function updateGanttChart() {
+      if (!criticalPath.length) {
+        if (ganttChart) ganttChart.destroy();
+        ganttChart = null;
+        return;
+      }
+
+      const labels = criticalPath.map(a => `${a['Activity ID']}\n${a['Activity Name'] || ''}`);
+      const startDates = criticalPath.map(a => a['Start'] ? new Date(a['Start']) : null);
+      const endDates = criticalPath.map(a => a['Finish'] ? new Date(a['Finish']) : null);
+
+      const datasets = [{
+        label: 'Duration',
+        data: criticalPath.map((a, i) => ({
+          x: [startDates[i], endDates[i]],
+          y: labels[i]
+        })),
+        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      }];
+
+      const ctx = ganttCanvas.getContext('2d');
+      if (ganttChart) ganttChart.destroy();
+
+      ganttChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+          indexAxis: 'y',
+          scales: {
+            x: { type: 'time', time: { unit: 'day' }, title: { display: true, text: 'Timeline' } },
+            y: { title: { display: true, text: 'Activities' } }
+          },
+          plugins: {
+            tooltip: { mode: 'index', intersect: false },
+            legend: { display: false }
+          },
+          responsive: true,
+          maintainAspectRatio: false
         }
       });
-
-      // If we have a sort column, sort the data
-      if (predecessorSortColumn) {
-        predData.sort((a, b) => {
-          const valA = a[predecessorSortColumn] || '';
-          const valB = b[predecessorSortColumn] || '';
-          // For numeric sort, parse float if possible
-          const numA = parseFloat(valA);
-          const numB = parseFloat(valB);
-          // If both are numeric
-          if (!isNaN(numA) && !isNaN(numB)) {
-            return (numA - numB) * predecessorSortDir;
-          } else {
-            // Otherwise do string comparison
-            return valA.toString().localeCompare(valB.toString()) * predecessorSortDir;
-          }
-        });
-      }
-
-      // Create table rows for each predecessor
-      predData.forEach(item => {
-        const row = document.createElement('tr');
-        // Store activity id in an attribute for selection
-        row.setAttribute('data-activityid', item['Activity ID']);
-
-        // On click, highlight and mark it as selected
-        row.addEventListener('click', () => {
-          // Remove selected state from any existing row
-          document.querySelectorAll('#predecessorTable tbody tr').forEach(r => {
-            r.classList.remove('selected-activity');
-          });
-          // Add to this row
-          row.classList.add('selected-activity');
-          // Log
-          logMessage(`Predecessor row clicked: ${item['Activity ID']}`);
-        });
-
-        // Build cells
-        const cells = [
-          item['Activity ID'],
-          item['Start'],
-          item['Finish'],
-          item['Total Float'],
-          item['Relationship Free Float'],
-          item['Primary Constraint'],
-        ];
-        cells.forEach(val => {
-          const td = document.createElement('td');
-          td.innerText = val;
-          row.appendChild(td);
-        });
-
-        // Append row to tbody
-        tbody.appendChild(row);
-      });
     }
 
-    /**
-     * sortPredecessors: 
-     *   Toggles sort direction on a given column (by name) and re-renders the table.
-     * @param {String} colName - column name to sort by
-     */
-    function sortPredecessors(colName) {
-      // If user clicks again on the same header, reverse direction; 
-      // otherwise set to ascending
-      if (predecessorSortColumn === colName) {
-        predecessorSortDir = -predecessorSortDir;
-      } else {
-        predecessorSortDir = 1;
-      }
-      predecessorSortColumn = colName;
-      // Re-render the table
-      renderPredecessorTable();
-      // Log
-      logMessage(`Sorting predecessors by column: ${colName}, direction: ${predecessorSortDir > 0 ? 'ASC' : 'DESC'}`);
-    }
-
-    /**
-     * parseRelationshipFreeFloat: Example parser for Relationship Free Float string
-     * @param {String} details 
-     * @returns {String} or 'N/A'
-     */
-    function parseRelationshipFreeFloat(details) {
-      // Implement custom logic if your "Predecessor Details" column has actual data for RFF
-      // We'll do a naive example search for 'FF='
-      const match = details.match(/FF\s*=\s*(\d+)/);
-      if (match) {
-        return match[1]; // numeric value
-      }
-      return 'N/A';
-    }
-
-    /**
-     * renderGanttChart: Uses Google Charts to draw a Gantt chart of the path
-     * @param {Array} path - the list of activities in the traced path
-     */
-    function renderGanttChart(path) {
-      // If path is empty, do nothing
-      if (!path.length) return;
-      // Load the Gantt library from Google
-      google.charts.setOnLoadCallback(drawGantt);
-
-      function drawGantt() {
-        // Create a DataTable
-        const dataTable = new google.visualization.DataTable();
-        // Define columns for the Gantt
-        dataTable.addColumn('string', 'Task ID');
-        dataTable.addColumn('string', 'Task Name');
-        dataTable.addColumn('date', 'Start Date');
-        dataTable.addColumn('date', 'End Date');
-        dataTable.addColumn('number', 'Duration');
-        dataTable.addColumn('number', 'Percent Complete');
-        dataTable.addColumn('string', 'Dependencies');
-
-        // Map each activity in the path to Gantt rows
-        const rows = path.map((act) => {
-          const startDate = parseDate(act['Start']);
-          const finishDate = parseDate(act['Finish']);
-          const preds = act['Predecessors'] ? act['Predecessors'].split(',').join(';') : null;
-          return [
-            act['Activity ID'],
-            act['Activity Name'],
-            startDate,
-            finishDate,
-            null,
-            0,
-            preds,
-          ];
-        });
-
-        // Add rows to the DataTable
-        dataTable.addRows(rows);
-
-        // Gantt chart options
-        const options = {
-          height: 400,
-          gantt: {
-            criticalPathEnabled: false,
-            percentEnabled: false,
-          },
-        };
-
-        // Actually draw the chart
-        const chart = new google.visualization.Gantt(document.getElementById('gantt_chart_area'));
-        chart.draw(dataTable, options);
-      }
-    }
-
-    /**
-     * renderDependencyGraph: Basic D3.js graph showing current path + immediate predecessors
-     */
-    function renderDependencyGraph() {
-      // Reference to the dependency_graph container
-      const svgContainer = document.getElementById('dependency_graph');
-      // Clear previous SVG content
-      svgContainer.innerHTML = '';
-      // Width/Height for the SVG
-      const width = svgContainer.clientWidth;
-      const height = svgContainer.clientHeight;
-
-      // Create an SVG in the container
-      const svg = d3
-        .select('#dependency_graph')
-        .append('svg')
-        .attr('width', width)
-        .attr('height', height);
-
-      // We'll build node/link arrays
-      const nodes = [];
-      const links = [];
-
-      // Add nodes for items in the currentPath
-      currentPath.forEach((act) => {
-        nodes.push({
-          id: act['Activity ID'],
-          name: act['Activity Name'],
-        });
+    // Auto-Detect Critical Path (CPM)
+    autoDetectBtn.addEventListener('click', () => {
+      addLog('Running auto-detect critical path...');
+      const zeroFloatActs = activities.filter(a => {
+        const tf = parseFloat(a['Total Float'] || '');
+        return !isNaN(tf) && tf === 0;
       });
 
-      // Also add immediate preds for the currentActivity, if any
-      if (currentActivity && currentActivity['Predecessors']) {
-        const preds = currentActivity['Predecessors'].split(',').filter(Boolean);
-        preds.forEach((pid) => {
-          if (!nodes.find((node) => node.id === pid)) {
-            const pAct = projectData.find((act) => act['Activity ID'] === pid);
-            if (pAct) {
-              nodes.push({ id: pAct['Activity ID'], name: pAct['Activity Name'] });
-            }
-          }
-        });
-      }
-
-      // Build link structure for the path
-      for (let i = 0; i < currentPath.length - 1; i++) {
-        links.push({
-          source: currentPath[i]['Activity ID'],
-          target: currentPath[i + 1]['Activity ID'],
-        });
-      }
-
-      // Also connect immediate preds to the current activity
-      if (currentActivity && currentActivity['Predecessors']) {
-        const preds = currentActivity['Predecessors'].split(',').filter(Boolean);
-        preds.forEach((pid) => {
-          links.push({ source: pid, target: currentActivity['Activity ID'] });
-        });
-      }
-
-      // Build force simulation
-      const simulation = d3
-        .forceSimulation(nodes)
-        .force('link', d3.forceLink(links).id((d) => d.id).distance(100))
-        .force('charge', d3.forceManyBody().strength(-300))
-        .force('center', d3.forceCenter(width / 2, height / 2));
-
-      // Draw lines for links
-      const link = svg
-        .selectAll('.link')
-        .data(links)
-        .enter()
-        .append('line')
-        .attr('class', 'link')
-        .attr('stroke', '#999')
-        .attr('stroke-width', 2);
-
-      // Draw nodes
-      const node = svg
-        .selectAll('.node')
-        .data(nodes)
-        .enter()
-        .append('g')
-        .attr('class', 'node')
-        .call(
-          d3
-            .drag()
-            .on('start', dragstarted)
-            .on('drag', dragged)
-            .on('end', dragended)
-        );
-
-      // Circle shape for each node
-      node
-        .append('circle')
-        .attr('r', 15)
-        .attr('fill', '#007bff');
-
-      // Label text for each node
-      node
-        .append('text')
-        .attr('dy', 4)
-        .attr('text-anchor', 'middle')
-        .attr('fill', '#ffffff')
-        .text((d) => d.id);
-
-      // On each simulation tick, update positions
-      simulation.on('tick', () => {
-        link
-          .attr('x1', (d) => d.source.x)
-          .attr('y1', (d) => d.source.y)
-          .attr('x2', (d) => d.target.x)
-          .attr('y2', (d) => d.target.y);
-
-        node.attr('transform', (d) => `translate(${d.x},${d.y})`);
-      });
-
-      /**
-       * dragstarted: Called by D3 when user begins dragging a node
-       */
-      function dragstarted(d) {
-        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-        d.fx = d.x;
-        d.fy = d.y;
-      }
-
-      /**
-       * dragged: Called by D3 while user drags a node
-       */
-      function dragged(d) {
-        d.fx = d3.event.x;
-        d.fy = d3.event.y;
-      }
-
-      /**
-       * dragended: Called by D3 when user releases mouse
-       */
-      function dragended(d) {
-        if (!d3.event.active) simulation.alphaTarget(0);
-        d.fx = null;
-        d.fy = null;
-      }
-    }
-
-    /**
-     * applyWhatIfChange: Allows user to change the Remaining Duration of the current activity
-     */
-    function applyWhatIfChange() {
-      // If no current activity, do nothing
-      if (!currentActivity) return;
-      // Get the input
-      const newDuration = document.getElementById('whatIfInput').value;
-      // If empty, alert user
-      if (!newDuration) {
-        alert('Please input a new Remaining Duration first.');
-        return;
-      }
-      // Set new Remaining Duration
-      currentActivity['Remaining Duration'] = newDuration;
-      // Alert the user
-      alert(`Applied new Remaining Duration = ${newDuration} for Activity ID: ${currentActivity['Activity ID']}`);
-      logMessage(`What-If applied: Remaining Duration changed to ${newDuration} for ${currentActivity['Activity ID']}`);
-      // Optionally recalc or update schedule if you have logic
-      renderGanttChart(currentPath);
-      renderDependencyGraph();
-    }
-
-    /**
-     * addComment: Adds a note to the collaboration log
-     */
-    function addComment() {
-      // Grab the text from the textarea
-      const commentText = document.getElementById('notesTextarea').value;
-      // If empty, do nothing
-      if (!commentText.trim()) return;
-      // Build comment object
-      const comment = {
-        timestamp: new Date().toLocaleString(),
-        activityId: currentActivity ? currentActivity['Activity ID'] : '',
-        note: commentText,
-      };
-      // Push to commentsLog
-      commentsLog.push(comment);
-      // Clear the textarea
-      document.getElementById('notesTextarea').value = '';
-      // Render updated comments
-      renderComments();
-      // Log
-      logMessage(`Comment added for Activity: ${comment.activityId}`);
-    }
-
-    /**
-     * renderComments: Updates the UI to show the up-to-date comments
-     */
-    function renderComments() {
-      // Reference to the list
-      const list = document.getElementById('commentsList');
-      // Clear existing
-      list.innerHTML = '';
-      // For each comment in logs
-      commentsLog.forEach((c) => {
-        // Create an li element
-        const li = document.createElement('li');
-        li.className = 'list-group-item';
-        // Text with timestamp and note
-        li.innerHTML = `<strong>[${c.timestamp}] ${c.activityId}</strong>: ${c.note}`;
-        // Append to the list
-        list.appendChild(li);
-      });
-    }
-
-    /**
-     * exportCsv: Exports the final traced path + comments into a CSV file
-     */
-    function exportCsv() {
-      // If no path, do nothing
-      if (!currentPath.length) {
-        alert('No path to export.');
-        logMessage('Export attempted but path is empty.');
+      if (zeroFloatActs.length === 0) {
+        addLog('No zero-float activities found.');
+        alert('No critical path detected (no activities with Total Float = 0).');
         return;
       }
 
-      // Build CSV headers
+      // Build graph
+      const graph = {};
+      const indegree = {};
+      zeroFloatActs.forEach(a => {
+        const id = a['Activity ID'];
+        graph[id] = (a.Successors || '').split(/[,;]/).map(s => s.trim()).filter(s => s && activityMap[s] && parseFloat(activityMap[s]['Total Float'] || '') === 0);
+        indegree[id] = 0;
+      });
+      Object.values(graph).flat().forEach(s => indegree[s] = (indegree[s] || 0) + 1);
+
+      // Find start nodes
+      const starts = zeroFloatActs.filter(a => !indegree[a['Activity ID']]);
+      if (starts.length === 0) {
+        addLog('No valid start node in critical path.');
+        return;
+      }
+
+      // Topological sort
+      const path = [];
+      const queue = [starts[0]['Activity ID']];
+      const visited = new Set();
+
+      while (queue.length) {
+        const id = queue.shift();
+        if (visited.has(id)) continue;
+        visited.add(id);
+        const act = activityMap[id];
+        if (act) path.push(act);
+        graph[id]?.forEach(succ => queue.push(succ));
+      }
+
+      if (path.length < 2) {
+        addLog('Auto-detect found only isolated critical activities.');
+        alert('Critical path too short or fragmented.');
+        return;
+      }
+
+      criticalPath = path;
+      addLog(`Auto-detected critical path with ${path.length} activities.`);
+      updateCriticalPathUI();
+      showPredecessors(criticalPath[0]);
+      traceSection.style.display = 'block';
+      updateGanttChart();
+    });
+
+    // Export Critical Path as CSV
+    exportBtn.addEventListener('click', () => {
+      if (criticalPath.length === 0) return;
+
       const headers = [
-        'Project ID',
-        'Activity ID',
-        'Activity Name',
-        'Start',
-        'Finish',
-        'Remaining Duration',
-        'Total Float',
-        'Primary Constraint',
-        'Primary Constraint Date',
-        'Comments (if any)'
+        'Project ID', 'Activity ID', 'Activity Name', 'Original Duration', 'At Completion Duration',
+        'Remaining Duration', 'Early Start', 'Early Finish', 'Start', 'Finish', 'Late Start', 'Late Finish',
+        'Predecessors', 'Successors', 'Activity Status', 'Total Float', 'Activity Type'
       ];
-      // Start with headers row
-      const csvRows = [];
-      csvRows.push(headers.join(','));
 
-      // For each activity in the path
-      currentPath.forEach((act) => {
-        // Gather relevant comments for this activity
-        const relevantComments = commentsLog
-          .filter((c) => c.activityId === act['Activity ID'])
-          .map((x) => `[${x.timestamp}] ${x.note}`)
-          .join(' | ');
+      const rows = criticalPath.map(act => headers.map(h => act[h] || ''));
 
-        // Prepare each column, wrap in quotes to avoid CSV separation issues
-        const row = [
-          '"' + (act['Project ID'] || '') + '"',
-          '"' + (act['Activity ID'] || '') + '"',
-          '"' + (act['Activity Name'] || '') + '"',
-          '"' + (act['Start'] || '') + '"',
-          '"' + (act['Finish'] || '') + '"',
-          '"' + (act['Remaining Duration'] || '') + '"',
-          '"' + (act['Total Float'] || '') + '"',
-          '"' + (act['Primary Constraint'] || '') + '"',
-          '"' + (act['Primary Constraint Date'] || '') + '"',
-          '"' + relevantComments.replace(/"/g, '""') + '"'
-        ];
-        // Add to csvRows
-        csvRows.push(row.join(','));
-      });
+      let csvContent = headers.join(',') + '\n' + rows.map(r => r.join(',')).join('\n');
 
-      // Join rows into a single CSV string
-      const csvString = csvRows.join('\n');
-      // Create a Blob
-      const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-      // Create an object URL
+      const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
-      // Create a hidden <a> element and trigger click to download
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'traced_path.csv');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `critical_path_${criticalPath[0]['Activity ID']}_to_${criticalPath[criticalPath.length-1]['Activity ID']}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
 
-      // Log
-      logMessage('Final path exported to traced_path.csv');
-    }
-
-    /**
-     * parseDate: Converts a date string (YYYY-MM-DD) into a JS Date object 
-     * @param {String} dateStr 
-     * @returns {Date|null}
-     */
-    function parseDate(dateStr) {
-      // If empty, return null
-      if (!dateStr) return null;
-      // Assume format YYYY-MM-DD
-      const parts = dateStr.split('-');
-      // If not 3 parts, return null
-      if (parts.length < 3) return null;
-      // Create new Date with Y, M, D
-      return new Date(parts[0], parts[1] - 1, parts[2]);
-    }
-
-    /**
-     * logMessage: Appends a message to the #logArea for real-time logging
-     * @param {String} msg 
-     */
-    function logMessage(msg) {
-      // Reference log area
-      const logDiv = document.getElementById('logArea');
-      // Create a new paragraph
-      const p = document.createElement('p');
-      // Format message with timestamp
-      p.textContent = `[${new Date().toLocaleString()}] ${msg}`;
-      // Append to log area
-      logDiv.appendChild(p);
-      // Auto-scroll to bottom
-      logDiv.scrollTop = logDiv.scrollHeight;
-    }
+      addLog(`Exported critical path with ${criticalPath.length} activities.`);
+    });
   </script>
 </body>
 </html>
