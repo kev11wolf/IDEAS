@@ -253,19 +253,21 @@
     /*
      * Bar => absolute
      */
-    .bar {
-      position: absolute;
-      height: calc(var(--row-height) - 16px);
-      left: 0;
-      border-radius: 4px;
-      color: #fff;
-      cursor: pointer;
-      user-select: none;
-      opacity: 0.7;
-      overflow: hidden;
-      z-index: 0;
-      box-sizing: border-box;
-    }
+.bar {
+  position: absolute;
+  height: calc(var(--row-height) - 20px); /* Adjusted height to account for 2px border top/bottom (4px total) to prevent clipping */
+  left: 0;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+  opacity: 0.7;
+  overflow: hidden;
+  z-index: 0;
+  box-sizing: border-box;
+  border: 2px solid #000; /* Added: 2px black border */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Added: Drop shadow for better contrast and depth */
+}
     .bar.selected {
       outline: 3px solid #00f;
     }
@@ -532,6 +534,10 @@
       color: #fff;
       border: 1px solid #6c757d;
     }
+    body.dark-theme .bar {
+  border: 2px solid #fff; /* Slightly darker for dark mode */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
 
     /* Zoom sliders => horizontal and vertical range inputs */
     .zoom-slider {
