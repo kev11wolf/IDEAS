@@ -1,0 +1,3424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Character set: Ensures correct text encoding -->
+  <meta charset="UTF-8" />
+  <!-- Page Title -->
+  <title>Gantt Planner</title>
+  <!-- Bootstrap 5 CSS -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+  />
+  <style>
+    /* 
+     * We rely on native sizing to prevent clipping at bottom.
+     * The last row is a 'filler row' that remains always at bottom.
+     */
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    /*
+     * Sticky navbar at the top with scrolling if content grows too large.
+     * Increased height to 250px as requested, 
+     * plus overflow to handle taller content.
+     */
+    .navbar {
+      position: sticky; /* keep the toolbar stuck at the top */
+      top: 0;           /* offset from top */
+      z-index: 1000;    /* ensure it stays above table rows/bars */
+      background-color: #f8f9fa;
+      padding: 0.25rem 0.5rem;
+      width: 100%;
+      height: 200px;    /* new fixed height of 200px for the toolbar */
+      overflow-y: auto; /* scroll if the toolbar gets too tall */
+    }
+
+    .navbar .container-fluid {
+      max-width: 100vw;
+      padding: 0;
+      margin: 0;
+    }
+
+    /*
+     * Collapsible area with a more horizontal layout (no wrapping),
+     * plus a smaller gap for slimness.
+     */
+    .navbar-collapse {
+      display: flex !important;
+      flex-wrap: nowrap !important; /* force horizontal layout */
+      gap: 0.5rem;                  /* smaller gap between tool groups */
+    }
+
+    /*
+     * We'll adjust .toolbar-column to display in a row 
+     * and align items center for a slimmer horizontal approach.
+     */
+    .toolbar-column {
+      display: flex;
+      flex-direction: row;
+      gap: 0.5rem;
+      border-right: 1px solid #dee2e6;
+      padding-right: 0.5rem;
+      align-items: center;
+    }
+    .toolbar-column:last-child {
+      border-right: none;
+      padding-right: 0;
+    }
+
+    /*
+     * Kept .toolbar-group but left alone to avoid removing any functionality.
+     * It can still hold labels and inputs in a column if needed.
+     */
+    .toolbar-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .toolbar-group label {
+      margin-bottom: 0;
+    }
+
+    /*
+     * Timescale block => two side-by-side columns for Year/Week input.
+     */
+    .timescale-row {
+      display: flex;
+      flex-direction: row;
+      gap: 0.75rem;
+    }
+    .timescale-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .timescale-col label {
+      font-size: 0.85rem;
+    }
+
+    /*
+     * .gantt-container below the navbar.
+     * We'll rely on an extra "filler row" to ensure no clipping at bottom.
+     */
+    .gantt-container {
+      position: relative;
+      height: calc(100% - 100px);
+      margin-bottom: 0;
+    }
+
+    /*
+     * Added padding-bottom to help the last row be fully visible 
+     * (the filler row at the bottom).
+   */
+    .table-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: auto;
+      box-sizing: border-box;
+      padding-bottom: 100px; /* Extra space at bottom */
+    }
+  
+    /*
+     * Main table => black grid lines
+     */
+    #ganttTable {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      position: relative;
+    }
+    #ganttTable,
+    #ganttTable thead th,
+    #ganttTable tbody td {
+      border: 1px solid #000;
+    }
+
+    /* Sticky header */
+    #ganttTable thead {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: #f8f9fa;
+    }
+
+    /* 
+     * Header cells => single-line text with ellipses 
+     * (ensuring fonts fit on one line).
+     */
+    #ganttTable thead th {
+      background-color: #f8f9fa;
+      text-align: center;
+      font-size: 0.9rem;
+      padding: 4px 8px;
+      box-sizing: border-box;
+      overflow: hidden;    
+      text-overflow: ellipses;
+    }
+
+    /*
+     * "Tasks" => 300px wide
+     */
+    #nameHeader {
+      width: 300px;
+      text-align: center;
+      font-weight: bold;
+      background-color: #f8f9fa;
+      z-index: 51;
+    }
+    .timescale-header {
+      background-color: #e9ecef;
+      min-width: 50px;
+      /* The dynamic font size will be set inline in JS */
+    }
+
+    /*
+     * Tbody => row height from a CSS variable
+     */
+    #ganttTable tbody {
+      position: relative;
+    }
+    .gantt-row {
+      height: var(--row-height);
+      transition: outline 0.2s;
+    }
+    .gantt-row.selected {
+      background-color: #fff3cd;
+    }
+    .gantt-row.drag-highlight {
+      outline: 3px solid red;
+    }
+
+    /*
+     * We'll add a 'filler' row that remains at bottom
+     */
+    .filler-row {
+      height: 40px;
+    }
+
+    /*
+     * Name cell => sticky left
+     */
+    .name-cell {
+      position: sticky;
+      left: 0;
+      background-color: #f0f0f0;
+      box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+      z-index: 9;
+      width: 300px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: var(--row-height);
+      box-sizing: border-box;
+      cursor: move;
+    }
+
+    /* 
+     * Within the name cell, ensure single-line with ellipses for dynamic fitting.
+     */
+    .name-cell span {
+      font-size: 0.85rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipses;
+      display: inline-block;
+      max-width: 90%;
+    }
+
+    /*
+     * bar-cell => colSpan timescale columns
+     */
+    .bar-cell {
+      position: relative;
+      padding: 0;
+    }
+    .bar-row-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+    }
+
+    /*
+     * Bar => absolute
+     */
+    .bar {
+      position: absolute;
+      height: calc(var(--row-height) - 16px);
+      left: 0;
+      border-radius: 4px;
+      color: #fff;
+      cursor: pointer;
+      user-select: none;
+      opacity: 0.7;
+      overflow: hidden;
+      z-index: 0;
+      box-sizing: border-box;
+    }
+    .bar.selected {
+      outline: 3px solid #00f;
+    }
+    .bar.highlighted {
+      outline: 3px solid #0d6efd;
+      opacity: 0.9;
+    }
+    .bar-text {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      line-height: calc(var(--row-height) - 16px);
+      white-space: nowrap;
+      pointer-events: none;
+      font-weight: 500;
+      padding: 0 8px;
+    }
+
+    /* Admin bar-handle => resizing */
+    .bar-handle {
+      position: absolute;
+      top: 0;
+      width: 6px;
+      height: 100%;
+      cursor: col-resize;
+      background-color: rgba(255, 255, 255, 0.4);
+      z-index: 2;
+    }
+    .bar-handle.left {
+      left: 0;
+      border-radius: 4px 0 0 4px;
+    }
+    .bar-handle.right {
+      right: 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /*
+     * Overlap => diagonal stripes if bars truly overlap
+     */
+    .overlap-hatch {
+      position: absolute;
+      height: calc(var(--row-height) - 16px);
+      background: repeating-linear-gradient(
+        45deg,
+        red,
+        red 2px,
+        transparent 2px,
+        transparent 4px
+      );
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /*
+     * Editor modals
+     */
+    #barEditor,
+    #lineEditor {
+      position: absolute;
+      display: none;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 8px;
+      border-radius: 6px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      max-height: 80vh;
+      overflow: auto;
+      max-width: 90vw;
+    }
+    #barEditor {
+      min-width: 200px;
+    }
+    #lineEditor {
+      min-width: 280px;
+    }
+    .attribute-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .attribute-row label {
+      flex: 0 0 auto;
+      margin-right: 6px;
+      font-weight: 500;
+    }
+    .attribute-row input,
+    .attribute-row select {
+      flex: 1 1 auto;
+    }
+    #barEditorActions,
+    #lineEditorActions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    /*
+     * Filter modal => center, now taller (max-height 90vh)
+     * and smaller font for less intrusiveness.
+     */
+    #filterModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px; /* smaller padding */
+      border-radius: 6px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      min-width: 400px; /* reduced min-width to make it smaller */
+      max-height: 90vh; /* increased max height to show more options */
+      overflow: auto;
+      font-size: 0.85rem; /* slightly smaller font */
+    }
+    #filterModal h3 {
+      margin-top: 0;
+      font-size: 1rem; 
+    }
+    .filter-container {
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .filter-card {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 6px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .filter-card h5 {
+      margin-top: 0;
+      margin-bottom: 6px;
+      font-size: 0.95rem; 
+      font-weight: 600;
+    }
+    #filterActions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    /* 
+     * Settings modal => color/theme
+     */
+    #settingsModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      min-width: 300px;
+      max-height: 80vh;
+      max-width: 90vw;
+      overflow: auto;
+    }
+    #settingsModal h3 {
+      margin-top: 0;
+    }
+    #settingsModal label {
+      display: block;
+      margin-top: 8px;
+    }
+    #settingsActions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .color-picker {
+      width: 60px;
+      height: 30px;
+      padding: 0;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* 
+     * CSV Edit modal => topmost
+     */
+    #csvEditModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 60%;
+      height: 60%;
+      transform: translate(-50%, -50%);
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 6px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      z-index: 99999;
+      overflow: auto;
+    }
+    #csvTextarea {
+      width: 100%;
+      height: 70%;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+    #csvEditModalActions {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /*
+     * Dark theme => .dark-theme
+     * Updated to ensure all fonts become white (#fff) for better contrast.
+     */
+    body.dark-theme {
+      background-color: #212529;
+      color: #fff; /* Changed to pure white for better contrast */
+    }
+    body.dark-theme .navbar {
+      background-color: #343a40 !important;
+    }
+    body.dark-theme #ganttTable thead th,
+    body.dark-theme .timescale-header {
+      background-color: #495057;
+      color: #fff; /* ensure white text in header */
+    }
+    body.dark-theme .name-cell {
+      background-color: #444;
+      color: #fff; /* ensure white text in name cell */
+      box-shadow: 1px 1px 3px rgba(255, 255, 255, 0.2);
+    }
+    body.dark-theme .bar-text {
+      color: #fff; /* ensure bar label text is white */
+    }
+    body.dark-theme #barEditor,
+    body.dark-theme #lineEditor,
+    body.dark-theme #filterModal,
+    body.dark-theme #settingsModal,
+    body.dark-theme #csvEditModal {
+      background: #343a40;
+      color: #fff; /* ensure modal text is white */
+      border: 1px solid #495057;
+    }
+    body.dark-theme input,
+    body.dark-theme select,
+    body.dark-theme textarea {
+      background: #495057;
+      color: #fff;
+      border: 1px solid #6c757d;
+    }
+
+    /* Zoom sliders => horizontal and vertical range inputs */
+    .zoom-slider {
+      width: 120px;
+      margin: 0 8px;
+      height: 8px;
+      border-radius: 4px;
+      background: #ced4da;
+      outline: none;
+      -webkit-appearance: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    }
+    .zoom-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #0d6efd;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    .zoom-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #0d6efd;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    /*
+     * Removed the vertical transform so the second slider is also horizontal
+     */
+    #heightZoomSlider {
+      width: 120px; /* set to a standard width so it's horizontal now */
+    }
+
+    /*
+     * Print => only prints the visible portion
+     */
+    @media print {
+      .navbar,
+      #barEditor,
+      #lineEditor,
+      #filterModal,
+      #settingsModal,
+      #csvEditModal {
+        display: none !important;
+      }
+    }
+
+    /*
+     * Legend => items vertically, each with a color & label horizontally
+     */
+    .legend-container-vertical {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .legend-item {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 4px;
+    }
+    .legend-swatch {
+      width: 16px;
+      height: 16px;
+    }
+
+    /*
+     * Updated toolbar arrangement:
+     * Slicers remain horizontal as requested, but we add a max-height + scrolling
+     * to accommodate the new 250px toolbar.
+     */
+    .slicers-horizontal {
+      display: flex;
+      flex-direction: row;
+      gap: 1rem;
+      align-items: flex-end; /* adjusted to fit within the 250px toolbar */
+      overflow-y: auto;      /* scroll if slicing area grows too large */
+    }
+    /* Ensures the slicer labels remain fully visible */
+    .slicer-group label {
+      white-space: nowrap;
+      overflow: visible;
+      text-overflow: clip;
+    }
+    .slicer-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      align-items: flex-start;
+    }
+    .slicer-group button {
+      width: 80px;
+      align-self: flex-start;
+    }
+
+    /* 
+     * Hide "Add Items" group by default. We'll toggle it in JS when adminMode is true.
+     */
+    #addItemsGroup {
+      display: none; /* hidden by default, shown only in admin mode */
+    }
+  </style>
+</head>
+<body>
+  <!-- Sticky navbar with newly arranged columns -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <!-- Brand => title -->
+      <a class="navbar-brand" href="#">Gantt Planner</a>
+      <!-- Toggler for small screens -->
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Collapsible area with columns -->
+      <div
+        class="collapse navbar-collapse"
+        id="navbarSupportedContent"
+        style="display: flex; flex-direction: row; gap: 1rem;"
+      >
+        <!-- Column 1 => Timescale -->
+        <div class="toolbar-column">
+          <div class="toolbar-group">
+            <span>Timescale</span>
+            <div class="timescale-row">
+              <!-- Start side -->
+              <div class="timescale-col">
+                <label for="startYearInput" class="form-label">Start Year:</label>
+                <input
+                  id="startYearInput"
+                  type="number"
+                  class="form-control form-control-sm"
+                  value="2025"
+                />
+                <label for="startWeekInput" class="form-label">Start Week:</label>
+                <input
+                  id="startWeekInput"
+                  type="number"
+                  class="form-control form-control-sm"
+                  value="1"
+                />
+              </div>
+              <!-- End side -->
+              <div class="timescale-col">
+                <label for="endYearInput" class="form-label">End Year:</label>
+                <input
+                  id="endYearInput"
+                  type="number"
+                  class="form-control form-control-sm"
+                  value="2025"
+                />
+                <label for="endWeekInput" class="form-label">End Week:</label>
+                <input
+                  id="endWeekInput"
+                  type="number"
+                  class="form-control form-control-sm"
+                  value="52"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2 => Zoom & Search -->
+        <div class="toolbar-column">
+          <div class="toolbar-group">
+            <span>Zoom</span>
+            <div style="display: flex; flex-direction: row; gap: 0.5rem;">
+              <div>
+                <!-- H-Zoom slider min set to 10 for narrower columns -->
+                <label for="zoomSlider" class="form-label m-0 me-2"
+                  >H-Zoom:</label
+                >
+                <input
+                  type="range"
+                  class="zoom-slider"
+                  id="zoomSlider"
+                  min="10"
+                  max="300"
+                  value="150"
+                  step="10"
+                />
+              </div>
+              <div>
+                <!-- The "vertical" slider is now also horizontal, removing rotation -->
+                <label for="heightZoomSlider" class="form-label m-0 me-2"
+                  >V-Zoom:</label
+                >
+                <input
+                  type="range"
+                  class="zoom-slider"
+                  id="heightZoomSlider"
+                  min="30"
+                  max="100"
+                  value="40"
+                  step="5"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="toolbar-group">
+            <span>Search</span>
+            <input
+              type="text"
+              id="searchInput"
+              class="form-control form-control-sm"
+              placeholder="Filter lines/bars..."
+            />
+            <button id="filterBtn" class="btn btn-outline-primary btn-sm mt-1">
+              Filter
+            </button>
+          </div>
+        </div>
+
+        <!-- Column 3 => Add Items & History -->
+        <div class="toolbar-column">
+          <!-- Hidden by default; only shown in admin mode below -->
+          <div id="addItemsGroup" class="toolbar-group">
+            <span>Add Items</span>
+            <button id="addLineItemBtn" class="btn btn-primary btn-sm">
+              Add Line
+            </button>
+            <button id="addBarBtn" class="btn btn-secondary btn-sm">
+              Add Bar
+            </button>
+          </div>
+          <div class="toolbar-group">
+            <span>History</span>
+            <button id="undoBtn" type="button" class="btn btn-sm btn-success">
+              Undo
+            </button>
+            <button id="redoBtn" type="button" class="btn btn-sm btn-warning">
+              Redo
+            </button>
+          </div>
+        </div>
+
+        <!-- Column 4 => Legend vertically stacked -->
+        <div class="toolbar-column">
+          <div class="toolbar-group legend-container-vertical" id="legendContainer">
+            <div class="legend-item">
+              <div class="legend-swatch" id="legendSecuredSwatch"></div>
+              <span>Secured</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" id="legendProposedSwatch"></div>
+              <span>Proposed</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" id="legendOpportunitySwatch"></div>
+              <span>Opportunity</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-swatch" id="legendFutureSwatch"></div>
+              <span>Future</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 5 => Import/Export/Print -->
+        <div class="toolbar-column">
+          <div class="toolbar-group">
+            <span>Import/Export</span>
+            <button id="importCsvBtn" class="btn btn-outline-success btn-sm">
+              Import CSV
+            </button>
+            <button id="downloadCsvBtn" class="btn btn-outline-secondary btn-sm">
+              Export CSV
+            </button>
+            <button id="printBtn" class="btn btn-outline-dark btn-sm">
+              Print/PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Column 6 => Misc => Admin & Theme/About toggles -->
+        <div class="toolbar-column">
+          <div class="toolbar-group">
+            <span>Misc</span>
+            <button id="adminToggleBtn" class="btn btn-sm btn-outline-danger">
+              Admin
+            </button>
+            <button id="themeToggleBtn" class="btn btn-sm btn-outline-info">
+              Theme
+            </button>
+            <button id="aboutToggleBtn" class="btn btn-sm btn-outline-secondary">
+              About
+            </button>
+            <button
+              id="csvEditToggleBtn"
+              class="btn btn-outline-dark btn-sm"
+              style="display: none;"
+            >
+              Edit CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- Column 7 => Slicers arranged horizontally -->
+        <div class="toolbar-column">
+          <div class="slicers-horizontal">
+            <!-- discipline slicer: multiple -->
+            <div class="slicer-group">
+              <label>Discipline</label>
+              <button
+                id="clearDisciplineSlicerBtn"
+                class="btn btn-sm btn-warning"
+              >
+                Clear
+              </button>
+              <select
+                id="slicerDisciplineSelect"
+                class="form-select form-select-sm"
+                multiple
+              ></select>
+            </div>
+
+            <!-- client slicer: multiple -->
+            <div class="slicer-group">
+              <label>Client</label>
+              <button id="clearClientSlicerBtn" class="btn btn-sm btn-warning">
+                Clear
+              </button>
+              <select
+                id="slicerClientSelect"
+                class="form-select form-select-sm"
+                multiple
+              ></select>
+            </div>
+
+            <!-- experience slicer: multiple -->
+            <div class="slicer-group">
+              <label>Experience</label>
+              <button
+                id="clearExperienceSlicerBtn"
+                class="btn btn-sm btn-warning"
+              >
+                Clear
+              </button>
+              <select
+                id="slicerExperienceSelect"
+                class="form-select form-select-sm"
+                multiple
+              ></select>
+            </div>
+
+            <!-- location slicer: multiple -->
+            <div class="slicer-group">
+              <label>Location</label>
+              <button
+                id="clearLocationSlicerBtn"
+                class="btn btn-sm btn-warning"
+              >
+                Clear
+              </button>
+              <select
+                id="slicerLocationSelect"
+                class="form-select form-select-sm"
+                multiple
+              ></select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Gantt container => table wrapper -->
+  <div class="gantt-container">
+    <div class="table-wrapper" id="tableWrapper">
+      <table id="ganttTable">
+        <thead>
+          <!-- We will build 3 rows for the date headers dynamically in JS -->
+          <!-- The third row (weeks) will use id="headerRow" so existing references remain valid. -->
+        </thead>
+        <tbody id="tableBody">
+          <!-- Rows generated dynamically -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Bar editor => single label plus attributes -->
+  <div id="barEditor">
+    <div class="attribute-row">
+      <label for="barLabelInput">Bar Label:</label>
+      <input type="text" id="barLabelInput" placeholder="Bar Label..." />
+    </div>
+    <div class="attribute-row">
+      <label for="barProjectNameInput">Project Name:</label>
+      <input type="text" id="barProjectNameInput" placeholder="Project Name..." />
+    </div>
+    <div class="attribute-row">
+      <label for="barClientInput">Client:</label>
+      <input type="text" id="barClientInput" placeholder="Client..." />
+    </div>
+    <div class="attribute-row">
+      <label for="barDisciplineInput">Discipline:</label>
+      <input type="text" id="barDisciplineInput" placeholder="Discipline..." />
+    </div>
+    <div class="attribute-row">
+      <label for="barExperienceInput">Experience:</label>
+      <input type="text" id="barExperienceInput" placeholder="Experience..." />
+    </div>
+    <div class="attribute-row">
+      <label for="barLOEInput">LOE:</label>
+      <input type="text" id="barLOEInput" placeholder="LOE..." />
+    </div>
+    <div class="attribute-row">
+      <label for="barLocationInput">Location:</label>
+      <input type="text" id="barLocationInput" placeholder="Location..." />
+    </div>
+    <!-- "Assigned to" -->
+    <div class="attribute-row">
+      <label for="barAssignedToInput">Assigned to:</label>
+      <input type="text" id="barAssignedToInput" placeholder="Assigned to..." />
+    </div>
+    <div class="attribute-row">
+      <label for="barTypeSelect">Type (affects color):</label>
+      <select id="barTypeSelect">
+        <option value="secured">Secured</option>
+        <option value="proposed">Proposed</option>
+        <option value="opportunity">Opportunity</option>
+        <option value="future">Future</option>
+      </select>
+    </div>
+    <div class="attribute-row">
+      <label for="barProposedSelect">Proposed:</label>
+      <select id="barProposedSelect">
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+    <div class="attribute-row">
+      <label for="startYearSelect">Start (Y/W):</label>
+      <select id="startYearSelect"></select>
+      <select id="startWeekSelect"></select>
+    </div>
+    <div class="attribute-row">
+      <label for="endYearSelect">End (Y/W):</label>
+      <select id="endYearSelect"></select>
+      <select id="endWeekSelect"></select>
+    </div>
+    <div id="barEditorActions">
+      <button id="barDeleteBtn" class="btn btn-sm btn-danger">Delete Bar</button>
+      <button id="barEditorOkBtn" class="btn btn-sm btn-primary">OK</button>
+      <button id="barEditorCancelBtn" class="btn btn-sm btn-secondary">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Line editor -->
+  <div id="lineEditor">
+    <div class="attribute-row">
+      <label for="lineNameInput">Name:</label>
+      <input type="text" id="lineNameInput" placeholder="Name..." />
+    </div>
+    <div class="attribute-row">
+      <label for="lineClientInput">Client:</label>
+      <input type="text" id="lineClientInput" placeholder="Client..." />
+    </div>
+    <div class="attribute-row">
+      <label for="lineDisciplineInput">Discipline:</label>
+      <input type="text" id="lineDisciplineInput" placeholder="Discipline..." />
+    </div>
+    <div class="attribute-row">
+      <label for="lineExperienceInput">Experience:</label>
+      <input type="text" id="lineExperienceInput" placeholder="Experience..." />
+    </div>
+    <div class="attribute-row">
+      <label for="lineOfficeLocationInput">Office Location:</label>
+      <input
+        type="text"
+        id="lineOfficeLocationInput"
+        placeholder="Office Location..."
+      />
+    </div>
+    <div class="attribute-row">
+      <label for="lineGeoLocationInput">Geo Location:</label>
+      <input
+        type="text"
+        id="lineGeoLocationInput"
+        placeholder="Geo Location..."
+      />
+    </div>
+    <div class="attribute-row">
+      <label for="lineTypeInput">Type:</label>
+      <input type="text" id="lineTypeInput" placeholder="Type..." />
+    </div>
+    <div id="lineEditorActions">
+      <button id="lineDeleteBtn" class="btn btn-sm btn-danger">
+        Delete Line Item
+      </button>
+      <button id="lineEditorOkBtn" class="btn btn-sm btn-primary">OK</button>
+      <button id="lineEditorCancelBtn" class="btn btn-sm btn-secondary">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter modal -->
+  <div id="filterModal">
+    <h3>Filter Lines/Bars</h3>
+    <div class="filter-container">
+      <!-- Left filter card => line item fields as dropdowns -->
+      <div class="filter-card">
+        <h5>Line Item Filters</h5>
+        <label for="filterLineName">Name:</label>
+        <select id="filterLineName" class="form-select form-select-sm"></select>
+
+        <label for="filterLineClient">Client:</label>
+        <select id="filterLineClient" class="form-select form-select-sm"></select>
+
+        <label for="filterLineDiscipline">Discipline:</label>
+        <select
+          id="filterLineDiscipline"
+          class="form-select form-select-sm"
+        ></select>
+
+        <label for="filterLineExperience">Experience:</label>
+        <select
+          id="filterLineExperience"
+          class="form-select form-select-sm"
+        ></select>
+
+        <label for="filterLineOfficeLocation">Office Location:</label>
+        <select
+          id="filterLineOfficeLocation"
+          class="form-select form-select-sm"
+        ></select>
+
+        <label for="filterLineGeoLocation">Geo Location:</label>
+        <select
+          id="filterLineGeoLocation"
+          class="form-select form-select-sm"
+        ></select>
+
+        <label for="filterLineType">Type:</label>
+        <select id="filterLineType" class="form-select form-select-sm"></select>
+      </div>
+      <!-- Right filter card => bar attributes as dropdowns -->
+      <div class="filter-card">
+        <h5>Bar Filters</h5>
+        <label for="filterBarProjectName">Project Name:</label>
+        <select id="filterBarProjectName" class="form-select form-select-sm"></select>
+
+        <label for="filterBarClient">Client:</label>
+        <select id="filterBarClient" class="form-select form-select-sm"></select>
+
+        <label for="filterBarDiscipline">Discipline:</label>
+        <select
+          id="filterBarDiscipline"
+          class="form-select form-select-sm"
+        ></select>
+
+        <label for="filterBarExperience">Experience:</label>
+        <select
+          id="filterBarExperience"
+          class="form-select form-select-sm"
+        ></select>
+
+        <label for="filterBarLOE">LOE:</label>
+        <select id="filterBarLOE" class="form-select form-select-sm"></select>
+
+        <label for="filterBarLocation">Location:</label>
+        <select id="filterBarLocation" class="form-select form-select-sm"></select>
+
+        <label for="filterBarAssignedTo">Assigned to:</label>
+        <select
+          id="filterBarAssignedTo"
+          class="form-select form-select-sm"
+        ></select>
+
+        <label for="filterBarType">Type:</label>
+        <select id="filterBarType" class="form-select form-select-sm"></select>
+
+        <label for="filterBarProposed">Proposed:</label>
+        <select
+          id="filterBarProposed"
+          class="form-select form-select-sm"
+        ></select>
+      </div>
+    </div>
+    <div id="filterActions">
+      <button id="filterApplyBtn" class="btn btn-sm btn-primary">Apply</button>
+      <button id="filterClearBtn" class="btn btn-sm btn-secondary">
+        Clear
+      </button>
+      <button id="filterCancelBtn" class="btn btn-sm btn-secondary">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div id="settingsModal">
+    <h3>Theme Settings</h3>
+    <label>Theme:</label>
+    <select id="themeSelect">
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+    </select>
+
+    <label for="securedColor">Secured Color:</label>
+    <input
+      type="color"
+      id="securedColor"
+      class="color-picker"
+      value="#28a745"
+    />
+
+    <label for="proposedColor">Proposed Color:</label>
+    <input
+      type="color"
+      id="proposedColor"
+      class="color-picker"
+      value="#fd7e14"
+    />
+
+    <label for="opportunityColor">Opportunity Color:</label>
+    <input
+      type="color"
+      id="opportunityColor"
+      class="color-picker"
+      value="#dc3545"
+    />
+
+    <label for="futureColor">Future Color:</label>
+    <input
+      type="color"
+      id="futureColor"
+      class="color-picker"
+      value="#6f42c1"
+    />
+
+    <div id="settingsActions">
+      <button id="settingsOkBtn" class="btn btn-sm btn-primary">Apply</button>
+      <button id="settingsCancelBtn" class="btn btn-sm btn-secondary">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- CSV Edit modal -->
+  <div id="csvEditModal">
+    <h3>Edit CSV In-Browser</h3>
+    <textarea id="csvTextarea"></textarea>
+    <div id="csvEditModalActions">
+      <button id="csvEditApplyBtn" class="btn btn-sm btn-primary">
+        Apply Changes
+      </button>
+      <button id="csvEditCancelBtn" class="btn btn-sm btn-secondary">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <!-- Hidden file input for CSV import only -->
+  <input type="file" id="importFileInput" accept=".csv" style="display: none;" />
+
+  <!-- Bootstrap 5 JS bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    /* 
+      ---------------------------------------------------------------------------------------------
+      GLOBALS 
+      ---------------------------------------------------------------------------------------------
+      The following variables store the overall state of the Gantt chart and user configurations.
+      We will call pushState() whenever the user moves bars/lines so that Undo/Redo covers:
+      - moving bars up/down
+      - moving line items up/down
+      - moving bars left/right
+    */
+    let adminMode = false; // Admin toggle
+    let typeColors = {
+      secured: "#28a745",
+      proposed: "#fd7e14",
+      opportunity: "#dc3545",
+      future: "#6f42c1",
+    };
+
+    /* 
+      lines: Each line has an array of bars, plus line-level attributes 
+      like name, client, discipline, etc.
+    */
+    let lines = [
+      {
+        id: 1,
+        name: "Line One",
+        client: "",
+        discipline: "",
+        experience: "",
+        officeLocation: "",
+        geoLocation: "",
+        type: "",
+        bars: [
+          {
+            id: 101,
+            label: "Bar Sample A",
+            projectName: "Proj A",
+            client: "",
+            discipline: "",
+            experience: "",
+            LOE: "",
+            location: "",
+            assignedTo: "",
+            proposed: "no",
+            type: "secured",
+            startAbsWeek: toAbsoluteWeek(2025, 2),
+            length: 4,
+            selected: false,
+          },
+        ],
+        selected: false,
+        dragging: false,
+      },
+      {
+        id: 2,
+        name: "Line Two",
+        client: "",
+        discipline: "",
+        experience: "",
+        officeLocation: "",
+        geoLocation: "",
+        type: "",
+        bars: [
+          {
+            id: 102,
+            label: "Bar Sample B",
+            projectName: "Proj B",
+            client: "",
+            discipline: "",
+            experience: "",
+            LOE: "",
+            location: "",
+            assignedTo: "",
+            proposed: "yes",
+            type: "proposed",
+            startAbsWeek: toAbsoluteWeek(2025, 10),
+            length: 7,
+            selected: false,
+          },
+        ],
+        selected: false,
+        dragging: false,
+      },
+    ];
+
+    // Timescale & counters
+    let startYear = 2025;
+    let startWeek = 1;
+    let endYear = 2025;
+    let endWeek = 52;
+    let lineCounter = 2;
+    let barCounter = 102;
+
+    // Zoom defaults
+    let cellWidth = 150;
+    let rowHeight = 40;
+
+    // Basic filters
+    let filters = { line: {}, bar: {} };
+
+    // Slicer-based filters => discipline, client, experience, location
+    let slicers = {
+      discipline: null,
+      client: null,
+      experience: null,
+      location: null,
+    };
+
+    // Search term
+    let searchTerm = "";
+
+    // Theme
+    let currentTheme = "light";
+
+    // Undo/Redo stacks
+    let undoStack = [];
+    let redoStack = [];
+
+    // Dragging states
+    let dragging = false;
+    let dragType = null;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let initialStartAbs = 0;
+    let initialLength = 0;
+    let currentBar = null;
+    let currentLine = null;
+    let draggingLine = null;
+    let tableBodyRect = null;
+    let mainFilteredLines = [];
+    let currentEditorBar = null;
+    let currentEditorLine = null;
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      TIME & HELPER 
+      ---------------------------------------------------------------------------------------------
+      Convert year/week to absolute week or vice versa.
+    */
+    function toAbsoluteWeek(year, week) {
+      return year * 52 + (week - 1);
+    }
+    function fromAbsoluteWeek(abs) {
+      const y = Math.floor(abs / 52);
+      const w = (abs % 52) + 1;
+      return { year: y, week: w };
+    }
+    function getMonthFromYearWeek(year, week) {
+      // This approximates the month from a given year/week number
+      let january4 = new Date(year, 0, 4);
+      let dayMs = 24 * 3600 * 1000;
+      let offsetDays =
+        (week - 1) * 7 - ((january4.getDay() + 6) % 7);
+      let date = new Date(january4.getTime() + offsetDays * dayMs);
+      return date.getMonth();
+    }
+    function getMonthName(m) {
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      return months[m] || "";
+    }
+    function getColorFromType(t) {
+      return typeColors[t] || "#fd7e14";
+    }
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      LOCAL STORAGE 
+      ---------------------------------------------------------------------------------------------
+      Save/Load entire chart configuration to localStorage.
+    */
+    function saveToLocalStorage() {
+      const chartData = {
+        lines,
+        startYear,
+        startWeek,
+        endYear,
+        endWeek,
+        lineCounter,
+        barCounter,
+        cellWidth,
+        rowHeight,
+        typeColors,
+        currentTheme,
+      };
+      localStorage.setItem("ganttChartData", JSON.stringify(chartData));
+    }
+    function loadFromLocalStorage() {
+      const stored = localStorage.getItem("ganttChartData");
+      if (!stored) return;
+      try {
+        let parsed = JSON.parse(stored);
+        lines = parsed.lines || [];
+        lines.forEach((line) => {
+          line.selected = false;
+          line.dragging = false;
+          line.bars.forEach((bar) => {
+            bar.selected = false;
+            if (bar.type === undefined) bar.type = "proposed";
+            if (bar.label === undefined) bar.label = "";
+            if (bar.assignedTo === undefined) bar.assignedTo = "";
+          });
+          if (!line.client) line.client = "";
+        });
+        startYear = parsed.startYear || 2025;
+        startWeek = parsed.startWeek || 1;
+        endYear = parsed.endYear || 2025;
+        endWeek = parsed.endWeek || 52;
+        lineCounter = parsed.lineCounter || lineCounter;
+        barCounter = parsed.barCounter || barCounter;
+        cellWidth = parsed.cellWidth || 150;
+        rowHeight = parsed.rowHeight || 40;
+        typeColors = parsed.typeColors || typeColors;
+        currentTheme = parsed.currentTheme || "light";
+      } catch (err) {
+        console.warn("Invalid localStorage data");
+      }
+    }
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      THEME & CSS
+      ---------------------------------------------------------------------------------------------
+      Update legend swatches & apply theme changes.
+    */
+    function updateLegendSwatches() {
+      document.getElementById("legendSecuredSwatch").style.backgroundColor =
+        typeColors.secured;
+      document.getElementById("legendProposedSwatch").style.backgroundColor =
+        typeColors.proposed;
+      document.getElementById("legendOpportunitySwatch").style.backgroundColor =
+        typeColors.opportunity;
+      document.getElementById("legendFutureSwatch").style.backgroundColor =
+        typeColors.future;
+    }
+    function applyTheme() {
+      if (currentTheme === "dark") {
+        document.body.classList.add("dark-theme");
+      } else {
+        document.body.classList.remove("dark-theme");
+      }
+      updateLegendSwatches();
+      renderTable();
+      saveToLocalStorage();
+    }
+    function updateCSSVariables() {
+      document.documentElement.style.setProperty(
+        "--cell-width",
+        cellWidth + "px"
+      );
+      document.documentElement.style.setProperty(
+        "--row-height",
+        rowHeight + "px"
+      );
+    }
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      getDisplayRange => from timescale
+      ---------------------------------------------------------------------------------------------
+    */
+    function getDisplayRange() {
+      let ds = toAbsoluteWeek(startYear, startWeek);
+      let de = toAbsoluteWeek(endYear, endWeek);
+      return { displayStart: ds, displayEnd: de };
+    }
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      UTILS => unselect/hide highlights
+      ---------------------------------------------------------------------------------------------
+    */
+    function unselectAllBars() {
+      lines.forEach((line) =>
+        line.bars.forEach((bar) => (bar.selected = false))
+      );
+    }
+    function clearHighlights() {
+      document
+        .querySelectorAll(".bar.highlighted")
+        .forEach((el) => el.classList.remove("highlighted"));
+    }
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      updateBarTextPositions => center bar label if visible
+      ---------------------------------------------------------------------------------------------
+    */
+    function updateBarTextPositions() {
+      let scrollLeft = tableWrapper.scrollLeft;
+      let viewportWidth = tableWrapper.clientWidth;
+      document.querySelectorAll(".bar-text").forEach((textEl) => {
+        let barEl = textEl.parentElement;
+        let barLeft = parseFloat(barEl.style.left);
+        let barWidth = parseFloat(barEl.style.width);
+        let barRight = barLeft + barWidth;
+
+        let visibleLeft = Math.max(barLeft, scrollLeft);
+        let visibleRight = Math.min(barRight, scrollLeft + viewportWidth);
+        let visibleWidth = visibleRight - visibleLeft;
+        if (visibleWidth <= 0) {
+          textEl.style.opacity = "0";
+          return;
+        }
+        textEl.style.opacity = "1";
+        let textWidth = textEl.offsetWidth;
+        let textLeft =
+          visibleLeft - barLeft + (visibleWidth - textWidth) / 2;
+        if (textLeft < 5) textLeft = 5;
+        if (textLeft + textWidth > barWidth - 5) {
+          textLeft = barWidth - textWidth - 5;
+        }
+        textEl.style.left = textLeft + "px";
+      });
+    }
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      renderHeader => 3-row date header with dynamic width & font sizes for each row
+      ---------------------------------------------------------------------------------------------
+    */
+    function renderHeader() {
+      // 1) Clear out all existing rows in thead
+      const thead = ganttTable.querySelector("thead");
+      thead.innerHTML = "";
+
+      // 2) Create three new <tr> elements:
+      //    yearRow => top row for years
+      //    monthRow => middle row for months
+      //    weekRow => bottom row for weeks
+      let yearRow = document.createElement("tr");
+      let monthRow = document.createElement("tr");
+      let weekRow = document.createElement("tr");
+      // We set id="headerRow" on the bottom row so existing references remain valid
+      weekRow.id = "headerRow";
+
+      // 3) Create the "Tasks" cell in the top-left corner with rowSpan=3
+      const tasksTh = document.createElement("th");
+      tasksTh.id = "nameHeader";
+      tasksTh.rowSpan = 3;
+      tasksTh.textContent = "Tasks";
+      tasksTh.classList.add("timescale-header"); 
+      yearRow.appendChild(tasksTh);
+
+      // Append these 3 rows to the existing thead
+      thead.appendChild(yearRow);
+      thead.appendChild(monthRow);
+      thead.appendChild(weekRow);
+
+      // 4) Determine how many weeks we have to display 
+      let { displayStart, displayEnd } = getDisplayRange();
+      let totalWeeks = displayEnd - displayStart + 1;
+      if (totalWeeks < 1) return;
+
+      // 5) Build an array of each display week's metadata: year, month, etc.
+      let weekData = [];
+      for (let i = 0; i < totalWeeks; i++) {
+        let abs = displayStart + i;
+        let { year, week } = fromAbsoluteWeek(abs);
+        let mIdx = getMonthFromYearWeek(year, week);
+        weekData.push({ abs, year, week, monthIndex: mIdx });
+      }
+
+      // 6) Group these weeks by year
+      let yearGroups = [];
+      let currentYearGroup = null;
+      for (let wd of weekData) {
+        if (!currentYearGroup || currentYearGroup.year !== wd.year) {
+          currentYearGroup = {
+            year: wd.year,
+            weeks: [],
+          };
+          yearGroups.push(currentYearGroup);
+        }
+        currentYearGroup.weeks.push(wd);
+      }
+
+      // 7) Within each year group, also group by month
+      for (let yg of yearGroups) {
+        let monthGroups = [];
+        let currentMonthGroup = null;
+        for (let wd of yg.weeks) {
+          if (!currentMonthGroup || currentMonthGroup.monthIndex !== wd.monthIndex) {
+            currentMonthGroup = {
+              monthIndex: wd.monthIndex,
+              weeks: [],
+            };
+            monthGroups.push(currentMonthGroup);
+          }
+          currentMonthGroup.weeks.push(wd);
+        }
+        yg.monthGroups = monthGroups;
+      }
+
+      // 8) For the top row (yearRow), create a th for each yearGroup with colSpan
+      for (let yg of yearGroups) {
+        let th = document.createElement("th");
+        th.textContent = yg.year;
+        th.colSpan = yg.weeks.length; // number of weeks in this year group
+        th.className = "timescale-header";
+
+        // NEW: Dynamically set width and font size based on how many columns in this year group
+        let totalWidthForYear = yg.weeks.length * cellWidth;
+        th.style.width = totalWidthForYear + "px";
+        let dynamicFontSizeYear = Math.max(
+          8,
+          Math.min(16, totalWidthForYear * 0.02)
+        );
+        th.style.fontSize = dynamicFontSizeYear + "px";
+
+        yearRow.appendChild(th);
+      }
+
+      // 9) For each year group, create the month cells in monthRow
+      for (let yg of yearGroups) {
+        for (let mg of yg.monthGroups) {
+          let th = document.createElement("th");
+          th.textContent = getMonthName(mg.monthIndex);
+          th.colSpan = mg.weeks.length; // number of weeks in this month group
+          th.className = "timescale-header";
+
+          // NEW: Dynamically set width and font size for each month group
+          let totalWidthForMonth = mg.weeks.length * cellWidth;
+          th.style.width = totalWidthForMonth + "px";
+          let dynamicFontSizeMonth = Math.max(
+            8,
+            Math.min(16, totalWidthForMonth * 0.02)
+          );
+          th.style.fontSize = dynamicFontSizeMonth + "px";
+
+          monthRow.appendChild(th);
+        }
+      }
+
+      // 10) Create the bottom row (weekRow) => one cell per actual week
+      for (let wd of weekData) {
+        let th = document.createElement("th");
+        th.className = "timescale-header";
+
+        // Set width to match the cellWidth (zoom)
+        th.style.width = cellWidth + "px";
+
+        // Apply dynamic font size so each week label adjusts
+        let dynamicFontSizeWeek = Math.max(8, Math.min(16, cellWidth * 0.2));
+        th.style.fontSize = dynamicFontSizeWeek + "px";
+
+        // For the label, we just print the week number
+        th.textContent = "W" + wd.week;
+        weekRow.appendChild(th);
+      }
+    }
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      handleBarClickSelect => shift/ctrl multi selection
+      ---------------------------------------------------------------------------------------------
+    */
+    function handleBarClickSelect(bar, evt) {
+      let multi = evt.shiftKey || evt.ctrlKey || evt.metaKey;
+      if (!multi) {
+        unselectAllBars();
+        bar.selected = true;
+      } else {
+        bar.selected = !bar.selected;
+      }
+    }
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      renderTable => main UI
+      ---------------------------------------------------------------------------------------------
+    */
+    function renderTable() {
+      // 1) Render the new 3-row header
+      renderHeader();
+
+      // 2) Prepare body content
+      tableBody.innerHTML = "";
+      clearHighlights();
+
+      let { displayStart, displayEnd } = getDisplayRange();
+      let totalWeeks = displayEnd - displayStart + 1;
+      if (totalWeeks < 1) return;
+
+      let lowerSearch = searchTerm.toLowerCase();
+
+      // Filter lines
+      let filteredLines = lines.filter((line) => {
+        // 1) line filters
+        if (Object.keys(filters.line).length > 0) {
+          for (let f in filters.line) {
+            let filterValue = filters.line[f].toLowerCase();
+            if (
+              !line[f] ||
+              !line[f].toLowerCase().includes(filterValue)
+            ) {
+              return false;
+            }
+          }
+        }
+
+        // 2) slicers => discipline, client, experience, location
+        if (slicers.discipline) {
+          if (Array.isArray(slicers.discipline)) {
+            const discLower = line.discipline.toLowerCase();
+            const selLowerArr = slicers.discipline.map(d => d.toLowerCase());
+            if (!selLowerArr.includes(discLower)) {
+              return false;
+            }
+          } else {
+            if (
+              line.discipline.toLowerCase() !==
+              slicers.discipline.toLowerCase()
+            ) {
+              return false;
+            }
+          }
+        }
+
+        if (slicers.client) {
+          if (Array.isArray(slicers.client)) {
+            let passAny = false;
+            for (let cVal of slicers.client.map(c => c.toLowerCase())) {
+              let lineMatchesClient =
+                line.client &&
+                line.client.toLowerCase() === cVal;
+              let barHasClient = line.bars.some(
+                (b) =>
+                  b.client &&
+                  b.client.toLowerCase() === cVal
+              );
+              if (lineMatchesClient || barHasClient) {
+                passAny = true;
+                break;
+              }
+            }
+            if (!passAny) return false;
+          } else {
+            const lineMatchesClient =
+              line.client &&
+              line.client.toLowerCase() === slicers.client.toLowerCase();
+            const barHasClient = line.bars.some(
+              (b) =>
+                b.client &&
+                b.client.toLowerCase() === slicers.client.toLowerCase()
+            );
+            if (!lineMatchesClient && !barHasClient) {
+              return false;
+            }
+          }
+        }
+
+        if (slicers.experience) {
+          if (Array.isArray(slicers.experience)) {
+            const exprLower = line.experience.toLowerCase();
+            const selArr = slicers.experience.map(e => e.toLowerCase());
+            if (!selArr.includes(exprLower)) {
+              return false;
+            }
+          } else {
+            if (
+              line.experience.toLowerCase() !==
+              slicers.experience.toLowerCase()
+            ) {
+              return false;
+            }
+          }
+        }
+
+        if (slicers.location) {
+          if (Array.isArray(slicers.location)) {
+            const locLower = line.officeLocation.toLowerCase();
+            const selArr = slicers.location.map(l => l.toLowerCase());
+            if (!selArr.includes(locLower)) {
+              return false;
+            }
+          } else {
+            if (
+              line.officeLocation.toLowerCase() !==
+              slicers.location.toLowerCase()
+            ) {
+              return false;
+            }
+          }
+        }
+
+        // 3) bar filter => at least one bar passes if bar filters exist
+        let passBars = line.bars.filter((b) => {
+          if (Object.keys(filters.bar).length > 0) {
+            for (let fb in filters.bar) {
+              let val = filters.bar[fb].toLowerCase();
+              if (!b[fb] || !b[fb].toLowerCase().includes(val)) {
+                return false;
+              }
+            }
+          }
+          return true;
+        });
+        if (
+          Object.keys(filters.bar).length > 0 &&
+          passBars.length === 0
+        ) {
+          return false;
+        }
+
+        // 4) search => line or any bar
+        if (lowerSearch) {
+          let lineMatch =
+            (line.name &&
+              line.name.toLowerCase().includes(lowerSearch)) ||
+            (line.client &&
+              line.client.toLowerCase().includes(lowerSearch)) ||
+            (line.discipline &&
+              line.discipline.toLowerCase().includes(lowerSearch)) ||
+            (line.experience &&
+              line.experience.toLowerCase().includes(lowerSearch)) ||
+            (line.officeLocation &&
+              line.officeLocation.toLowerCase().includes(lowerSearch)) ||
+            (line.geoLocation &&
+              line.geoLocation.toLowerCase().includes(lowerSearch)) ||
+            (line.type && line.type.toLowerCase().includes(lowerSearch));
+
+          let barMatch = line.bars.some((bar) => {
+            let bFields = [
+              (bar.label || "").toLowerCase(),
+              (bar.projectName || "").toLowerCase(),
+              (bar.client || "").toLowerCase(),
+              (bar.discipline || "").toLowerCase(),
+              (bar.experience || "").toLowerCase(),
+              (bar.LOE || "").toLowerCase(),
+              (bar.location || "").toLowerCase(),
+              (bar.type || "").toLowerCase(),
+              (bar.proposed || "").toLowerCase(),
+              (bar.assignedTo || "").toLowerCase(),
+            ];
+            return bFields.some((f) => f.includes(lowerSearch));
+          });
+          if (!lineMatch && !barMatch) return false;
+        }
+        return true;
+      });
+
+      mainFilteredLines = filteredLines;
+
+      // Render lines
+      filteredLines.forEach((line, lineIndex) => {
+        const tr = document.createElement("tr");
+        tr.className = "gantt-row";
+        if (line.selected) tr.classList.add("selected");
+        if (line.dragging) tr.classList.add("drag-highlight");
+
+        // name cell
+        const nameTd = document.createElement("td");
+        nameTd.className = "name-cell";
+        nameTd.addEventListener("mousedown", (e) =>
+          onLineMouseDown(e, line, lineIndex)
+        );
+        // right-click => lineEditor
+        nameTd.addEventListener("contextmenu", (e) => {
+          e.preventDefault();
+          showLineEditor(line, e.clientX, e.clientY);
+        });
+        const labelSpan = document.createElement("span");
+        labelSpan.textContent = line.name;
+        nameTd.appendChild(labelSpan);
+        tr.appendChild(nameTd);
+
+        // bar cell => colSpan timescale
+        const barTd = document.createElement("td");
+        barTd.colSpan = totalWeeks;
+        barTd.className = "bar-cell";
+        const barContainer = document.createElement("div");
+        barContainer.className = "bar-row-container";
+        barContainer.addEventListener("contextmenu", (ev) => {
+          if (adminMode) {
+            // Right-click in empty area => add new bar if admin
+            if (
+              !ev.target.classList.contains("bar") &&
+              !ev.target.classList.contains("bar-text") &&
+              !ev.target.classList.contains("bar-handle")
+            ) {
+              ev.preventDefault();
+              barCounter++;
+              let offsetX = ev.offsetX;
+              let weeksFromStart = Math.floor(offsetX / cellWidth);
+              let { displayStart } = getDisplayRange();
+              let nb = {
+                id: barCounter,
+                label: "",
+                projectName: "New Project",
+                client: "",
+                discipline: "",
+                experience: "",
+                LOE: "",
+                location: "",
+                assignedTo: "",
+                proposed: "no",
+                type: "proposed",
+                startAbsWeek: displayStart + weeksFromStart,
+                length: 4,
+                selected: false,
+              };
+              line.bars.push(nb);
+              pushState(); // Ensure adding a bar can be undone
+              renderTable();
+              saveToLocalStorage();
+            }
+          }
+        });
+
+        // Filter bars that pass bar filters
+        let finalBarsToRender = line.bars.filter((b) => {
+          if (Object.keys(filters.bar).length > 0) {
+            for (let fb in filters.bar) {
+              let val = filters.bar[fb].toLowerCase();
+              if (!b[fb] || !b[fb].toLowerCase().includes(val)) {
+                return false;
+              }
+            }
+          }
+          return true;
+        });
+
+        // Render bars
+        finalBarsToRender.forEach((bar) => {
+          let barStart = bar.startAbsWeek;
+          let barEnd = barStart + bar.length;
+          let overlapStart = Math.max(displayStart, barStart);
+          let overlapEnd = Math.min(displayEnd + 1, barEnd);
+          let overlapLen = overlapEnd - overlapStart;
+          if (overlapLen <= 0) return;
+
+          let barLeftPx = (overlapStart - displayStart) * cellWidth;
+          let barWidthPx = overlapLen * cellWidth;
+
+          const barDiv = document.createElement("div");
+          barDiv.classList.add("bar");
+          if (bar.selected) barDiv.classList.add("selected");
+
+          // highlight if search matches
+          if (
+            lowerSearch &&
+            (
+              (bar.projectName || "").toLowerCase().includes(lowerSearch) ||
+              (bar.assignedTo || "").toLowerCase().includes(lowerSearch)
+            )
+          ) {
+            barDiv.classList.add("highlighted");
+          }
+
+          barDiv.style.left = barLeftPx + "px";
+          barDiv.style.width = barWidthPx + "px";
+          barDiv.style.backgroundColor = getColorFromType(bar.type);
+
+          // bar text
+          const textSpan = document.createElement("span");
+          textSpan.className = "bar-text";
+          textSpan.textContent = bar.label || bar.projectName;
+          barDiv.appendChild(textSpan);
+
+          // admin => add resize handles
+          if (adminMode) {
+            const leftHandle = document.createElement("div");
+            leftHandle.classList.add("bar-handle", "left");
+            const rightHandle = document.createElement("div");
+            rightHandle.classList.add("bar-handle", "right");
+            barDiv.appendChild(leftHandle);
+            barDiv.appendChild(rightHandle);
+          }
+
+          // right-click => bar editor
+          barDiv.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            showBarEditor(bar, line, e.clientX, e.clientY);
+          });
+          // click => select
+          barDiv.addEventListener("click", (e) => {
+            e.stopPropagation();
+            handleBarClickSelect(bar, e);
+            renderTable();
+            saveToLocalStorage();
+          });
+          // mousedown => drag
+          barDiv.addEventListener("mousedown", (e) =>
+            onBarMouseDown(e, line, bar, lineIndex)
+          );
+
+          barContainer.appendChild(barDiv);
+        });
+
+        // Overlap => create diagonal stripes if bars overlap
+        let sorted = [...finalBarsToRender].sort(
+          (a, b) => a.startAbsWeek - b.startAbsWeek
+        );
+        for (let i = 0; i < sorted.length; i++) {
+          for (let j = i + 1; j < sorted.length; j++) {
+            let b1 = sorted[i];
+            let b2 = sorted[j];
+            let s1 = b1.startAbsWeek;
+            let e1 = b1.startAbsWeek + b1.length;
+            let s2 = b2.startAbsWeek;
+            let e2 = b2.startAbsWeek + b2.length;
+            let overlapS = Math.max(s1, s2);
+            let overlapE = Math.min(e1, e2);
+            if (overlapE > overlapS) {
+              let leftPx =
+                (Math.max(displayStart, overlapS) - displayStart) *
+                cellWidth;
+              let wPx =
+                (Math.min(displayEnd + 1, overlapE) -
+                  Math.max(displayStart, overlapS)) *
+                cellWidth;
+              if (wPx > 0) {
+                let hatch = document.createElement("div");
+                hatch.className = "overlap-hatch";
+                hatch.style.left = leftPx + "px";
+                hatch.style.width = wPx + "px";
+                barContainer.appendChild(hatch);
+              }
+            }
+          }
+        }
+
+        barTd.appendChild(barContainer);
+        tr.appendChild(barTd);
+        tableBody.appendChild(tr);
+      });
+
+      updateBarTextPositions();
+    }
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      onLineMouseDown => reorder lines by dragging
+      ---------------------------------------------------------------------------------------------
+      We capture the state at mouseup in the global mouseup event.
+    */
+    function onLineMouseDown(e, line, lineIndex) {
+      dragging = true;
+      dragType = "line-reorder";
+      draggingLine = line;
+      line.dragging = true;
+      tableBodyRect = tableBody.getBoundingClientRect();
+      renderTable();
+      e.preventDefault();
+    }
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      onBarMouseDown => bar drag/move
+      ---------------------------------------------------------------------------------------------
+      We capture the final state in the global mouseup event for undo/redo.
+    */
+    function onBarMouseDown(e, line, bar, lineIndex) {
+      dragging = true;
+      currentBar = bar;
+      currentLine = line;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      initialStartAbs = bar.startAbsWeek;
+      initialLength = bar.length;
+      tableBodyRect = tableBody.getBoundingClientRect();
+
+      if (adminMode) {
+        if (e.target.classList.contains("bar-handle")) {
+          if (e.target.classList.contains("left")) dragType = "resize-left";
+          else dragType = "resize-right";
+        } else {
+          dragType = "bar-move-admin";
+        }
+      } else {
+        dragType = "bar-move-user";
+      }
+      e.preventDefault();
+    }
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      MOUSEMOVE => handle dragging (bars or lines)
+      ---------------------------------------------------------------------------------------------
+      On each mousemove, we update the relevant item in memory, then re-render.
+      pushState() is not called until mouseup to capture the final state for undo/redo.
+    */
+    document.addEventListener("mousemove", (e) => {
+      if (!dragging) return;
+      if (dragType === "line-reorder" && draggingLine) {
+        let posY = e.clientY - tableBodyRect.top;
+        let newIndex = Math.floor(posY / rowHeight);
+        if (newIndex < 0) newIndex = 0;
+        if (newIndex >= mainFilteredLines.length)
+          newIndex = mainFilteredLines.length - 1;
+        let oldIndex = mainFilteredLines.indexOf(draggingLine);
+        if (oldIndex < 0) return;
+        if (newIndex !== oldIndex) {
+          lines.splice(lines.indexOf(draggingLine), 1);
+          let targetLine = mainFilteredLines[newIndex];
+          let targetGlobalIdx = lines.indexOf(targetLine);
+          if (targetGlobalIdx < 0) targetGlobalIdx = lines.length;
+          lines.splice(targetGlobalIdx, 0, draggingLine);
+          renderTable();
+        }
+      } else if (dragType === "bar-move-admin" && currentBar) {
+        let dx = e.clientX - dragStartX;
+        let dWeeks = Math.round(dx / cellWidth);
+        currentBar.startAbsWeek = Math.max(0, initialStartAbs + dWeeks);
+
+        let posY = e.clientY - tableBodyRect.top;
+        let idxCur = mainFilteredLines.indexOf(currentLine);
+        if (idxCur < 0) idxCur = 0;
+        let newIdx = Math.floor(posY / rowHeight);
+        if (newIdx < 0) newIdx = 0;
+        if (newIdx >= mainFilteredLines.length)
+          newIdx = mainFilteredLines.length - 1;
+        if (newIdx !== idxCur) {
+          currentLine.bars = currentLine.bars.filter(
+            (b) => b.id !== currentBar.id
+          );
+          mainFilteredLines[newIdx].bars.push(currentBar);
+          currentLine = mainFilteredLines[newIdx];
+        }
+        renderTable();
+      } else if (dragType === "resize-left" && currentBar) {
+        let dx = e.clientX - dragStartX;
+        let dWeeks = Math.round(dx / cellWidth);
+        let newStart = initialStartAbs + dWeeks;
+        let newLen = initialStartAbs + initialLength - newStart;
+        if (newLen < 1) {
+          newLen = 1;
+          newStart = initialStartAbs + initialLength - 1;
+        }
+        currentBar.startAbsWeek = Math.max(0, newStart);
+        currentBar.length = newLen;
+        renderTable();
+      } else if (dragType === "resize-right" && currentBar) {
+        let dx = e.clientX - dragStartX;
+        let dWeeks = Math.round(dx / cellWidth);
+        let newLen = initialLength + dWeeks;
+        if (newLen < 1) newLen = 1;
+        currentBar.length = newLen;
+        renderTable();
+      } else if (dragType === "bar-move-user" && currentBar) {
+        let posY = e.clientY - tableBodyRect.top;
+        let newIndex = Math.floor(posY / rowHeight);
+        if (newIndex < 0) newIndex = 0;
+        if (newIndex >= mainFilteredLines.length)
+          newIndex = mainFilteredLines.length - 1;
+        let oldLineIdx = mainFilteredLines.indexOf(currentLine);
+        if (oldLineIdx < 0) oldLineIdx = 0;
+        if (newIndex !== oldLineIdx) {
+          mainFilteredLines[oldLineIdx].bars = mainFilteredLines[
+            oldLineIdx
+          ].bars.filter((b) => b.id !== currentBar.id);
+          mainFilteredLines[newIndex].bars.push(currentBar);
+          currentLine = mainFilteredLines[newIndex];
+          renderTable();
+        }
+      }
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      MOUSEUP => finalize drag
+      ---------------------------------------------------------------------------------------------
+      We call pushState() here so that Undo/Redo can revert or reapply these movements.
+    */
+    document.addEventListener("mouseup", () => {
+      if (!dragging) return;
+      dragging = false;
+      if (dragType === "line-reorder") {
+        draggingLine.dragging = false;
+        draggingLine = null;
+        pushState(); // Save final arrangement to undo stack
+        saveToLocalStorage();
+        renderTable();
+      } else if (
+        [
+          "bar-move-admin",
+          "resize-left",
+          "resize-right",
+          "bar-move-user",
+        ].includes(dragType)
+      ) {
+        currentBar = null;
+        currentLine = null;
+        pushState(); // Save final bar movement to undo stack
+        saveToLocalStorage();
+      }
+      dragType = null;
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      Document click => unselect lines/bars if blank
+      ---------------------------------------------------------------------------------------------
+    */
+    document.addEventListener("click", (evt) => {
+      if (!dragging) {
+        let nm = evt.target.closest(".name-cell");
+        let br = evt.target.closest(".bar");
+        if (!nm && !br) {
+          lines.forEach((l) => (l.selected = false));
+          unselectAllBars();
+          renderTable();
+          saveToLocalStorage();
+        }
+      }
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      showBarEditor => bar editor
+      ---------------------------------------------------------------------------------------------
+      The editor is shown on right-click of a bar. We also auto-save if admin changes fields.
+    */
+    function showBarEditor(bar, line, x, y) {
+      currentEditorBar = bar;
+      currentEditorLine = line;
+      // Populate fields
+      barLabelInput.value = bar.label || "";
+      barProjectNameInput.value = bar.projectName || "";
+      barClientInput.value = bar.client || "";
+      barDisciplineInput.value = bar.discipline || "";
+      barExperienceInput.value = bar.experience || "";
+      barLOEInput.value = bar.LOE || "";
+      barLocationInput.value = bar.location || "";
+      barAssignedToInput.value = bar.assignedTo || "";
+      barTypeSelect.value = bar.type || "proposed";
+      barProposedSelect.value = bar.proposed || "no";
+
+      let { year: sy, week: sw } = fromAbsoluteWeek(bar.startAbsWeek);
+      let { year: ey, week: ew } = fromAbsoluteWeek(
+        bar.startAbsWeek + bar.length - 1
+      );
+      startYearSelect.value = sy;
+      startWeekSelect.value = sw;
+      endYearSelect.value = ey;
+      endWeekSelect.value = ew;
+
+      let ro = !adminMode;
+      [
+        barLabelInput,
+        barProjectNameInput,
+        barClientInput,
+        barDisciplineInput,
+        barExperienceInput,
+        barLOEInput,
+        barLocationInput,
+        barAssignedToInput,
+        barTypeSelect,
+        barProposedSelect,
+        startYearSelect,
+        startWeekSelect,
+        endYearSelect,
+        endWeekSelect,
+        barDeleteBtn,
+      ].forEach((el) => (el.disabled = ro));
+
+      barEditor.style.display = "block";
+      barEditor.style.left = x + window.scrollX + 10 + "px";
+      barEditor.style.top = y + window.scrollY + 10 + "px";
+
+      setTimeout(() => {
+        let rect = barEditor.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+          barEditor.style.left =
+            Math.max(0, window.innerWidth - rect.width - 10) + "px";
+        }
+        if (rect.bottom > window.innerHeight) {
+          barEditor.style.top =
+            Math.max(0, window.innerHeight - rect.height - 10) + "px";
+        }
+      }, 0);
+
+      // Autosave if admin
+      const autosave = () => {
+        if (!adminMode) return;
+        currentEditorBar.label = barLabelInput.value;
+        currentEditorBar.projectName = barProjectNameInput.value;
+        currentEditorBar.client = barClientInput.value;
+        currentEditorBar.discipline = barDisciplineInput.value;
+        currentEditorBar.experience = barExperienceInput.value;
+        currentEditorBar.LOE = barLOEInput.value;
+        currentEditorBar.location = barLocationInput.value;
+        currentEditorBar.assignedTo = barAssignedToInput.value;
+        currentEditorBar.type = barTypeSelect.value;
+        currentEditorBar.proposed = barProposedSelect.value;
+
+        let sY = parseInt(startYearSelect.value);
+        let sW = parseInt(startWeekSelect.value);
+        let eY = parseInt(endYearSelect.value);
+        let eW = parseInt(endWeekSelect.value);
+        currentEditorBar.startAbsWeek = toAbsoluteWeek(sY, sW);
+        currentEditorBar.length =
+          toAbsoluteWeek(eY, eW) - currentEditorBar.startAbsWeek + 1;
+        if (currentEditorBar.length < 1) currentEditorBar.length = 1;
+
+        renderTable();
+        saveToLocalStorage();
+      };
+      barLabelInput.oninput = autosave;
+      barProjectNameInput.oninput = autosave;
+      barClientInput.oninput = autosave;
+      barDisciplineInput.oninput = autosave;
+      barExperienceInput.oninput = autosave;
+      barLOEInput.oninput = autosave;
+      barLocationInput.oninput = autosave;
+      barAssignedToInput.oninput = autosave;
+      barTypeSelect.onchange = autosave;
+      barProposedSelect.onchange = autosave;
+      startYearSelect.onchange = autosave;
+      startWeekSelect.onchange = autosave;
+      endYearSelect.onchange = autosave;
+      endWeekSelect.onchange = autosave;
+    }
+
+    barEditorOkBtn.addEventListener("click", () => {
+      barEditor.style.display = "none";
+      currentEditorBar = null;
+      currentEditorLine = null;
+      pushState(); // finalize changes for undo
+    });
+    barEditorCancelBtn.addEventListener("click", () => {
+      barEditor.style.display = "none";
+      currentEditorBar = null;
+      currentEditorLine = null;
+      pushState(); // just in case any changes occurred
+    });
+    barDeleteBtn.addEventListener("click", () => {
+      if (!adminMode) return;
+      if (!currentEditorBar || !currentEditorLine) return;
+      currentEditorLine.bars = currentEditorLine.bars.filter(
+        (b) => b.id !== currentEditorBar.id
+      );
+      barEditor.style.display = "none";
+      currentEditorBar = null;
+      currentEditorLine = null;
+      pushState(); 
+      renderTable();
+      saveToLocalStorage();
+    });
+
+    document.addEventListener("mousedown", (e) => {
+      if (barEditor.style.display === "block") {
+        let rect = barEditor.getBoundingClientRect();
+        let inside =
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom;
+        if (!inside) {
+          barEditor.style.display = "none";
+          currentEditorBar = null;
+          currentEditorLine = null;
+          pushState();
+        }
+      }
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      showLineEditor => line editor
+      ---------------------------------------------------------------------------------------------
+      The editor is shown on right-click of a line name cell.
+    */
+    function showLineEditor(line, x, y) {
+      currentEditorLine = line;
+      lineNameInput.value = line.name || "";
+      lineClientInput.value = line.client || "";
+      lineDisciplineInput.value = line.discipline || "";
+      lineExperienceInput.value = line.experience || "";
+      lineOfficeLocationInput.value = line.officeLocation || "";
+      lineGeoLocationInput.value = line.geoLocation || "";
+      lineTypeInput.value = line.type || "";
+
+      let ro = !adminMode;
+      [
+        lineNameInput,
+        lineClientInput,
+        lineDisciplineInput,
+        lineExperienceInput,
+        lineOfficeLocationInput,
+        lineGeoLocationInput,
+        lineTypeInput,
+        lineDeleteBtn,
+      ].forEach((el) => (el.disabled = ro));
+
+      lineEditor.style.display = "block";
+      lineEditor.style.left = x + window.scrollX + 10 + "px";
+      lineEditor.style.top = y + window.scrollY + 10 + "px";
+
+      setTimeout(() => {
+        let rect = lineEditor.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+          lineEditor.style.left =
+            Math.max(0, window.innerWidth - rect.width - 10) + "px";
+        }
+        if (rect.bottom > window.innerHeight) {
+          lineEditor.style.top =
+            Math.max(0, window.innerHeight - rect.height - 10) + "px";
+        }
+      }, 0);
+
+      // Autosave if admin
+      const autosaveLine = () => {
+        if (!adminMode) return;
+        currentEditorLine.name = lineNameInput.value;
+        currentEditorLine.client = lineClientInput.value;
+        currentEditorLine.discipline = lineDisciplineInput.value;
+        currentEditorLine.experience = lineExperienceInput.value;
+        currentEditorLine.officeLocation =
+          lineOfficeLocationInput.value;
+        currentEditorLine.geoLocation = lineGeoLocationInput.value;
+        currentEditorLine.type = lineTypeInput.value;
+        renderTable();
+        saveToLocalStorage();
+      };
+      lineNameInput.oninput = autosaveLine;
+      lineClientInput.oninput = autosaveLine;
+      lineDisciplineInput.oninput = autosaveLine;
+      lineExperienceInput.oninput = autosaveLine;
+      lineOfficeLocationInput.oninput = autosaveLine;
+      lineGeoLocationInput.oninput = autosaveLine;
+      lineTypeInput.oninput = autosaveLine;
+    }
+
+    lineEditorOkBtn.addEventListener("click", () => {
+      lineEditor.style.display = "none";
+      currentEditorLine = null;
+      pushState();
+    });
+    lineEditorCancelBtn.addEventListener("click", () => {
+      lineEditor.style.display = "none";
+      currentEditorLine = null;
+      pushState();
+    });
+    lineDeleteBtn.addEventListener("click", () => {
+      if (!adminMode) return;
+      if (!currentEditorLine) return;
+      lines = lines.filter((l) => l.id !== currentEditorLine.id);
+      lineEditor.style.display = "none";
+      currentEditorLine = null;
+      pushState();
+      renderTable();
+      saveToLocalStorage();
+    });
+
+    document.addEventListener("mousedown", (e) => {
+      if (lineEditor.style.display === "block") {
+        let rect = lineEditor.getBoundingClientRect();
+        let inside =
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom;
+        if (!inside) {
+          lineEditor.style.display = "none";
+          currentEditorLine = null;
+          pushState();
+        }
+      }
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      SLICER logic => discipline, client, experience, location
+      ---------------------------------------------------------------------------------------------
+    */
+    const slicerDisciplineSelect = document.getElementById(
+      "slicerDisciplineSelect"
+    );
+    const slicerClientSelect = document.getElementById("slicerClientSelect");
+    const slicerExperienceSelect = document.getElementById(
+      "slicerExperienceSelect"
+    );
+    const slicerLocationSelect = document.getElementById(
+      "slicerLocationSelect"
+    );
+
+    document
+      .getElementById("clearDisciplineSlicerBtn")
+      .addEventListener("click", () => {
+        slicers.discipline = null;
+        Array.from(slicerDisciplineSelect.options).forEach(o => (o.selected = false));
+        renderTable();
+      });
+    document
+      .getElementById("clearClientSlicerBtn")
+      .addEventListener("click", () => {
+        slicers.client = null;
+        Array.from(slicerClientSelect.options).forEach(o => (o.selected = false));
+        renderTable();
+      });
+    document
+      .getElementById("clearExperienceSlicerBtn")
+      .addEventListener("click", () => {
+        slicers.experience = null;
+        Array.from(slicerExperienceSelect.options).forEach(o => (o.selected = false));
+        renderTable();
+      });
+    document
+      .getElementById("clearLocationSlicerBtn")
+      .addEventListener("click", () => {
+        slicers.location = null;
+        Array.from(slicerLocationSelect.options).forEach(o => (o.selected = false));
+        renderTable();
+      });
+
+    // On slicer selects: build arrays
+    slicerDisciplineSelect.addEventListener("change", () => {
+      const selectedOptions = Array.from(slicerDisciplineSelect.selectedOptions)
+        .map(o => o.value)
+        .filter(v => v !== "");
+      slicers.discipline = selectedOptions.length > 0 ? selectedOptions : null;
+      renderTable();
+    });
+    slicerClientSelect.addEventListener("change", () => {
+      const selectedOptions = Array.from(slicerClientSelect.selectedOptions)
+        .map(o => o.value)
+        .filter(v => v !== "");
+      slicers.client = selectedOptions.length > 0 ? selectedOptions : null;
+      renderTable();
+    });
+    slicerExperienceSelect.addEventListener("change", () => {
+      const selectedOptions = Array.from(slicerExperienceSelect.selectedOptions)
+        .map(o => o.value)
+        .filter(v => v !== "");
+      slicers.experience = selectedOptions.length > 0 ? selectedOptions : null;
+      renderTable();
+    });
+    slicerLocationSelect.addEventListener("change", () => {
+      const selectedOptions = Array.from(slicerLocationSelect.selectedOptions)
+        .map(o => o.value)
+        .filter(v => v !== "");
+      slicers.location = selectedOptions.length > 0 ? selectedOptions : null;
+      renderTable();
+    });
+
+    function populateSlicers() {
+      let disciplineSet = new Set();
+      let clientSet = new Set();
+      let experienceSet = new Set();
+      let locationSet = new Set();
+
+      lines.forEach((line) => {
+        if (line.discipline) disciplineSet.add(line.discipline);
+        if (line.client) clientSet.add(line.client);
+        if (line.experience) experienceSet.add(line.experience);
+        if (line.officeLocation) locationSet.add(line.officeLocation);
+
+        // Also check bar client for the client slicer
+        line.bars.forEach((b) => {
+          if (b.client) clientSet.add(b.client);
+        });
+      });
+
+      let discArr = [...disciplineSet].sort();
+      let clientArr = [...clientSet].sort();
+      let expArr = [...experienceSet].sort();
+      let locArr = [...locationSet].sort();
+
+      function buildOptions(options) {
+        return (
+          `<option value=""></option>` +
+          options.map((o) => `<option value="${o}">${o}</option>`).join("")
+        );
+      }
+      slicerDisciplineSelect.innerHTML = buildOptions(discArr);
+      slicerClientSelect.innerHTML = buildOptions(clientArr);
+      slicerExperienceSelect.innerHTML = buildOptions(expArr);
+      slicerLocationSelect.innerHTML = buildOptions(locArr);
+    }
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      DYNAMIC FILTER => build from data for line & bar
+      ---------------------------------------------------------------------------------------------
+    */
+    const filterLineName = document.getElementById("filterLineName");
+    const filterLineClient = document.getElementById("filterLineClient");
+    const filterLineDiscipline = document.getElementById(
+      "filterLineDiscipline"
+    );
+    const filterLineExperience = document.getElementById(
+      "filterLineExperience"
+    );
+    const filterLineOfficeLocation = document.getElementById(
+      "filterLineOfficeLocation"
+    );
+    const filterLineGeoLocation = document.getElementById(
+      "filterLineGeoLocation"
+    );
+    const filterLineType = document.getElementById("filterLineType");
+
+    const filterBarProjectName = document.getElementById("filterBarProjectName");
+    const filterBarClient = document.getElementById("filterBarClient");
+    const filterBarDiscipline = document.getElementById("filterBarDiscipline");
+    const filterBarExperience = document.getElementById("filterBarExperience");
+    const filterBarLOE = document.getElementById("filterBarLOE");
+    const filterBarLocation = document.getElementById("filterBarLocation");
+    const filterBarAssignedTo = document.getElementById("filterBarAssignedTo");
+    const filterBarType = document.getElementById("filterBarType");
+    const filterBarProposed = document.getElementById("filterBarProposed");
+
+    function populateFilterDropdowns() {
+      let setLineName = new Set();
+      let setLineClient = new Set();
+      let setLineDiscipline = new Set();
+      let setLineExperience = new Set();
+      let setLineOffice = new Set();
+      let setLineGeo = new Set();
+      let setLineType = new Set();
+
+      let setBarProject = new Set();
+      let setBarClient = new Set();
+      let setBarDiscipline = new Set();
+      let setBarExperience = new Set();
+      let setBarLOE = new Set();
+      let setBarLocation = new Set();
+      let setBarAssigned = new Set();
+      let setBarType = new Set();
+      let setBarProposed = new Set();
+
+      lines.forEach((l) => {
+        if (l.name) setLineName.add(l.name);
+        if (l.client) setLineClient.add(l.client);
+        if (l.discipline) setLineDiscipline.add(l.discipline);
+        if (l.experience) setLineExperience.add(l.experience);
+        if (l.officeLocation) setLineOffice.add(l.officeLocation);
+        if (l.geoLocation) setLineGeo.add(l.geoLocation);
+        if (l.type) setLineType.add(l.type);
+
+        l.bars.forEach((b) => {
+          if (b.projectName) setBarProject.add(b.projectName);
+          if (b.client) setBarClient.add(b.client);
+          if (b.discipline) setBarDiscipline.add(b.discipline);
+          if (b.experience) setBarExperience.add(b.experience);
+          if (b.LOE) setBarLOE.add(b.LOE);
+          if (b.location) setBarLocation.add(b.location);
+          if (b.assignedTo) setBarAssigned.add(b.assignedTo);
+          if (b.type) setBarType.add(b.type);
+          if (b.proposed) setBarProposed.add(b.proposed);
+        });
+      });
+
+      let arrLineName = [...setLineName].sort();
+      let arrLineClient = [...setLineClient].sort();
+      let arrLineDiscipline = [...setLineDiscipline].sort();
+      let arrLineExperience = [...setLineExperience].sort();
+      let arrLineOffice = [...setLineOffice].sort();
+      let arrLineGeo = [...setLineGeo].sort();
+      let arrLineType = [...setLineType].sort();
+
+      let arrBarProject = [...setBarProject].sort();
+      let arrBarClient = [...setBarClient].sort();
+      let arrBarDiscipline = [...setBarDiscipline].sort();
+      let arrBarExperience = [...setBarExperience].sort();
+      let arrBarLOE = [...setBarLOE].sort();
+      let arrBarLocation = [...setBarLocation].sort();
+      let arrBarAssigned = [...setBarAssigned].sort();
+      let arrBarType = [...setBarType].sort();
+      let arrBarProposed = [...setBarProposed].sort();
+
+      function buildOptions(options) {
+        return (
+          `<option value=""></option>` +
+          options.map((o) => `<option value="${o}">${o}</option>`).join("")
+        );
+      }
+      filterLineName.innerHTML = buildOptions(arrLineName);
+      filterLineClient.innerHTML = buildOptions(arrLineClient);
+      filterLineDiscipline.innerHTML = buildOptions(arrLineDiscipline);
+      filterLineExperience.innerHTML = buildOptions(arrLineExperience);
+      filterLineOfficeLocation.innerHTML = buildOptions(arrLineOffice);
+      filterLineGeoLocation.innerHTML = buildOptions(arrLineGeo);
+      filterLineType.innerHTML = buildOptions(arrLineType);
+
+      filterBarProjectName.innerHTML = buildOptions(arrBarProject);
+      filterBarClient.innerHTML = buildOptions(arrBarClient);
+      filterBarDiscipline.innerHTML = buildOptions(arrBarDiscipline);
+      filterBarExperience.innerHTML = buildOptions(arrBarExperience);
+      filterBarLOE.innerHTML = buildOptions(arrBarLOE);
+      filterBarLocation.innerHTML = buildOptions(arrBarLocation);
+      filterBarAssignedTo.innerHTML = buildOptions(arrBarAssigned);
+      filterBarType.innerHTML = buildOptions(arrBarType);
+      filterBarProposed.innerHTML = buildOptions(arrBarProposed);
+    }
+
+    function autoRefreshFilters() {
+      filters.line.name = filterLineName.value || null;
+      filters.line.client = filterLineClient.value || null;
+      filters.line.discipline = filterLineDiscipline.value || null;
+      filters.line.experience = filterLineExperience.value || null;
+      filters.line.officeLocation =
+        filterLineOfficeLocation.value || null;
+      filters.line.geoLocation = filterLineGeoLocation.value || null;
+      filters.line.type = filterLineType.value || null;
+
+      filters.bar.projectName = filterBarProjectName.value || null;
+      filters.bar.client = filterBarClient.value || null;
+      filters.bar.discipline = filterBarDiscipline.value || null;
+      filters.bar.experience = filterBarExperience.value || null;
+      filters.bar.LOE = filterBarLOE.value || null;
+      filters.bar.location = filterBarLocation.value || null;
+      filters.bar.assignedTo = filterBarAssignedTo.value || null;
+      filters.bar.type = filterBarType.value || null;
+      filters.bar.proposed = filterBarProposed.value || null;
+
+      for (let k in filters.line) if (!filters.line[k]) delete filters.line[k];
+      for (let k in filters.bar) if (!filters.bar[k]) delete filters.bar[k];
+      renderTable();
+    }
+
+    [
+      filterLineName,
+      filterLineClient,
+      filterLineDiscipline,
+      filterLineExperience,
+      filterLineOfficeLocation,
+      filterLineGeoLocation,
+      filterLineType,
+      filterBarProjectName,
+      filterBarClient,
+      filterBarDiscipline,
+      filterBarExperience,
+      filterBarLOE,
+      filterBarLocation,
+      filterBarAssignedTo,
+      filterBarType,
+      filterBarProposed,
+    ].forEach((el) => {
+      el.addEventListener("change", autoRefreshFilters);
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      FILTER modal
+      ---------------------------------------------------------------------------------------------
+    */
+    filterBtn.addEventListener("click", () => {
+      populateFilterDropdowns();
+      filterLineName.value = filters.line.name || "";
+      filterLineClient.value = filters.line.client || "";
+      filterLineDiscipline.value = filters.line.discipline || "";
+      filterLineExperience.value = filters.line.experience || "";
+      filterLineOfficeLocation.value =
+        filters.line.officeLocation || "";
+      filterLineGeoLocation.value = filters.line.geoLocation || "";
+      filterLineType.value = filters.line.type || "";
+
+      filterBarProjectName.value = filters.bar.projectName || "";
+      filterBarClient.value = filters.bar.client || "";
+      filterBarDiscipline.value = filters.bar.discipline || "";
+      filterBarExperience.value = filters.bar.experience || "";
+      filterBarLOE.value = filters.bar.LOE || "";
+      filterBarLocation.value = filters.bar.location || "";
+      filterBarAssignedTo.value = filters.bar.assignedTo || "";
+      filterBarType.value = filters.bar.type || "";
+      filterBarProposed.value = filters.bar.proposed || "";
+      filterModal.style.display = "block";
+    });
+    filterApplyBtn.addEventListener("click", () => {
+      filterModal.style.display = "none";
+    });
+    filterClearBtn.addEventListener("click", () => {
+      filters.line = {};
+      filters.bar = {};
+      filterModal.style.display = "none";
+      renderTable();
+    });
+    filterCancelBtn.addEventListener("click", () => {
+      filterModal.style.display = "none";
+    });
+    document.addEventListener("mousedown", (e) => {
+      if (filterModal.style.display === "block") {
+        let rect = filterModal.getBoundingClientRect();
+        let inside =
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom;
+        if (!inside) filterModal.style.display = "none";
+      }
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      THEME => replaced gear icon with themeToggleBtn
+      ---------------------------------------------------------------------------------------------
+    */
+    const settingsModal = document.getElementById("settingsModal");
+    const settingsOkBtn = document.getElementById("settingsOkBtn");
+    const settingsCancelBtn = document.getElementById("settingsCancelBtn");
+    const themeSelect = document.getElementById("themeSelect");
+    const securedColor = document.getElementById("securedColor");
+    const proposedColor = document.getElementById("proposedColor");
+    const opportunityColor = document.getElementById("opportunityColor");
+    const futureColor = document.getElementById("futureColor");
+
+    document
+      .getElementById("themeToggleBtn")
+      .addEventListener("click", () => {
+        themeSelect.value = currentTheme;
+        securedColor.value = typeColors.secured;
+        proposedColor.value = typeColors.proposed;
+        opportunityColor.value = typeColors.opportunity;
+        futureColor.value = typeColors.future;
+        settingsModal.style.display = "block";
+      });
+    settingsOkBtn.addEventListener("click", () => {
+      currentTheme = themeSelect.value;
+      typeColors.secured = securedColor.value;
+      typeColors.proposed = proposedColor.value;
+      typeColors.opportunity = opportunityColor.value;
+      typeColors.future = futureColor.value;
+      settingsModal.style.display = "none";
+      applyTheme();
+    });
+    settingsCancelBtn.addEventListener("click", () => {
+      settingsModal.style.display = "none";
+    });
+    document.addEventListener("mousedown", (e) => {
+      if (settingsModal.style.display === "block") {
+        let rect = settingsModal.getBoundingClientRect();
+        let inside =
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom;
+        if (!inside) settingsModal.style.display = "none";
+      }
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      ABOUT => replaced help icon with aboutToggleBtn
+      ---------------------------------------------------------------------------------------------
+    */
+    document.getElementById("aboutToggleBtn").addEventListener("click", () => {
+      alert(
+        ` Sleek Professional Gantt Planner - Overview 
+• Timescale config, quick ranges, H/V zoom, search & filter. 
+• Slicers for discipline/client/experience/location, stacked horizontally & multi-select. 
+• “Client” slicer checks line.client OR any bar.client. 
+• Admin mode => advanced drag editing, CSV in-browser. 
+• Local storage, import/export CSV, print PDF, undo/redo. 
+• Legend auto-updates with theme colors. 
+Enjoy planning!
+`
+      );
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      SEARCH => instant filter
+      ---------------------------------------------------------------------------------------------
+    */
+    const searchInput = document.getElementById("searchInput");
+    searchInput.addEventListener("input", () => {
+      searchTerm = searchInput.value.trim();
+      renderTable();
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      ADMIN TOGGLE => adminToggleBtn
+      ---------------------------------------------------------------------------------------------
+    */
+    const adminToggleBtn = document.getElementById("adminToggleBtn");
+    const addItemsGroup = document.getElementById("addItemsGroup");
+    adminToggleBtn.addEventListener("click", () => {
+      if (!adminMode) {
+        let pwd = prompt("Enter admin password:");
+        if (pwd === "Password") {
+          adminMode = true;
+          alert("Admin mode enabled.");
+        } else {
+          alert("Incorrect password. Remaining in user mode.");
+          return;
+        }
+      } else {
+        adminMode = false;
+        alert("Admin mode disabled.");
+      }
+      addItemsGroup.style.display = adminMode ? "block" : "none";
+      csvEditToggleBtn.style.display = adminMode ? "inline-block" : "none";
+      renderTable();
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      CSV EDIT => remains hidden unless admin
+      ---------------------------------------------------------------------------------------------
+    */
+    const csvEditToggleBtn = document.getElementById("csvEditToggleBtn");
+    const csvEditModal = document.getElementById("csvEditModal");
+    const csvTextarea = document.getElementById("csvTextarea");
+    const csvEditApplyBtn = document.getElementById("csvEditApplyBtn");
+    const csvEditCancelBtn = document.getElementById("csvEditCancelBtn");
+
+    csvEditToggleBtn.addEventListener("click", () => {
+      if (!adminMode) return;
+      let csvStr =
+        "Line ID,Line Name,Line Client,Line Discipline,Line Experience,Line OfficeLocation,Line GeoLocation,Line Type," +
+        "Bar ID,Bar Label,Project Name,Client,Discipline,Experience,LOE,Location,Assigned to,Proposed,Type," +
+        "Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
+
+      lines.forEach((line) => {
+        if (!line.bars.length) {
+          csvStr += `${line.id || ""},"${line.name || ""}","${line.client || ""}","${
+            line.discipline || ""
+          }","${line.experience || ""}","${line.officeLocation || ""}","${
+            line.geoLocation || ""
+          }","${line.type || ""}",,,,,,,,,,,,\n`;
+        } else {
+          line.bars.forEach((bar) => {
+            let { year: sy, week: sw } = fromAbsoluteWeek(bar.startAbsWeek);
+            let { year: ey, week: ew } = fromAbsoluteWeek(
+              bar.startAbsWeek + bar.length - 1
+            );
+            csvStr += `${
+              line.id || ""
+            },"${line.name || ""}","${line.client || ""}","${
+              line.discipline || ""
+            }","${line.experience || ""}","${line.officeLocation || ""}","${
+              line.geoLocation || ""
+            }","${line.type || ""}",`;
+            csvStr += `${
+              bar.id || ""
+            },"${bar.label || ""}","${bar.projectName || ""}","${
+              bar.client || ""
+            }","${bar.discipline || ""}","${
+              bar.experience || ""
+            }","${bar.LOE || ""}","${bar.location || ""}","${
+              bar.assignedTo || ""
+            }","${bar.proposed || ""}","${bar.type || ""}",`;
+            csvStr += `${sy},${sw},${ey},${ew},${bar.length}\n`;
+          });
+        }
+      });
+      csvTextarea.value = csvStr;
+      csvEditModal.style.display = "block";
+    });
+
+    csvEditApplyBtn.addEventListener("click", () => {
+      if (!adminMode) return;
+      let csvData = csvTextarea.value;
+      try {
+        let parsed = parseCsv(csvData);
+        lines = parsed.lines;
+        lineCounter = parsed.lineCounter;
+        barCounter = parsed.barCounter;
+        pushState();
+        renderTable();
+        saveToLocalStorage();
+        alert("CSV updated successfully.");
+        csvEditModal.style.display = "none";
+      } catch (err) {
+        alert("Error parsing CSV: " + err.message);
+      }
+    });
+    csvEditCancelBtn.addEventListener("click", () => {
+      csvEditModal.style.display = "none";
+    });
+    document.addEventListener("mousedown", (e) => {
+      if (csvEditModal.style.display === "block") {
+        let rect = csvEditModal.getBoundingClientRect();
+        let inside =
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom;
+        if (!inside) csvEditModal.style.display = "none";
+      }
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      IMPORT => CSV ONLY
+      ---------------------------------------------------------------------------------------------
+    */
+    const importCsvBtn = document.getElementById("importCsvBtn");
+    const importFileInput = document.getElementById("importFileInput");
+    importCsvBtn.addEventListener("click", () => {
+      importFileInput.value = "";
+      importFileInput.click();
+    });
+    importFileInput.addEventListener("change", (e) => {
+      let file = e.target.files[0];
+      if (!file) return;
+      let reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          if (file.name.endsWith(".csv")) {
+            let parsed = parseCsv(ev.target.result);
+            lines = parsed.lines;
+            lineCounter = parsed.lineCounter;
+            barCounter = parsed.barCounter;
+          } else {
+            throw new Error("Unsupported file type (CSV only).");
+          }
+
+          startYearInput.value = startYear;
+          startWeekInput.value = startWeek;
+          endYearInput.value = endYear;
+          endWeekInput.value = endWeek;
+          zoomSlider.value = cellWidth;
+          heightZoomSlider.value = rowHeight;
+          themeSelect.value = currentTheme;
+          securedColor.value = typeColors.secured;
+          proposedColor.value = typeColors.proposed;
+          opportunityColor.value = typeColors.opportunity;
+          futureColor.value = typeColors.future;
+
+          updateCSSVariables();
+          applyTheme();
+          renderTable();
+          saveToLocalStorage();
+          alert("CSV Import successful!");
+        } catch (err) {
+          console.error(err);
+          alert("Import failed: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      CSV => minimal columns
+      ---------------------------------------------------------------------------------------------
+    */
+    const downloadCsvBtn = document.getElementById("downloadCsvBtn");
+    downloadCsvBtn.addEventListener("click", () => {
+      let csv =
+        "Line ID,Line Name,Line Client,Line Discipline,Line Experience,Line OfficeLocation,Line GeoLocation,Line Type," +
+        "Bar ID,Bar Label,Project Name,Client,Discipline,Experience,LOE,Location,Assigned to,Proposed,Type," +
+        "Start Year,Start Week,End Year,End Week,Duration (weeks)\n";
+
+      lines.forEach((line) => {
+        if (!line.bars.length) {
+          csv += `${line.id || ""},"${line.name || ""}","${line.client || ""}","${
+            line.discipline || ""
+          }","${line.experience || ""}","${line.officeLocation || ""}","${
+            line.geoLocation || ""
+          }","${line.type || ""}",,,,,,,,,,,,\n`;
+        } else {
+          line.bars.forEach((bar) => {
+            let { year: sy, week: sw } = fromAbsoluteWeek(bar.startAbsWeek);
+            let { year: ey, week: ew } = fromAbsoluteWeek(
+              bar.startAbsWeek + bar.length - 1
+            );
+            csv += `${
+              line.id || ""
+            },"${line.name || ""}","${line.client || ""}","${
+              line.discipline || ""
+            }","${line.experience || ""}","${line.officeLocation || ""}","${
+              line.geoLocation || ""
+            }","${line.type || ""}",`;
+            csv += `${
+              bar.id || ""
+            },"${bar.label || ""}","${bar.projectName || ""}","${
+              bar.client || ""
+            }","${bar.discipline || ""}","${
+              bar.experience || ""
+            }","${bar.LOE || ""}","${bar.location || ""}","${
+              bar.assignedTo || ""
+            }","${bar.proposed || ""}","${bar.type || ""}",`;
+            csv += `${sy},${sw},${ey},${ew},${bar.length}\n`;
+          });
+        }
+      });
+
+      let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      let url = URL.createObjectURL(blob);
+      let a = document.createElement("a");
+      a.download = "gantt-data.csv";
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      PRINT => only prints current portion
+      ---------------------------------------------------------------------------------------------
+    */
+    const printBtn = document.getElementById("printBtn");
+    printBtn.addEventListener("click", () => {
+      window.print();
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      ZOOM => cellWidth & rowHeight
+      ---------------------------------------------------------------------------------------------
+      We store state in localStorage so user can reload with same zoom levels.
+    */
+    const zoomSlider = document.getElementById("zoomSlider");
+    const heightZoomSlider = document.getElementById("heightZoomSlider");
+    zoomSlider.addEventListener("input", (e) => {
+      cellWidth = parseInt(e.target.value);
+      pushState();
+      updateCSSVariables();
+      renderTable();
+      saveToLocalStorage();
+    });
+    heightZoomSlider.addEventListener("input", (e) => {
+      rowHeight = parseInt(e.target.value);
+      pushState();
+      updateCSSVariables();
+      renderTable();
+      saveToLocalStorage();
+    });
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      UNDO/REDO 
+      ---------------------------------------------------------------------------------------------
+    */
+    function pushState() {
+      let st = JSON.parse(
+        JSON.stringify({
+          lines,
+          startYear,
+          startWeek,
+          endYear,
+          endWeek,
+          lineCounter,
+          barCounter,
+          cellWidth,
+          rowHeight,
+          typeColors,
+          currentTheme,
+        })
+      );
+      undoStack.push(st);
+      redoStack = [];
+    }
+    function restoreState(st) {
+      lines = st.lines;
+      startYear = st.startYear;
+      startWeek = st.startWeek;
+      endYear = st.endYear;
+      endWeek = st.endWeek;
+      lineCounter = st.lineCounter;
+      barCounter = st.barCounter;
+      cellWidth = st.cellWidth;
+      rowHeight = st.rowHeight;
+      typeColors = st.typeColors;
+      currentTheme = st.currentTheme;
+      updateCSSVariables();
+      applyTheme();
+      renderTable();
+      saveToLocalStorage();
+    }
+    function undo() {
+      if (!adminMode) return; // only in admin mode
+      if (undoStack.length < 2) return;
+      let cur = undoStack.pop();
+      redoStack.push(cur);
+      let prev = undoStack[undoStack.length - 1];
+      restoreState(prev);
+    }
+    function redo() {
+      if (!adminMode) return; // only in admin mode
+      if (!redoStack.length) return;
+      let nxt = redoStack.pop();
+      let cur = JSON.parse(
+        JSON.stringify({
+          lines,
+          startYear,
+          startWeek,
+          endYear,
+          endWeek,
+          lineCounter,
+          barCounter,
+          cellWidth,
+          rowHeight,
+          typeColors,
+          currentTheme,
+        })
+      );
+      undoStack.push(cur);
+      restoreState(nxt);
+    }
+
+    const undoBtn = document.getElementById("undoBtn");
+    undoBtn.addEventListener("click", undo);
+    const redoBtn = document.getElementById("redoBtn");
+    redoBtn.addEventListener("click", redo);
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      Timescale => updates
+      ---------------------------------------------------------------------------------------------
+    */
+    function checkTimescale() {
+      let ds = toAbsoluteWeek(startYear, startWeek);
+      let de = toAbsoluteWeek(endYear, endWeek);
+      if (ds > de) {
+        alert("Error: The Start date is later than the End date.");
+        return false;
+      }
+      return true;
+    }
+    function timescaleChange() {
+      startYear = parseInt(startYearInput.value) || 2025;
+      startWeek = parseInt(startWeekInput.value) || 1;
+      endYear = parseInt(endYearInput.value) || 2025;
+      endWeek = parseInt(endWeekInput.value) || 52;
+      if (checkTimescale()) {
+        pushState();
+        renderTable();
+        saveToLocalStorage();
+      }
+    }
+    const startYearInput = document.getElementById("startYearInput");
+    const startWeekInput = document.getElementById("startWeekInput");
+    const endYearInput = document.getElementById("endYearInput");
+    const endWeekInput = document.getElementById("endWeekInput");
+
+    startYearInput.addEventListener("change", timescaleChange);
+    startWeekInput.addEventListener("change", timescaleChange);
+    endYearInput.addEventListener("change", timescaleChange);
+    endWeekInput.addEventListener("change", timescaleChange);
+
+    /*
+      ---------------------------------------------------------------------------------------------
+      INIT => onload
+      ---------------------------------------------------------------------------------------------
+    */
+    const tableWrapper = document.getElementById("tableWrapper");
+    const ganttTable = document.getElementById("ganttTable");
+    const tableBody = document.getElementById("tableBody");
+
+    function init() {
+      loadFromLocalStorage();
+      populateDateSelects();
+      updateCSSVariables();
+      updateLegendSwatches();
+
+      startYearInput.value = startYear;
+      startWeekInput.value = startWeek;
+      endYearInput.value = endYear;
+      endWeekInput.value = endWeek;
+      zoomSlider.value = cellWidth;
+      heightZoomSlider.value = rowHeight;
+      themeSelect.value = currentTheme;
+      securedColor.value = typeColors.secured;
+      proposedColor.value = typeColors.proposed;
+      opportunityColor.value = typeColors.opportunity;
+      futureColor.value = typeColors.future;
+
+      populateSlicers();
+      applyTheme();
+      renderTable();
+      pushState(); // initial state
+
+      // Start with admin mode off => hide "Add Items"
+      addItemsGroup.style.display = "none";
+
+      // Adjust bar text positioning on scroll or window resize
+      tableWrapper.addEventListener("scroll", () => updateBarTextPositions());
+      window.addEventListener("resize", () => updateBarTextPositions());
+    }
+    window.addEventListener("load", init);
+
+    /*
+     * Populate bar date selects
+     */
+    function populateDateSelects() {
+      let years = [];
+      for (let y = 2023; y <= 2030; y++) {
+        years.push(y);
+      }
+      let weeks = [];
+      for (let w = 1; w <= 52; w++) {
+        weeks.push(w);
+      }
+      [startYearSelect, endYearSelect].forEach((sel) => {
+        sel.innerHTML = "";
+        years.forEach((Y) => {
+          let opt = document.createElement("option");
+          opt.value = Y;
+          opt.textContent = Y;
+          sel.appendChild(opt);
+        });
+      });
+      [startWeekSelect, endWeekSelect].forEach((sel) => {
+        sel.innerHTML = "";
+        weeks.forEach((W) => {
+          let opt = document.createElement("option");
+          opt.value = W;
+          opt.textContent = W;
+          sel.appendChild(opt);
+        });
+      });
+    }
+
+    /*
+     * parseCsv => minimal CSV parser that accounts for quoted fields
+     */
+    function parseCsv(csvString) {
+      let linesArr = csvString.split(/\r?\n/);
+      if (!linesArr.length)
+        return { lines: [], lineCounter: 0, barCounter: 0 };
+      let header = linesArr[0].split(",");
+      linesArr.shift();
+      let data = [];
+      linesArr.forEach((row) => {
+        if (!row.trim()) return;
+        let cols = splitCsvRow(row);
+        let entry = {};
+        for (let i = 0; i < header.length; i++) {
+          entry[header[i].trim()] = (cols[i] || "").trim();
+        }
+        data.push(entry);
+      });
+      let rebuilt = {};
+      let lineCount = 0,
+        barCount = 0;
+      data.forEach((r) => {
+        let lineId = r["Line ID"] || "";
+        if (!rebuilt[lineId]) {
+          rebuilt[lineId] = {
+            id:
+              parseInt(lineId) ||
+              1000 + Object.keys(rebuilt).length,
+            name: stripQuotes(r["Line Name"] || ""),
+            client: stripQuotes(r["Line Client"] || ""),
+            discipline: stripQuotes(r["Line Discipline"] || ""),
+            experience: stripQuotes(r["Line Experience"] || ""),
+            officeLocation: stripQuotes(
+              r["Line OfficeLocation"] || ""
+            ),
+            geoLocation: stripQuotes(r["Line GeoLocation"] || ""),
+            type: stripQuotes(r["Line Type"] || ""),
+            bars: [],
+            selected: false,
+            dragging: false,
+          };
+          lineCount++;
+        }
+        let barId = r["Bar ID"] || "";
+        if (barId.trim()) {
+          let sy = parseInt(r["Start Year"] || "2025");
+          let sw = parseInt(r["Start Week"] || "1");
+          let ey = parseInt(r["End Year"] || "2025");
+          let ew = parseInt(r["End Week"] || "1");
+          let startAbs = toAbsoluteWeek(sy, sw);
+          let endAbs = toAbsoluteWeek(ey, ew);
+          let length = endAbs - startAbs + 1;
+          if (length < 1) length = 1;
+          rebuilt[lineId].bars.push({
+            id: parseInt(barId) || 9999 + barCount,
+            label: stripQuotes(r["Bar Label"] || ""),
+            projectName: stripQuotes(r["Project Name"] || ""),
+            client: stripQuotes(r["Client"] || ""),
+            discipline: stripQuotes(r["Discipline"] || ""),
+            experience: stripQuotes(r["Experience"] || ""),
+            LOE: stripQuotes(r["LOE"] || ""),
+            location: stripQuotes(r["Location"] || ""),
+            assignedTo: stripQuotes(r["Assigned to"] || ""),
+            proposed: stripQuotes(r["Proposed"] || "no").toLowerCase(),
+            type: stripQuotes(r["Type"] || "proposed").toLowerCase(),
+            startAbsWeek: startAbs,
+            length,
+            selected: false,
+          });
+          barCount++;
+        }
+      });
+      let finalLines = Object.values(rebuilt);
+      return { lines: finalLines, lineCounter: lineCount, barCounter: barCount };
+    }
+    function splitCsvRow(row) {
+      let result = [];
+      let cur = "";
+      let inQuotes = false;
+      for (let i = 0; i < row.length; i++) {
+        let c = row[i];
+        if (c === '"') {
+          inQuotes = !inQuotes;
+          cur += c;
+        } else if (c === "," && !inQuotes) {
+          result.push(cur);
+          cur = "";
+        } else {
+          cur += c;
+        }
+      }
+      result.push(cur);
+      return result;
+    }
+    function stripQuotes(str) {
+      return str.replace(/^"(.*)"$/, "$1");
+    }
+  </script>
+</body>
+</html>
