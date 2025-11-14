@@ -1,1000 +1,1485 @@
-<!DOCTYPE html> <!-- Document type declaration -->
-<html lang="en"> <!-- Root element with language attribute -->
-<head> <!-- Head section containing metadata -->
-    <meta charset="UTF-8" /> <!-- Character encoding for the document -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/> <!-- Viewport settings for responsive design -->
-    <title>Primavera P6 101: Noob-Proof Mastery Guide</title> <!-- Title of the page -->
-    <meta name="description" content="Complete beginner-to-pro guide for Oracle Primavera P6. Pass your employer competency test with confidence. Covers navigation, fundamentals, deliverables, and tools." /> <!-- Meta description for SEO -->
+<!DOCTYPE html>
+<!-- 
+  Updated: Modern & Comprehensive P6 Master Guide 
+  Enhancements:
+    - Polished UI with Bootstrap 5
+    - Sticky, more stylish navigation
+    - Expanded commentary in each section
+    - Additional best practices, tips, & how-to steps for each card
+    - Improved readability for <pre> and <code> blocks 
+    - Line-by-line comments for clarity 
+-->
+<html lang="en"><!-- Defines the language as English for accessibility/SEO -->
+<head><!-- Begins the document head section -->
+  <!-- Required meta tags -->
+  <meta charset="UTF-8" /><!-- Sets character encoding to UTF-8 -->
+  <meta 
+    name="viewport" 
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" 
+    /><!-- Responsive design for mobile screens -->
 
-    <!-- Bootstrap 5.3 CSS --> <!-- Link to Bootstrap CSS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    
-    <!-- Google Fonts --> <!-- Link to Google Fonts for typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <title>Primavera P6 101: Noob-Proof Mastery Guide</title><!-- Browser tab title -->
+  <meta 
+    name="description" 
+    content="A thorough, production-ready guide to mastering Oracle Primavera P6 from installation to advanced deliverables." 
+    /><!-- Meta description for SEO -->
 
-    <!-- Custom CSS --> <!-- Custom styles for the page -->
-    <style> <!-- Start of style tag -->
-        :root { <!-- Root variables for colors -->
-            --primary: #1e40af; <!-- Primary color -->
-            --primary-light: #3b82f6; <!-- Lighter primary color -->
-            --dark: #111827; <!-- Dark color -->
-            --gray: #6b7280; <!-- Gray color -->
-            --light: #f9fafb; <!-- Light color -->
-            --success: #10b981; <!-- Success color -->
-            --warning: #f59e0b; <!-- Warning color -->
-            --danger: #ef4444; <!-- Danger color -->
-        } <!-- End of root variables -->
+  <!-- Bootstrap 5.3 CSS -->
+  <link 
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" 
+    rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" 
+    crossorigin="anonymous" 
+    /><!-- Official Bootstrap CSS with integrity and cross-origin attributes -->
 
-        body { <!-- Body styling -->
-            font-family: 'Inter', sans-serif; <!-- Font family -->
-            background-color: #f8fafc; <!-- Background color -->
-            color: #1f2937; <!-- Text color (dark for contrast) -->
-            line-height: 1.7; <!-- Line height for readability -->
-        } <!-- End of body styling -->
+  <!-- Google Fonts -->
+  <link 
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" 
+    rel="stylesheet" 
+    /><!-- Two fonts: Inter for UI text, JetBrains Mono for code sections -->
 
-        .navbar { <!-- Navbar styling -->
-            background: linear-gradient(135deg, var(--primary), var(--primary-light)); <!-- Gradient background -->
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); <!-- Box shadow -->
-        } <!-- End of navbar styling -->
+  <!-- Custom CSS -->
+  <style>
+    /* 
+      Root variables for consistent color usage across site
+      Adjust them as needed for brand or theme purposes 
+    */
+    :root {
+      --primary: #1e40af;
+      --primary-light: #3b82f6;
+      --dark: #111827;
+      --gray: #6b7280;
+      --light: #f9fafb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
 
-        .navbar-brand { <!-- Navbar brand styling -->
-            font-weight: 700; <!-- Font weight -->
-            font-size: 1.5rem; <!-- Font size -->
-            color: white !important; <!-- Text color (white for contrast on dark navbar) -->
-        } <!-- End of navbar-brand styling -->
+    /* 
+      Global font, background color, and text color 
+      line-height ensures readability 
+    */
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #1f2937;
+      line-height: 1.7;
+    }
 
-        .nav-link { <!-- Nav link styling -->
-            color: rgba(255,255,255,0.9) !important; <!-- Text color (near white for contrast) -->
-            font-weight: 500; <!-- Font weight -->
-            transition: all 0.3s; <!-- Transition effect -->
-        } <!-- End of nav-link styling -->
+    /* Navbar design with gradient background and shadow */
+    .navbar {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .navbar-brand {
+      font-weight: 700;
+      font-size: 1.5rem;
+      color: #fff !important;
+    }
+    .nav-link {
+      color: rgba(255,255,255,0.9) !important;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+    .nav-link:hover {
+      color: #fff !important;
+      transform: translateY(-1px);
+    }
 
-        .nav-link:hover { <!-- Nav link hover styling -->
-            color: white !important; <!-- Hover color -->
-            transform: translateY(-1px); <!-- Hover transform -->
-        } <!-- End of nav-link hover -->
+    /* Hero section with background overlay and text styling */
+    .hero {
+      background: linear-gradient(
+        135deg, 
+        rgba(30,64,175,0.9), 
+        rgba(59,130,246,0.8)
+      ), 
+      url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIzMDBweCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOnJnYmEoMjU1LDI1NSwyNTUsMC4xKTsiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOnJnYmEoMjU1LDI1NSwyNTUsMCkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIzMDBweCIgZmlsbD0idXJsKCNncmFkKSIvPjwvc3ZnPg==');
+      background-size: cover;
+      color: #fff;
+      padding: 100px 0;
+      margin-bottom: 3rem;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .hero h1 {
+      font-size: 3.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .hero p.lead {
+      font-size: 1.25rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
 
-        .hero { <!-- Hero section styling -->
-            background: linear-gradient(135deg, rgba(30,64,175,0.9), rgba(59,130,246,0.8)), url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIzMDBweCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImdyYWQiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOnJnYmEoMjU1LDI1NSwyNTUsMC4xKTsiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOnJnYmEoMjU1LDI1NSwyNTUsMCkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIzMDBweCIgZmlsbD0idXJsKCNncmFkKSIvPjwvc3ZnPg=='); <!-- Background gradient and SVG -->
-            background-size: cover; <!-- Background size -->
-            color: white; <!-- Text color (white for contrast on dark hero) -->
-            padding: 100px 0; <!-- Padding -->
-            margin-bottom: 3rem; <!-- Margin bottom -->
-        } <!-- End of hero styling -->
+    /* Card styling with hover, box-shadow, and transitions */
+    .card {
+      border: none;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+    .card-header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff;
+      font-weight: 600;
+      border: none;
+      padding: 1.25rem 1.5rem;
+      font-size: 1.1rem;
+    }
+    .card-body {
+      padding: 1.75rem;
+    }
+    .card-footer {
+      background-color: #f1f5f9;
+      border-top: 1px solid #e2e8f0;
+      padding: 1rem 1.5rem;
+      font-size: 0.9rem;
+      color: var(--gray);
+    }
 
-        .hero h1 { <!-- Hero h1 styling -->
-            font-size: 3.5rem; <!-- Font size -->
-            font-weight: 700; <!-- Font weight -->
-            margin-bottom: 1rem; <!-- Margin bottom -->
-        } <!-- End of hero h1 -->
+    /* Badge styling for small highlights or callouts */
+    .badge {
+      font-weight: 500;
+      padding: 0.5em 0.8em;
+      border-radius: 50px;
+    }
+    .badge-primary {
+      background-color: rgba(30,64,175,0.15);
+      color: var(--primary);
+    }
+    .badge-success {
+      background-color: rgba(16,185,129,0.15);
+      color: var(--success);
+    }
+    .badge-warning {
+      background-color: rgba(245,158,11,0.15);
+      color: var(--warning);
+    }
+    .badge-info {
+      background-color: rgba(59,130,246,0.15);
+      color: var(--primary-light);
+    }
 
-        .hero p.lead { <!-- Hero lead paragraph styling -->
-            font-size: 1.25rem; <!-- Font size -->
-            max-width: 800px; <!-- Max width -->
-            margin: 0 auto; <!-- Centering -->
-        } <!-- End of hero lead -->
+    /* Step number style, often used in enumerated instructions */
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-right: 1rem;
+      flex-shrink: 0;
+    }
 
-        .card { <!-- Card styling -->
-            border: none; <!-- No border -->
-            border-radius: 16px; <!-- Border radius -->
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08); <!-- Box shadow -->
-            transition: all 0.3s ease; <!-- Transition -->
-            margin-bottom: 1.5rem; <!-- Margin bottom -->
-            overflow: hidden; <!-- Overflow hidden -->
-        } <!-- End of card styling -->
+    /* 
+      Alert/Tip boxes with colored backgrounds 
+      for highlighting important information 
+    */
+    .tip-box {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border-left: 5px solid #f59e0b;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      font-size: 0.95rem;
+    }
+    .warning-box {
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      border-left: 5px solid #ef4444;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+    }
+    .success-box {
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      border-left: 5px solid #10b981;
+      padding: 1rem 1.25rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+    }
 
-        .card:hover { <!-- Card hover styling -->
-            transform: translateY(-8px); <!-- Hover transform -->
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15); <!-- Hover shadow -->
-        } <!-- End of card hover -->
+    /* 
+      Updated <pre> and <code> for improved readability:
+      - Larger font size
+      - Adjusted background for contrast
+      - Increased line-height 
+    */
+    pre {
+      background: #2d3748; /* Slightly lighter than previous to improve text contrast */
+      color: #e2e8f0;      /* A softer, more readable color on dark background */
+      padding: 1.5rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      line-height: 1.4;
+      margin-bottom: 1.5rem;
+    }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: #e2e8f0;
+      color: #2d3748;
+      padding: 0.25em 0.5em;
+      line-height: 1.3;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
 
-        .card-header { <!-- Card header styling -->
-            background: linear-gradient(135deg, var(--primary), var(--primary-light)); <!-- Gradient background -->
-            color: white; <!-- Text color (white for contrast) -->
-            font-weight: 600; <!-- Font weight -->
-            border: none; <!-- No border -->
-            padding: 1.25rem 1.5rem; <!-- Padding -->
-            font-size: 1.1rem; <!-- Font size -->
-        } <!-- End of card-header -->
+    /* Table of Contents (TOC) with sticky positioning and scroll */
+    .toc {
+      position: sticky;
+      top: 100px;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+      border-left: 1px solid #e2e8f0;
+      margin-left: -1rem;
+      padding-left: 1rem;
+    }
+    .toc a {
+      display: block;
+      padding: 0.5rem 0;
+      color: var(--gray);
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+    .toc a:hover,
+    .toc a.active {
+      color: var(--primary);
+      border-left-color: var(--primary);
+      text-decoration: none;
+      padding-left: 0.5rem;
+    }
 
-        .card-body { <!-- Card body styling -->
-            padding: 1.75rem; <!-- Padding -->
-        } <!-- End of card-body -->
+    /* Progress bar styling - fills horizontally to show scroll progress */
+    .progress {
+      height: 8px;
+      border-radius: 4px;
+      background-color: #e5e7eb;
+    }
+    .progress-bar {
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    }
 
-        .card-footer { <!-- Card footer styling -->
-            background-color: #f1f5f9; <!-- Background color -->
-            border-top: 1px solid #e2e8f0; <!-- Border top -->
-            padding: 1rem 1.5rem; <!-- Padding -->
-            font-size: 0.9rem; <!-- Font size -->
-            color: var(--gray); <!-- Text color -->
-        } <!-- End of card-footer -->
+    /* Keyboard key styling for inline text references */
+    .keyboard {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 0.2em 0.5em;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85em;
+      display: inline-block;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3);
+    }
 
-        .badge { <!-- Badge styling -->
-            font-weight: 500; <!-- Font weight -->
-            padding: 0.5em 0.8em; <!-- Padding -->
-            border-radius: 50px; <!-- Border radius -->
-        } <!-- End of badge -->
+    /* Basic footer with dark background for contrast */
+    footer {
+      background-color: var(--dark);
+      color: #9ca3af;
+      padding: 3rem 0 1.5rem;
+      margin-top: 4rem;
+    }
 
-        .badge-primary { background-color: rgba(30,64,175,0.15); color: var(--primary); } <!-- Primary badge -->
-        .badge-success { background-color: rgba(16,185,129,0.15); color: var(--success); } <!-- Success badge -->
-        .badge-warning { background-color: rgba(245,158,11,0.15); color: var(--warning); } <!-- Warning badge -->
-        .badge-info { background-color: rgba(59,130,246,0.15); color: var(--primary-light); } <!-- Info badge -->
+    /* Responsive styles adjusting hero font sizes and TOC for smaller screens */
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 2.5rem;
+      }
+      .hero p.lead {
+        font-size: 1.1rem;
+      }
+      .toc {
+        position: static;
+        max-height: none;
+        margin-left: 0;
+        border-left: none;
+        padding-left: 0;
+        margin-top: 2rem;
+      }
+    }
+  </style><!-- End of inlined custom CSS -->
+</head><!-- End of the <head> section -->
 
-        .step-number { <!-- Step number styling -->
-            display: inline-flex; <!-- Display flex -->
-            align-items: center; <!-- Align items -->
-            justify-content: center; <!-- Justify content -->
-            width: 36px; <!-- Width -->
-            height: 36px; <!-- Height -->
-            border-radius: 50%; <!-- Border radius -->
-            background: var(--primary); <!-- Background -->
-            color: white; <!-- Text color (white for contrast) -->
-            font-weight: 700; <!-- Font weight -->
-            font-size: 1.1rem; <!-- Font size -->
-            margin-right: 1rem; <!-- Margin right -->
-            flex-shrink: 0; <!-- Flex shrink -->
-        } <!-- End of step-number -->
+<body><!-- Opens the body where the visible page content goes -->
 
-        .tip-box { <!-- Tip box styling -->
-            background: linear-gradient(135deg, #fef3c7, #fde68a); <!-- Gradient background -->
-            border-left: 5px solid #f59e0b; <!-- Border left -->
-            padding: 1rem 1.25rem; <!-- Padding -->
-            border-radius: 8px; <!-- Border radius -->
-            margin: 1.5rem 0; <!-- Margin -->
-            font-size: 0.95rem; <!-- Font size -->
-        } <!-- End of tip-box -->
+  <!-- Navigation (Navbar) -->
+  <nav class="navbar navbar-expand-lg navbar-dark fixed-top"><!-- Primary site nav fixed at top -->
+    <div class="container"><!-- Bootstrap container for horizontal center align -->
+      <a class="navbar-brand" href="#">
+        <strong>P6 101</strong> Mastery
+      </a><!-- Brand text link -->
+      <button 
+        class="navbar-toggler" 
+        type="button" 
+        data-bs-toggle="collapse" 
+        data-bs-target="#navbarNav"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button><!-- Hamburger icon for mobile screens -->
+      <div 
+        class="collapse navbar-collapse" 
+        id="navbarNav"
+      ><!-- Collapsible nav container -->
+        <ul class="navbar-nav ms-auto"><!-- Navbar menu aligned to the right -->
+          <li class="nav-item">
+            <a class="nav-link" href="#basics">Basics</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#navigation">Navigation</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#deliverables">Deliverables</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#tools">Tools</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#test">Test Prep</a>
+          </li>
+        </ul>
+      </div><!-- End of collapsible nav -->
+    </div><!-- End container -->
+  </nav><!-- End navbar -->
 
-        .warning-box { <!-- Warning box styling -->
-            background: linear-gradient(135deg, #fee2e2, #fecaca); <!-- Gradient -->
-            border-left: 5px solid #ef4444; <!-- Border left -->
-            padding: 1rem 1.25rem; <!-- Padding -->
-            border-radius: 8px; <!-- Radius -->
-            margin: 1.5rem 0; <!-- Margin -->
-        } <!-- End of warning-box -->
+  <!-- Hero Section -->
+  <section class="hero text-center"><!-- Hero area with background image + text -->
+    <div class="container"><!-- Bootstrap container -->
+      <h1>Primavera P6 101</h1><!-- Main hero title -->
+      <p class="lead">
+        The Complete <strong>Noob-Proof</strong> Guide to Oracle Primavera P6 <br/>
+        <em>From Installation & Configuration to Advanced Deliverables</em>
+      </p><!-- Subtitle boosting main topic -->
+      <p>
+        From Zero to 
+        <span class="badge bg-light text-dark">Employer-Test Ready</span> 
+        in One Comprehensive Resource
+      </p><!-- Additional highlight callout -->
+      <div class="mt-4">
+        <span class="badge badge-success">Beginner Friendly</span>
+        <span class="badge badge-info">Step-by-Step</span>
+        <span class="badge badge-warning">Exam Ready</span>
+        <span class="badge badge-primary">Production Proven</span>
+      </div><!-- Group of badges for quick facts -->
+    </div><!-- End container -->
+  </section><!-- End hero section -->
 
-        .success-box { <!-- Success box styling -->
-            background: linear-gradient(135deg, #d1fae5, #a7f3d0); <!-- Gradient -->
-            border-left: 5px solid #10b981; <!-- Border left -->
-            padding: 1rem 1.25rem; <!-- Padding -->
-            border-radius: 8px; <!-- Radius -->
-            margin: 1.5rem 0; <!-- Margin -->
-        } <!-- End of success-box -->
+  <div class="container"><!-- Main content container -->
+    <div class="row"><!-- Row for main content & table of contents -->
+      
+      <!-- Table of Contents (Shown on large screens) -->
+      <div class="col-lg-3 d-none d-lg-block"><!-- Hide on small, show on large -->
+        <div class="toc">
+          <h5 class="fw-bold mb-3">Quick Navigation</h5>
+          <a href="#intro">Introduction</a>
+          <a href="#install">1. Installation & Setup</a>
+          <a href="#interface">2. Interface Overview</a>
+          <a href="#eps">3. EPS & Projects</a>
+          <a href="#wbs">4. WBS Structure</a>
+          <a href="#activities">5. Activities & Logic</a>
+          <a href="#resources">6. Resources & Roles</a>
+          <a href="#scheduling">7. Scheduling Engine</a>
+          <a href="#baselines">8. Baselines</a>
+          <a href="#reports">9. Reports & Layouts</a>
+          <a href="#tools">10. Advanced Tools</a>
+          <a href="#deliverables">11. Common Deliverables</a>
+          <a href="#test">12. Competency Test Prep</a>
+        </div><!-- End TOC -->
+      </div><!-- End column for TOC -->
 
-        pre { <!-- Pre tag styling -->
-            background: #1f2937; <!-- Background (dark) -->
-            color: #e5e7eb; <!-- Text color (light for contrast) -->
-            padding: 1rem; <!-- Padding -->
-            border-radius: 8px; <!-- Radius -->
-            overflow-x: auto; <!-- Overflow -->
-            font-family: 'JetBrains Mono', monospace; <!-- Font -->
-            font-size: 0.9rem; <!-- Size -->
-        } <!-- End of pre -->
+      <div class="col-lg-9"><!-- Main column for page content -->
+        
+        <!-- Progress Bar -->
+        <div 
+          class="progress mb-4" 
+          style="height: 6px;"
+        >
+          <div 
+            class="progress-bar" 
+            role="progressbar" 
+            style="width: 0%;" 
+            id="progressBar"
+          ></div>
+        </div><!-- End progress bar container -->
 
-        code { <!-- Code tag styling -->
-            font-family: 'JetBrains Mono', monospace; <!-- Font -->
-            background: #e5e7eb; <!-- Background (light) -->
-            color: #1f2937; <!-- Text color (dark for contrast) -->
-            padding: 0.2em 0.4em; <!-- Padding -->
-            border-radius: 4px; <!-- Radius -->
-            font-size: 0.9em; <!-- Size -->
-        } <!-- End of code -->
+        <!-- Introduction Card -->
+        <div class="card" id="intro"><!-- Introduction anchor for link references -->
+          <div class="card-header">
+            🎯 Introduction: Why P6 Matters
+          </div>
+          <div class="card-body">
+            <p>
+              Oracle Primavera P6 is the <strong>industry standard</strong> for 
+              project scheduling in construction, energy, aerospace, and government. 
+              This guide turns you from <em>zero</em> to <strong>certified competent</strong> 
+              in under 20 hours. It covers every aspect: from best practices 
+              in scheduling and resource allocation to generating high-quality 
+              deliverables. By mastering P6, you’ll demonstrate reliability and 
+              professionalism to current (and future) employers.
+            </p><!-- Basic intro about importance of P6 -->
+            <p>
+              World-class companies rely on P6’s robust scheduling engine to 
+              handle complex projects with thousands of activities. Whether 
+              you’re managing a large construction job or a short IT roll-out, 
+              understanding P6 ensures that you can deliver on time and on budget.
+            </p><!-- Emphasizing high-level usage scenarios -->
 
-        .toc { <!-- TOC styling -->
-            position: sticky; <!-- Position -->
-            top: 100px; <!-- Top -->
-            max-height: calc(100vh - 120px); <!-- Max height -->
-            overflow-y: auto; <!-- Overflow -->
-        } <!-- End of toc -->
+            <div class="row g-3 mt-3">
+              <div class="col-md-4">
+                <div class="text-center p-3 bg-light rounded">
+                  <h3 class="text-primary">100%</h3>
+                  <small>Pass Rate for Internal Tests</small>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="text-center p-3 bg-light rounded">
+                  <h3 class="text-success">Step-by-Step</h3>
+                  <small>With Screenshots & Tips</small>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="text-center p-3 bg-light rounded">
+                  <h3 class="text-warning">Production Ready</h3>
+                  <small>Real-World Deliverables</small>
+                </div>
+              </div>
+            </div><!-- Three summary boxes demonstrating main selling points -->
 
-        .toc a { <!-- TOC link styling -->
-            display: block; <!-- Display -->
-            padding: 0.5rem 0; <!-- Padding -->
-            color: var(--gray); <!-- Color -->
-            font-size: 0.95rem; <!-- Size -->
-            transition: all 0.2s; <!-- Transition -->
-            border-left: 3px solid transparent; <!-- Border left -->
-        } <!-- End of toc a -->
+            <div class="success-box mt-4">
+              <strong>🎯 Goal:</strong> After this guide, you will be able to:
+              <ul class="mt-2">
+                <li>Navigate P6 like a pro</li>
+                <li>Create a fully logic-driven schedule</li>
+                <li>Generate all standard deliverables</li>
+                <li>Pass any employer P6 competency test</li>
+                <li>Apply best practices in real projects</li>
+              </ul>
+            </div><!-- Success box with key bullet takeaways -->
 
-        .toc a:hover, .toc a.active { <!-- TOC link hover and active -->
-            color: var(--primary); <!-- Color -->
-            border-left-color: var(--primary); <!-- Border color -->
-            text-decoration: none; <!-- No decoration -->
-            padding-left: 0.5rem; <!-- Padding left -->
-        } <!-- End of toc a hover/active -->
+            <div class="tip-box">
+              <strong>💡 Tip:</strong> Read sequentially, practice each section 
+              in P6, and revisit for reinforcement. Use short sprints for each 
+              topic to solidify retention. Document your progress to track 
+              mastery step by step.
+            </div><!-- Tip box encouraging iterative practice -->
 
-        .progress { <!-- Progress bar styling -->
-            height: 8px; <!-- Height -->
-            border-radius: 4px; <!-- Radius -->
-            background-color: #e5e7eb; <!-- Background -->
-        } <!-- End of progress -->
+            <!-- Additional expansion for deeper context -->
+            <p class="mt-3">
+              <strong>Essential Terminology:</strong><br/>
+              - <em>Activities</em>: Individual tasks or work items within a project.<br/>
+              - <em>Resources</em>: Labor, materials, or equipment needed.<br/>
+              - <em>Schedule Engine</em>: The logic/algorithm that calculates dates and floats.<br/>
+              - <em>Baseline</em>: A frozen reference snapshot of your project’s plan.
+            </p><!-- Quick definitions for absolute beginners -->
 
-        .progress-bar { <!-- Progress bar fill styling -->
-            background: linear-gradient(90deg, var(--primary), var(--primary-light)); <!-- Gradient -->
-        } <!-- End of progress-bar -->
+          </div><!-- End card-body -->
+        </div><!-- End Introduction card -->
 
-        footer { <!-- Footer styling -->
-            background-color: var(--dark); <!-- Background -->
-            color: #9ca3af; <!-- Text color (light gray for contrast on dark) -->
-            padding: 3rem 0 1.5rem; <!-- Padding -->
-            margin-top: 4rem; <!-- Margin top -->
-        } <!-- End of footer -->
+        <!-- 1. Installation & Setup Card -->
+        <div class="card" id="install"><!-- ID to link from TOC -->
+          <div class="card-header">
+            1. Installation & First Launch
+          </div>
+          <div class="card-body">
+            <h5>System Requirements</h5>
+            <p>
+              Ensuring you have the right environment before installing 
+              Primavera P6 prevents common performance and data corruption 
+              issues. Always check the official Oracle documentation for 
+              version-specific requirements.
+            </p>
+            <ul>
+              <li>Windows 10/11 (64-bit)</li>
+              <li>8 GB RAM minimum (16 GB recommended)</li>
+              <li>Oracle Database or SQLite (standalone)</li>
+              <li>P6 Professional PPM (not EPPM web)</li>
+            </ul>
 
-        .keyboard { <!-- Keyboard key styling -->
-            background: #1f2937; <!-- Background -->
-            color: #e5e7eb; <!-- Text color (light for contrast) -->
-            padding: 0.2em 0.5em; <!-- Padding -->
-            border-radius: 4px; <!-- Radius -->
-            font-family: 'JetBrains Mono', monospace; <!-- Font -->
-            font-size: 0.85em; <!-- Size -->
-            display: inline-block; <!-- Display -->
-            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3); <!-- Shadow -->
-        } <!-- End of keyboard -->
+            <div class="tip-box">
+              <strong>💡 Pro Tip:</strong> Always install as 
+              <code>Administrator</code>. Use a clear folder structure, for example, 
+              <code>C:\Oracle\Primavera P6</code>, for simplified maintenance. 
+              Backup databases before major changes or version upgrades. 
+              Setting up a test environment can help avoid costly mistakes 
+              in production.
+            </div><!-- Enhanced tip with note on test environment -->
 
-        @media (max-width: 768px) { <!-- Media query for small screens -->
-            .hero h1 { font-size: 2.5rem; } <!-- Adjust hero h1 size -->
-            .hero p.lead { font-size: 1.1rem; } <!-- Adjust lead size -->
-            .toc { position: static; max-height: none; } <!-- Adjust TOC -->
-        } <!-- End of media query -->
-    </style> <!-- End of style tag -->
-</head> <!-- End of head -->
-<body> <!-- Body start -->
+            <h5 class="mt-4">First Login Steps</h5>
+            <ol class="list-group list-group-numbered">
+              <li class="list-group-item d-flex">
+                <span class="step-number">1</span>
+                <div>
+                  Open P6 → Login with <code>admin/admin</code> (default). 
+                  Verify connection to database. If you’re using a standalone 
+                  SQLite DB, ensure it’s selected from the database configuration.
+                </div>
+              </li>
+              <li class="list-group-item d-flex">
+                <span class="step-number">2</span>
+                <div>
+                  Go to <code>Admin → Admin Preferences</code> → Set 
+                  <strong>Date Format: MM/DD/YYYY</strong>, Time Units: Days/Hours, 
+                  Currency: USD. Consistent global settings help keep the entire 
+                  team on the same page.
+                </div>
+              </li>
+              <li class="list-group-item d-flex">
+                <span class="step-number">3</span>
+                <div>
+                  Create new user: <code>Tools → Users → Add</code>. 
+                  Assign appropriate security profiles for scheduling, resource 
+                  management, or admin roles. Regularly update user permissions 
+                  as team roles evolve.
+                </div>
+              </li>
+            </ol>
 
-    <!-- Navigation --> <!-- Navbar section -->
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top"> <!-- Navbar element -->
-        <div class="container"> <!-- Container for navbar -->
-            <a class="navbar-brand" href="#"> <!-- Brand link -->
-                <strong>P6 101</strong> Mastery <!-- Brand text -->
-            </a> <!-- End brand -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"> <!-- Toggler button -->
-                <span class="navbar-toggler-icon"></span> <!-- Toggler icon -->
-            </button> <!-- End toggler -->
-            <div class="collapse navbar-collapse" id="navbarNav"> <!-- Collapsible content -->
-                <ul class="navbar-nav ms-auto"> <!-- Nav list -->
-                    <li class="nav-item"><a class="nav-link" href="#basics">Basics</a></li> <!-- Nav item -->
-                    <li class="nav-item"><a class="nav-link" href="#navigation">Navigation</a></li> <!-- Nav item -->
-                    <li class="nav-item"><a class="nav-link" href="#deliverables">Deliverables</a></li> <!-- Nav item -->
-                    <li class="nav-item"><a class="nav-link" href="#tools">Tools</a></li> <!-- Nav item -->
-                    <li class="nav-item"><a class="nav-link" href="#test">Test Prep</a></li> <!-- Nav item -->
-                </ul> <!-- End nav list -->
-            </div> <!-- End collapse -->
-        </div> <!-- End container -->
-    </nav> <!-- End navbar -->
+            <div class="warning-box">
+              <strong>⚠️ Never work in the SAMPLE database for production!</strong> 
+              Create a new database for real projects to avoid data corruption 
+              and merges with demo data. Keep your project environment clean 
+              by archiving obsolete projects.
+            </div><!-- Warning on using sample database -->
 
-    <!-- Hero Section --> <!-- Hero section -->
-    <section class="hero text-center"> <!-- Hero section element -->
-        <div class="container"> <!-- Container -->
-            <h1>Primavera P6 101</h1> <!-- Main title -->
-            <p class="lead">The Complete <strong>Noob-Proof</strong> Guide to Master Oracle Primavera P6 Professional</p> <!-- Lead paragraph -->
-            <p>From Zero to <span class="badge bg-light text-dark">Employer-Test Ready</span> in One Comprehensive Resource</p> <!-- Additional paragraph -->
-            <div class="mt-4"> <!-- Badge container -->
-                <span class="badge badge-success">Beginner Friendly</span> <!-- Badge -->
-                <span class="badge badge-info">Step-by-Step</span> <!-- Badge -->
-                <span class="badge badge-warning">Exam Ready</span> <!-- Badge -->
-                <span class="badge badge-primary">Production Proven</span> <!-- Badge -->
-            </div> <!-- End badges -->
-        </div> <!-- End container -->
-    </section> <!-- End hero -->
+            <!-- Additional expansion for deeper context -->
+            <h6>Common Installation Pitfalls & Solutions</h6>
+            <ul>
+              <li>
+                <strong>Database Connection Errors:</strong> Ensure your Oracle 
+                or SQLite setup is correct and test the connection inside P6’s 
+                Database Configuration.
+              </li>
+              <li>
+                <strong>Version Incompatibility:</strong> Always confirm that 
+                your version of P6 matches or is certified on your OS to avoid 
+                crashes.
+              </li>
+              <li>
+                <strong>Administrator Rights:</strong> Install and update as 
+                an Admin to ensure all registry entries are correct.
+              </li>
+            </ul>
 
-    <div class="container"> <!-- Main container -->
-        <div class="row"> <!-- Row for layout -->
-            <!-- Table of Contents --> <!-- TOC sidebar -->
-            <div class="col-lg-3 d-none d-lg-block"> <!-- Column for TOC -->
-                <div class="toc"> <!-- TOC div -->
-                    <h5 class="fw-bold mb-3">Quick Navigation</h5> <!-- TOC title -->
-                    <a href="#intro">Introduction</a> <!-- Link -->
-                    <a href="#install">1. Installation & Setup</a> <!-- Link -->
-                    <a href="#interface">2. Interface Overview</a> <!-- Link -->
-                    <a href="#eps">3. EPS & Projects</a> <!-- Link -->
-                    <a href="#wbs">4. WBS Structure</a> <!-- Link -->
-                    <a href="#activities">5. Activities & Logic</a> <!-- Link -->
-                    <a href="#resources">6. Resources & Roles</a> <!-- Link -->
-                    <a href="#scheduling">7. Scheduling Engine</a> <!-- Link -->
-                    <a href="#baselines">8. Baselines</a> <!-- Link -->
-                    <a href="#reports">9. Reports & Layouts</a> <!-- Link -->
-                    <a href="#tools">10. Advanced Tools</a> <!-- Link -->
-                    <a href="#deliverables">11. Common Deliverables</a> <!-- Link -->
-                    <a href="#test">12. Competency Test Prep</a> <!-- Link -->
-                </div> <!-- End TOC -->
-            </div> <!-- End column -->
+          </div><!-- End card-body -->
+          <div class="card-footer">
+            <strong>Shortcut:</strong> 
+            <kbd>Ctrl + Alt + P</kbd> → Open Project
+          </div><!-- Footer with a helpful shortcut -->
+        </div><!-- End Installation card -->
 
-            <!-- Main Content --> <!-- Main content column -->
-            <div class="col-lg-9"> <!-- Column for content -->
+        <!-- 2. Interface Overview Card -->
+        <div class="card" id="interface">
+          <div class="card-header">
+            2. P6 Interface: Know Every Button
+          </div>
+          <div class="card-body">
+            <h5>Understanding Layout & Navigation</h5>
+            <p>
+              Familiarizing yourself with each menu and toolbar ensures smoother 
+              workflows. Spend time exploring each bar’s capabilities. 
+              Consider creating a personal cheat sheet of your most-used commands.
+            </p>
+            <div class="row">
+              <div class="col-md-6">
+                <h6>Main Menu Bar</h6>
+                <ul class="small">
+                  <li><strong>File</strong> → New, Open, Export (Use for XER imports/exports)</li>
+                  <li><strong>Edit</strong> → Copy/Paste, Fill Down (Great for bulk updates)</li>
+                  <li><strong>View</strong> → Layouts, Timescale (Customize views here)</li>
+                  <li><strong>Project</strong> → Activities, WBS, Baselines (Core project mgmt)</li>
+                  <li><strong>Enterprise</strong> → EPS, Resources, Roles (Global settings)</li>
+                  <li><strong>Tools</strong> → Scheduling, Global Change (Automation tools)</li>
+                  <li><strong>Admin</strong> → Users, Security (Access control)</li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <h6>Key Toolbars</h6>
+                <ul class="small">
+                  <li><strong>Command Bar:</strong> Open, Schedule, Level (Quick actions)</li>
+                  <li><strong>Directory Bar:</strong> EPS ↔ Projects ↔ Activities (Navigation)</li>
+                  <li><strong>Activity Toolbar:</strong> Add, Delete, Indent (Activity management)</li>
+                </ul>
+              </div>
+            </div>
 
-                <!-- Progress Bar --> <!-- Progress bar -->
-                <div class="progress mb-4" style="height: 6px;"> <!-- Progress div -->
-                    <div class="progress-bar" role="progressbar" style="width: 0%;" id="progressBar"></div> <!-- Progress bar element -->
-                </div> <!-- End progress -->
+            <div class="mt-4">
+              <h6>Essential Keyboard Shortcuts</h6>
+              <div class="row g-2">
+                <div class="col-auto"><kbd>F9</kbd> Schedule</div>
+                <div class="col-auto"><kbd>Ctrl + D</kbd> Fill Down</div>
+                <div class="col-auto"><kbd>Ctrl + Z</kbd> Undo</div>
+                <div class="col-auto"><kbd>Ctrl + F</kbd> Find</div>
+                <div class="col-auto"><kbd>Insert</kbd> Add Activity</div>
+                <div class="col-auto"><kbd>Delete</kbd> Delete Activity</div>
+              </div>
+            </div><!-- Quick reference to speed usage -->
 
-                <!-- Introduction --> <!-- Intro card -->
-                <div class="card" id="intro"> <!-- Card div -->
-                    <div class="card-header"> <!-- Header -->
-                        🎯 Introduction: Why P6 Matters <!-- Header text -->
-                    </div> <!-- End header -->
-                    <div class="card-body"> <!-- Body -->
-                        <p>Oracle Primavera P6 is the <strong>industry standard</strong> for project scheduling in construction, energy, aerospace, and government. This guide turns you from <em>zero</em> to <strong>certified competent</strong> in under 20 hours. It covers every aspect, leaving no stone unturned, with best practices for scheduling, resources, critical path, and deliverables.</p> <!-- Expanded intro text -->
-                        
-                        <div class="row g-3 mt-3"> <!-- Row for stats -->
-                            <div class="col-md-4"> <!-- Column -->
-                                <div class="text-center p-3 bg-light rounded"> <!-- Stat box -->
-                                    <h3 class="text-primary">100%</h3> <!-- Stat -->
-                                    <small>Pass Rate for Internal Tests</small> <!-- Description -->
-                                </div> <!-- End box -->
-                            </div> <!-- End column -->
-                            <div class="col-md-4"> <!-- Column -->
-                                <div class="text-center p-3 bg-light rounded"> <!-- Stat box -->
-                                    <h3 class="text-success">Step-by-Step</h3> <!-- Stat -->
-                                    <small>With Screenshots & Shortcuts</small> <!-- Description -->
-                                </div> <!-- End box -->
-                            </div> <!-- End column -->
-                            <div class="col-md-4"> <!-- Column -->
-                                <div class="text-center p-3 bg-light rounded"> <!-- Stat box -->
-                                    <h3 class="text-warning">Production Ready</h3> <!-- Stat -->
-                                    <small>Real-World Deliverables</small> <!-- Description -->
-                                </div> <!-- End box -->
-                            </div> <!-- End column -->
-                        </div> <!-- End row -->
+            <div class="success-box mt-3">
+              <strong>Master Layouts:</strong> Save your screen setup via 
+              <code>View → Layouts → Save As...</code>. Maintain separate 
+              layouts for tasks like Gantt, Resource Histograms, or 
+              Activity Tables. Quick switching can save hours.
+            </div>
 
-                        <div class="success-box mt-4"> <!-- Success box -->
-                            <strong>🎯 Goal:</strong> After this guide, you will be able to: <!-- Goal text -->
-                            <ul class="mt-2"> <!-- List -->
-                                <li>Navigate P6 like a pro</li> <!-- Item -->
-                                <li>Create a fully logic-driven schedule</li> <!-- Item -->
-                                <li>Generate all standard deliverables</li> <!-- Item -->
-                                <li>Pass any employer P6 competency test</li> <!-- Item -->
-                                <li>Apply best practices in real projects</li> <!-- Added item -->
-                            </ul> <!-- End list -->
-                        </div> <!-- End box -->
+            <div class="tip-box">
+              <strong>💡 Tip:</strong> 
+              Customize toolbars via <code>View → Toolbars → Customize</code>. 
+              If possible, use dual monitors to keep your Gantt chart on one side 
+              and activity details on the other. This improves your ability to 
+              spot logic issues more quickly.
+            </div>
 
-                        <div class="tip-box"> <!-- Tip box -->
-                            <strong>💡 Tip:</strong> Read sequentially, practice each section in P6, and revisit for reinforcement. <!-- Tip text -->
-                        </div> <!-- End tip -->
-                    </div> <!-- End body -->
-                </div> <!-- End card -->
+            <!-- Additional expansion for deeper context -->
+            <p class="mt-3">
+              <strong>Common Menu Customization Ideas:</strong><br/>
+              - Pin “Schedule” and “Level Resources” to a top toolbar for quick access.<br/>
+              - Arrange commonly used icons (like Fill Down) in a row to reduce mouse travel.<br/>
+              - Save and share custom layout files across your team to standardize reporting.
+            </p><!-- Extra tips on customizing user interface -->
 
-                <!-- 1. Installation & Setup --> <!-- Install card -->
-                <div class="card" id="install"> <!-- Card div -->
-                    <div class="card-header"> <!-- Header -->
-                        1. Installation & First Launch <!-- Header text -->
-                    </div> <!-- End header -->
-                    <div class="card-body"> <!-- Body -->
-                        <h5>System Requirements</h5> <!-- Subsection -->
-                        <ul> <!-- List -->
-                            <li>Windows 10/11 (64-bit)</li> <!-- Item -->
-                            <li>8 GB RAM minimum (16 GB recommended)</li> <!-- Item -->
-                            <li>Oracle Database or SQLite (standalone)</li> <!-- Item -->
-                            <li>P6 Professional PPM (not EPPM web)</li> <!-- Item -->
-                        </ul> <!-- End list -->
+          </div><!-- End card-body -->
+        </div><!-- End Interface Overview card -->
 
-                        <div class="tip-box"> <!-- Tip -->
-                            <strong>💡 Pro Tip:</strong> Always install as <code>Administrator</code>. Use <code>C:\Oracle\Primavera P6</code> as default path. Backup databases before major changes. <!-- Expanded tip -->
-                        </div> <!-- End tip -->
+        <!-- 3. EPS & Projects Card -->
+        <div class="card" id="eps">
+          <div class="card-header">
+            3. EPS (Enterprise Project Structure)
+          </div>
+          <div class="card-body">
+            <p>
+              The EPS is your <strong>project portfolio hierarchy</strong>. 
+              It lets you better organize multiple projects under different 
+              organizational or functional groups. Effective EPS setup helps 
+              you quickly find, categorize, and manage your projects at scale.
+            </p>
+            
+            <h5>Create EPS Node</h5>
+            <ol>
+              <li>Go to <code>Enterprise → Enterprise Project Structure</code></li>
+              <li>Click <strong>Add</strong></li>
+              <li>Name: <code>2025 Capital Program</code></li>
+              <li>Responsible Manager: <code>John Doe</code></li>
+              <li>Arrange nodes in logical hierarchies (e.g., by region, business unit, or program year)</li>
+            </ol>
 
-                        <h5 class="mt-4">First Login Steps</h5> <!-- Subsection -->
-                        <ol class="list-group list-group-numbered"> <!-- Numbered list -->
-                            <li class="list-group-item d-flex"> <!-- Item -->
-                                <span class="step-number">1</span> <!-- Step number -->
-                                <div>Open P6 → Login with <code>admin/admin</code> (default). Verify connection to database.</div> <!-- Step text -->
-                            </li> <!-- End item -->
-                            <li class="list-group-item d-flex"> <!-- Item -->
-                                <span class="step-number">2</span> <!-- Step number -->
-                                <div>Go to <code>Admin → Admin Preferences</code> → Set <strong>Date Format: MM/DD/YYYY</strong>, Time Units: Days/Hours, Currency: USD.</div> <!-- Expanded step -->
-                            </li> <!-- End item -->
-                            <li class="list-group-item d-flex"> <!-- Item -->
-                                <span class="step-number">3</span> <!-- Step number -->
-                                <div>Create new user: <code>Tools → Users → Add</code>. Assign security profiles and module access.</div> <!-- Expanded step -->
-                            </li> <!-- End item -->
-                        </ol> <!-- End list -->
-
-                        <div class="warning-box"> <!-- Warning -->
-                            <strong>⚠️ Never work in the SAMPLE database for production!</strong> Create a new database for real projects to avoid data corruption. <!-- Expanded warning -->
-                        </div> <!-- End warning -->
-                    </div> <!-- End body -->
-                    <div class="card-footer"> <!-- Footer -->
-                        <strong>Shortcut:</strong> <kbd>Ctrl + Alt + P</kbd> → Open Project <!-- Footer text -->
-                    </div> <!-- End footer -->
-                </div> <!-- End card -->
-
-                <!-- 2. Interface Overview --> <!-- Interface card -->
-                <div class="card" id="interface"> <!-- Card div -->
-                    <div class="card-header"> <!-- Header -->
-                        2. P6 Interface: Know Every Button <!-- Header text -->
-                    </div> <!-- End header -->
-                    <div class="card-body"> <!-- Body -->
-                        <div class="row"> <!-- Row -->
-                            <div class="col-md-6"> <!-- Column -->
-                                <h6>Main Menu Bar</h6> <!-- Subsection -->
-                                <ul class="small"> <!-- List -->
-                                    <li><strong>File</strong> → New, Open, Export (Use for XER imports/exports)</li> <!-- Expanded item -->
-                                    <li><strong>Edit</strong> → Copy/Paste, Fill Down (Great for bulk updates)</li> <!-- Expanded item -->
-                                    <li><strong>View</strong> → Layouts, Timescale (Customize views here)</li> <!-- Expanded item -->
-                                    <li><strong>Project</strong> → Activities, WBS, Baselines (Core project management)</li> <!-- Expanded item -->
-                                    <li><strong>Enterprise</strong> → EPS, Resources, Roles (Global settings)</li> <!-- Expanded item -->
-                                    <li><strong>Tools</strong> → Scheduling, Global Change (Automation tools)</li> <!-- Expanded item -->
-                                    <li><strong>Admin</strong> → Users, Security (Access control)</li> <!-- Expanded item -->
-                                </ul> <!-- End list -->
-                            </div> <!-- End column -->
-                            <div class="col-md-6"> <!-- Column -->
-                                <h6>Key Toolbars</h6> <!-- Subsection -->
-                                <ul class="small"> <!-- List -->
-                                    <li><strong>Command Bar:</strong> Open, Schedule, Level (Quick actions)</li> <!-- Expanded item -->
-                                    <li><strong>Directory Bar:</strong> EPS ↔ Projects ↔ Activities (Navigation)</li> <!-- Expanded item -->
-                                    <li><strong>Activity Toolbar:</strong> Add, Delete, Indent (Activity management)</li> <!-- Expanded item -->
-                                </ul> <!-- End list -->
-                            </div> <!-- End column -->
-                        </div> <!-- End row -->
-
-                        <div class="mt-4"> <!-- Shortcuts section -->
-                            <h6>Essential Keyboard Shortcuts</h6> <!-- Subsection -->
-                            <div class="row g-2"> <!-- Row for shortcuts -->
-                                <div class="col-auto"><kbd>F9</kbd> Schedule</div> <!-- Shortcut -->
-                                <div class="col-auto"><kbd>Ctrl + D</kbd> Fill Down</div> <!-- Shortcut -->
-                                <div class="col-auto"><kbd>Ctrl + Z</kbd> Undo</div> <!-- Shortcut -->
-                                <div class="col-auto"><kbd>Ctrl + F</kbd> Find</div> <!-- Shortcut -->
-                                <div class="col-auto"><kbd>Insert</kbd> Add Activity</div> <!-- Shortcut -->
-                                <div class="col-auto"><kbd>Delete</kbd> Delete Activity</div> <!-- Shortcut -->
-                            </div> <!-- End row -->
-                        </div> <!-- End shortcuts -->
-
-                        <div class="success-box mt-3"> <!-- Success box -->
-                            <strong>Master Layouts:</strong> Save your screen setup via <code>View → Layouts → Save As...</code>. Create custom layouts for different views like Gantt, Table, etc. <!-- Expanded text -->
-                        </div> <!-- End box -->
-
-                        <div class="tip-box"> <!-- Tip -->
-                            <strong>💡 Tip:</strong> Customize toolbars via <code>View → Toolbars → Customize</code> for efficiency. Use dual monitors for better navigation. <!-- Expanded tip -->
-                        </div> <!-- End tip -->
-                    </div> <!-- End body -->
-                </div> <!-- End card -->
-
-                <!-- 3. EPS & Projects --> <!-- EPS card -->
-                <div class="card" id="eps"> <!-- Card div -->
-                    <div class="card-header"> <!-- Header -->
-                        3. EPS (Enterprise Project Structure) <!-- Header text -->
-                    </div> <!-- End header -->
-                    <div class="card-body"> <!-- Body -->
-                        <p>The EPS is your <strong>project portfolio hierarchy</strong>. Think of it like folders for organizing multiple projects.</p> <!-- Expanded text -->
-
-                        <h5>Create EPS Node</h5> <!-- Subsection -->
-                        <ol> <!-- List -->
-                            <li>Go to <code>Enterprise → Enterprise Project Structure</code></li> <!-- Step -->
-                            <li>Click <strong>Add</strong></li> <!-- Step -->
-                            <li>Name: <code>2025 Capital Program</code></li> <!-- Step -->
-                            <li>Responsible Manager: <code>John Doe</code></li> <!-- Step -->
-                            <li>Save and organize hierarchically</li> <!-- Added step -->
-                        </ol> <!-- End list -->
-
-                        <h5>Create New Project</h5> <!-- Subsection -->
-                        <pre><code>Project ID: PRJ-1001 <!-- Code example -->
+            <h5>Create New Project</h5>
+            <pre><code>
+Project ID: PRJ-1001
 Project Name: New Office Building
 Planned Start: 01/01/2025
 Must Finish By: 12/31/2025
-Data Date: 01/01/2025</code></pre> <!-- Expanded code -->
+Data Date: 01/01/2025
+            </code></pre><!-- Example of how new project data might look -->
 
-                        <div class="tip-box"> <!-- Tip -->
-                            <strong>Rule:</strong> Always set <code>Must Finish By</code> date for deadline-driven projects. Use OBS (Organizational Breakdown Structure) for access control. <!-- Expanded tip -->
-                        </div> <!-- End tip -->
-                    </div> <!-- End body -->
-                </div> <!-- End card -->
+            <div class="tip-box">
+              <strong>Rule:</strong> Always set <code>Must Finish By</code> date 
+              for deadline-driven projects. Use OBS (Organizational Breakdown 
+              Structure) for assigning managers and controlling user access 
+              based on their role. Maintaining consistent naming conventions 
+              helps unify enterprise data.
+            </div>
 
-                <!-- 4. WBS --> <!-- WBS card -->
-                <div class="card" id="wbs"> <!-- Card div -->
-                    <div class="card-header"> <!-- Header -->
-                        4. WBS (Work Breakdown Structure) <!-- Header text -->
-                    </div> <!-- End header -->
-                    <div class="card-body"> <!-- Body -->
-                        <p>WBS = <strong>Deliverable-based hierarchy</strong>. Not phases! Decompose to level where work can be estimated and assigned.</p> <!-- Expanded text -->
+            <!-- Additional expansion for deeper context -->
+            <p class="mt-3">
+              <strong>Use Cases for EPS:</strong><br/>
+              - Grouping multiple design-build projects within a portfolio.<br/>
+              - Quickly generating roll-up reports across all capital programs.<br/>
+              - Assigning global resource pools at the parent EPS level for enterprise consistency.
+            </p><!-- Additional insights for new users -->
 
-                        <h5>Best Practice WBS</h5> <!-- Subsection -->
-                        <div class="table-responsive"> <!-- Table wrapper -->
-                            <table class="table table-bordered"> <!-- Table -->
-                                <thead class="table-light"> <!-- Head -->
-                                    <tr><th>Level</th><th>Example</th></tr> <!-- Row -->
-                                </thead> <!-- End head -->
-                                <tbody> <!-- Body -->
-                                    <tr><td>1</td><td>Office Building</td></tr> <!-- Row -->
-                                    <tr><td>2</td><td>1.0 Design</td></tr> <!-- Row -->
-                                    <tr><td>3</td><td>1.1 Architectural</td></tr> <!-- Row -->
-                                    <tr><td>3</td><td>1.2 Structural</td></tr> <!-- Row -->
-                                    <tr><td>2</td><td>2.0 Construction</td></tr> <!-- Row -->
-                                    <tr><td>3</td><td>2.1 Foundation</td></tr> <!-- Added row -->
-                                </tbody> <!-- End body -->
-                            </table> <!-- End table -->
-                        </div> <!-- End wrapper -->
+          </div><!-- End card-body -->
+        </div><!-- End EPS card -->
 
-                        <h5>Create WBS</h5> <!-- Subsection -->
-                        <ol> <!-- List -->
-                            <li>Open Project → <code>WBS</code> tab</li> <!-- Step -->
-                            <li>Click <strong>Add</strong></li> <!-- Step -->
-                            <li>Enter WBS Code: <code>1.1</code></li> <!-- Step -->
-                            <li>Name: <code>Architectural Design</code></li> <!-- Step -->
-                            <li>Assign WBS category if needed</li> <!-- Added step -->
-                        </ol> <!-- End list -->
+        <!-- 4. WBS Card -->
+        <div class="card" id="wbs">
+          <div class="card-header">
+            4. WBS (Work Breakdown Structure)
+          </div>
+          <div class="card-body">
+            <p>
+              The WBS is a <strong>deliverable-oriented hierarchy</strong>, 
+              breaking down your project into manageable components. Well-defined 
+              WBS levels help with clear scope definition, cost control, and 
+              streamlined communication among stakeholders.
+            </p>
 
-                        <div class="tip-box"> <!-- Tip -->
-                            <strong>💡 Tip:</strong> Limit to 4-5 levels max. Use WBS Summary activities for rollups. <!-- Expanded tip -->
-                        </div> <!-- End tip -->
-                    </div> <!-- End body -->
-                </div> <!-- End card -->
+            <h5>Best Practice WBS</h5>
+            <div class="table-responsive">
+              <table class="table table-bordered">
+                <thead class="table-light">
+                  <tr>
+                    <th>Level</th>
+                    <th>Example</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>Office Building</td></tr>
+                  <tr><td>2</td><td>1.0 Design</td></tr>
+                  <tr><td>3</td><td>1.1 Architectural</td></tr>
+                  <tr><td>3</td><td>1.2 Structural</td></tr>
+                  <tr><td>2</td><td>2.0 Construction</td></tr>
+                  <tr><td>3</td><td>2.1 Foundation</td></tr>
+                </tbody>
+              </table>
+            </div><!-- Example table of WBS organization -->
 
-                <!-- 5. Activities --> <!-- Activities card -->
-                <div class="card" id="activities"> <!-- Card div -->
-                    <div class="card-header"> <!-- Header -->
-                        5. Activities & Logic: The Heart of P6 <!-- Header text -->
-                    </div> <!-- End header -->
-                    <div class="card-body"> <!-- Body -->
-                        <h5>Activity Types</h5> <!-- Subsection -->
-                        <div class="row g-3"> <!-- Row -->
-                            <div class="col-md-6"> <!-- Column -->
-                                <div class="border p-3 rounded"> <!-- Box -->
-                                    <strong>Task Dependent</strong><br> <!-- Type -->
-                                    <small>Default. Use for normal work. Calendar based on project.</small> <!-- Description -->
-                                </div> <!-- End box -->
-                            </div> <!-- End column -->
-                            <div class="col-md-6"> <!-- Column -->
-                                <div class="border p-3 rounded"> <!-- Box -->
-                                    <strong>Resource Dependent</strong><br> <!-- Type -->
-                                    <small>Use when crew size matters. Calendar based on resource.</small> <!-- Description -->
-                                </div> <!-- End box -->
-                            </div> <!-- End column -->
-                            <div class="col-md-6"> <!-- Column -->
-                                <div class="border p-3 rounded"> <!-- Box -->
-                                    <strong>Level of Effort (LOE)</strong><br> <!-- Type -->
-                                    <small>For ongoing support (PM, QA). Spans predecessors/successors.</small> <!-- Description -->
-                                </div> <!-- End box -->
-                            </div> <!-- End column -->
-                            <div class="col-md-6"> <!-- Column -->
-                                <div class="border p-3 rounded"> <!-- Box -->
-                                    <strong>Milestone</strong><br> <!-- Type -->
-                                    <small>Start/Finish. Duration = 0. Use for key events.</small> <!-- Description -->
-                                </div> <!-- End box -->
-                            </div> <!-- End column -->
-                            <div class="col-md-6"> <!-- Added column -->
-                                <div class="border p-3 rounded"> <!-- Box -->
-                                    <strong>WBS Summary</strong><br> <!-- Type -->
-                                    <small>Rollup durations/costs from child activities.</small> <!-- Description -->
-                                </div> <!-- End box -->
-                            </div> <!-- End column -->
-                        </div> <!-- End row -->
+            <h5>Create WBS</h5>
+            <ol>
+              <li>Open Project → <code>WBS</code> tab</li>
+              <li>Click <strong>Add</strong></li>
+              <li>Enter WBS Code: <code>1.1</code></li>
+              <li>Name: <code>Architectural Design</code></li>
+              <li>Assign WBS category if needed (for overhead or specialized grouping)</li>
+            </ol>
 
-                        <h5 class="mt-4">Add Activity</h5> <!-- Subsection -->
-                        <ol> <!-- List -->
-                            <li>Go to <code>Activities</code> view</li> <!-- Step -->
-                            <li>Press <kbd>Insert</kbd></li> <!-- Step -->
-                            <li>ID: <code>A1000</code> (auto or manual)</li> <!-- Step -->
-                            <li>Name: <code>Submit Design Package</code></li> <!-- Step -->
-                            <li>Duration: <code>5d</code></li> <!-- Step -->
-                            <li>Assign to WBS: <code>1.1</code></li> <!-- Step -->
-                            <li>Add relationships: Predecessors/Successors</li> <!-- Added step -->
-                            <li>Set constraints if necessary (e.g., Start On)</li> <!-- Added step -->
-                        </ol> <!-- End list -->
+            <div class="tip-box">
+              <strong>💡 Tip:</strong> Limit WBS levels to a manageable depth 
+              (4–5 max). Overly detailed WBS can complicate scheduling and 
+              resource management. Also, align your WBS with your cost accounts 
+              or standard operating procedures for seamless integration.
+            </div>
 
-                        <div class="tip-box"> <!-- Tip -->
-                            <strong>💡 Naming Convention:</strong> <code>[Verb] + [Noun]</code> → "Install Rebar", "Pour Foundation". Keep IDs sequential. Use codes for filtering. <!-- Expanded tip -->
-                        </div> <!-- End tip -->
-                    </div> <!-- End body -->
-                </div> <!-- End card -->
+            <!-- Additional expansion for deeper context -->
+            <p class="mt-3">
+              <strong>Common Pitfalls:</strong><br/>
+              - Creating too many levels of detail that slow data entry.<br/>
+              - Not aligning WBS codes with finance or procurement systems.<br/>
+              - Failing to separate temporary or overhead tasks from deliverable-based tasks.
+            </p><!-- Advice to avoid common mistakes -->
 
-                <!-- 6. Resources --> <!-- Resources card -->
-                <div class="card" id="resources"> <!-- Card div -->
-                    <div class="card-header"> <!-- Header -->
-                        6. Resources, Roles & Allocation Best Practices <!-- Updated header -->
-                    </div> <!-- End header -->
-                    <div class="card-body"> <!-- Body -->
-                        <h5>Create Resource</h5> <!-- Subsection -->
-                        <pre><code>Resource ID: LAB-001 <!-- Code -->
+          </div><!-- End card-body -->
+        </div><!-- End WBS card -->
+
+        <!-- 5. Activities & Logic Card -->
+        <div class="card" id="activities">
+          <div class="card-header">
+            5. Activities & Logic: The Heart of P6
+          </div>
+          <div class="card-body">
+            <p>
+              Activities are the actionable steps within your WBS. Proper logic 
+              ties them together in sequence. The network of relationships 
+              determines the project’s critical path and overall scheduling accuracy.
+            </p>
+
+            <h5>Activity Types</h5>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="border p-3 rounded">
+                  <strong>Task Dependent</strong><br>
+                  <small>Default. Uses activity calendar. Ideal for straightforward tasks.</small>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="border p-3 rounded">
+                  <strong>Resource Dependent</strong><br>
+                  <small>Uses resource calendar. Helpful when resource availability drives schedule.</small>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="border p-3 rounded">
+                  <strong>Level of Effort (LOE)</strong><br>
+                  <small>Spans between predecessor and successor. Common for project admin tasks.</small>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="border p-3 rounded">
+                  <strong>Milestone</strong><br>
+                  <small>Zero-duration. Marks key events or phase gates.</small>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="border p-3 rounded">
+                  <strong>WBS Summary</strong><br>
+                  <small>Rolls up durations/costs from child activities within a WBS element.</small>
+                </div>
+              </div>
+            </div><!-- Overview of different activity types -->
+
+            <h5 class="mt-4">Add Activity</h5>
+            <ol>
+              <li>Go to <code>Activities</code> view</li>
+              <li>Press <kbd>Insert</kbd></li>
+              <li>ID: <code>A1000</code> (auto or manually entered)</li>
+              <li>Name: <code>Submit Design Package</code></li>
+              <li>Duration: <code>5d</code></li>
+              <li>Assign to WBS: <code>1.1</code></li>
+              <li>Link predecessor/successor to create logic</li>
+              <li>Set constraints (optional, use sparingly)</li>
+            </ol>
+
+            <div class="tip-box">
+              <strong>💡 Naming Convention:</strong> 
+              <code>[Verb] + [Noun]</code> → "Install Rebar", "Pour Foundation". 
+              Keep IDs sequential. Use activity codes to group or filter later. 
+              Clarity in naming reduces confusion among your team.
+            </div>
+
+            <!-- Additional expansion with best practices -->
+            <p class="mt-3">
+              <strong>Handling Constraints Effectively:</strong><br/>
+              - Use “Finish On or Before” constraints only when contractually needed.<br/>
+              - Avoid artificially constraining tasks that should remain flexible.<br/>
+              - Regularly check your scheduling log for conflicts or missed relationships.
+            </p><!-- Deeper advice on constraints and logic -->
+
+          </div><!-- End card-body -->
+        </div><!-- End Activities & Logic card -->
+
+        <!-- 6. Resources & Roles Card -->
+        <div class="card" id="resources">
+          <div class="card-header">
+            6. Resources, Roles & Allocation Best Practices
+          </div>
+          <div class="card-body">
+            <p>
+              Resources are the labor, equipment, and materials required. 
+              Assigning roles ensures flexibility if personnel change. 
+              Configuring these properly helps track cost and workload.
+            </p>
+
+            <h5>Create Resource</h5>
+            <pre><code>
+Resource ID: LAB-001
 Name: General Labor
 Type: Labor
 Default Units/Time: 8h/d
 Cost/Unit: $45.00/h
-Max Units/Time: 40h/d</code></pre> <!-- Expanded code -->
+Max Units/Time: 40h/d
+            </code></pre><!-- Example resource definition -->
 
-                        <h5>Assign Resource</h5> <!-- Subsection -->
-                        <ol> <!-- List -->
-                            <li>Select activity</li> <!-- Step -->
-                            <li>Go to <code>Resources</code> tab (bottom)</li> <!-- Step -->
-                            <li>Click <strong>Add Resource</strong></li> <!-- Step -->
-                            <li>Select <code>LAB-001</code></li> <!-- Step -->
-                            <li>Budgeted Units: <code>40h</code></li> <!-- Step -->
-                            <li>Set curve: Linear/Front-loaded</li> <!-- Added step -->
-                        </ol> <!-- End list -->
+            <h5>Assign Resource</h5>
+            <ol>
+              <li>Select activity in <code>Activities</code> view</li>
+              <li>Open <code>Resources</code> tab (bottom pane)</li>
+              <li>Click <strong>Add Resource</strong></li>
+              <li>Select <code>LAB-001</code></li>
+              <li>Budgeted Units: <code>40h</code></li>
+              <li>Choose a resource curve (linear, front-loaded, etc.) if needed</li>
+            </ol>
 
-                        <h5 class="mt-4">Resource Allocation Best Practices & How-To</h5> <!-- New subsection -->
-                        <ul> <!-- List -->
-                            <li><strong>Avoid Overallocation:</strong> Use <code>Tools → Level Resources</code> to resolve peaks.</li> <!-- Practice -->
-                            <li><strong>Roles First:</strong> Assign roles, then replace with resources for flexibility.</li> <!-- Practice -->
-                            <li><strong>Curves:</strong> Use resource curves for non-linear distribution (e.g., bell curve for ramp-up).</li> <!-- Practice -->
-                            <li><strong>Shifts/Calendars:</strong> Assign resource-specific calendars for accurate availability.</li> <!-- Practice -->
-                            <li><strong>Thresholds:</strong> Set max units to prevent unrealistic assignments.</li> <!-- Practice -->
-                        </ul> <!-- End list -->
+            <h5 class="mt-4">Resource Allocation Best Practices & How-To</h5>
+            <ul>
+              <li><strong>Avoid Overallocation:</strong> Use 
+                  <code>Tools → Level Resources</code> to resolve peaks.</li>
+              <li><strong>Roles First:</strong> Assign roles, then replace with 
+                  named resources for real-world scheduling flexibility.</li>
+              <li><strong>Curves:</strong> Consider bell curves or front-loaded 
+                  distribution if work ramps up or tapers off.</li>
+              <li><strong>Shifts/Calendars:</strong> Align resource calendars 
+                  with actual working shifts/availability.</li>
+              <li><strong>Thresholds:</strong> Set realistic max units/time; 
+                  never schedule a single laborer for 24 hours a day.</li>
+            </ul>
 
-                        <div class="success-box"> <!-- Success -->
-                            <strong>Golden Rule:</strong> Always assign <strong>Roles</strong> first, then replace with actual <strong>Resources</strong> later. Monitor usage spreadsheets. <!-- Expanded -->
-                        </div> <!-- End success -->
+            <div class="success-box">
+              <strong>Golden Rule:</strong> Always assign <strong>Roles</strong> 
+              first, then replace with actual <strong>Resources</strong> once 
+              you confirm availability. Leverage usage spreadsheets to validate 
+              workloads.
+            </div>
 
-                        <div class="tip-box"> <!-- Tip -->
-                            <strong>💡 Tip:</strong> Use Resource Usage Profile to visualize allocation. Adjust lags for smoothing. <!-- Tip -->
-                        </div> <!-- End tip -->
-                    </div> <!-- End body -->
-                </div> <!-- End card -->
+            <div class="tip-box">
+              <strong>💡 Tip:</strong> Use Resource Usage Profile to visually 
+              spot overallocations. Adjust lags or schedule constraints to even 
+              out resource spikes. Also, incorporate real rates and overhead 
+              costs to get more accurate cost forecasting.
+            </div>
 
-                <!-- 7. Scheduling --> <!-- Scheduling card -->
-                <div class="card" id="scheduling"> <!-- Card div -->
-                    <div class="card-header"> <!-- Header -->
-                        7. Scheduling Engine & Critical Path Best Practices <!-- Updated header -->
-                    </div> <!-- End header -->
-                    <div class="card-body"> <!-- Body -->
-                        <h5>Schedule Project (F9)</h5> <!-- Subsection -->
-                        <ol> <!-- List -->
-                            <li>Press <kbd>F9</kbd></li> <!-- Step -->
-                            <li>Check <strong>Log to File</strong></li> <!-- Step -->
-                            <li>Set Data Date</li> <!-- Added step -->
-                            <li>Click <strong>Schedule</strong></li> <!-- Step -->
-                            <li>Review log for errors</li> <!-- Added step -->
-                        </ol> <!-- End list -->
+            <!-- Additional expansion for further context -->
+            <p class="mt-3">
+              <strong>Resource Dictionary Organization:</strong><br/>
+              - Group resources by type (e.g., “Skilled Labor,” “Heavy Equipment”).<br/>
+              - Keep cost rates updated to ensure your project’s budget is credible.<br/>
+              - Regularly review resource usage to prevent burnouts or lack of coverage.
+            </p><!-- More detail for new resource managers -->
 
-                        <h5>Scheduling Best Practices & How-To</h5> <!-- New subsection -->
-                        <ul> <!-- List -->
-                            <li><strong>Logic Ties:</strong> Use FS mostly, SS/FF with lags sparingly. Avoid FF for cycles.</li> <!-- Practice -->
-                            <li><strong>Constraints:</strong> Minimize hard constraints; use soft (expected finish).</li> <!-- Practice -->
-                            <li><strong>Data Date:</strong> Update weekly; progress activities before scheduling.</li> <!-- Practice -->
-                            <li><strong>Calendars:</strong> Use global/project calendars consistently for holidays/weather.</li> <!-- Practice -->
-                            <li><strong>Float Management:</strong> Monitor total float; buffer critical paths.</li> <!-- Practice -->
-                        </ul> <!-- End list -->
+          </div><!-- End card-body -->
+        </div><!-- End Resources & Roles card -->
 
-                        <h5>Critical Path</h5> <!-- Subsection -->
-                        <ul> <!-- List -->
-                            <li>Activities with <strong>Total Float ≤ 0</strong></li> <!-- Item -->
-                            <li>Shown in <strong>red</strong> by default</li> <!-- Item -->
-                            <li>Filter: <code>View → Filters → Critical</code></li> <!-- Item -->
-                        </ul> <!-- End list -->
+        <!-- 7. Scheduling (Engine & Critical Path) Card -->
+        <div class="card" id="scheduling">
+          <div class="card-header">
+            7. Scheduling Engine & Critical Path Best Practices
+          </div>
+          <div class="card-body">
+            <p>
+              Primavera P6’s scheduling engine calculates start and finish 
+              dates based on your activity relationships, calendars, and 
+              constraints. Managing the critical path is crucial for on-time 
+              project delivery and guiding management decisions.
+            </p>
 
-                        <h5>Critical Path Best Practices & How-To</h5> <!-- New subsection -->
-                        <ul> <!-- List -->
-                            <li><strong>Identify Multiple Paths:</strong> Use longest path option in schedule settings.</li> <!-- Practice -->
-                            <li><strong>Buffer:</strong> Add contingency activities on critical path.</li> <!-- Practice -->
-                            <li><strong>Monitor:</strong> Weekly review variance from baseline.</li> <!-- Practice -->
-                            <li><strong>Optimize:</strong> Crash activities by adding resources, but calculate cost impact.</li> <!-- Practice -->
-                            <li><strong>Avoid Artificial Criticality:</strong> Remove unnecessary constraints.</li> <!-- Practice -->
-                        </ul> <!-- End list -->
+            <h5>Schedule Project (F9)</h5>
+            <ol>
+              <li>Press <kbd>F9</kbd> or go to <code>Tools → Schedule</code></li>
+              <li>Enable <strong>Log to File</strong> to capture errors or warnings</li>
+              <li>Set Data Date correctly (e.g., current day or last update date)</li>
+              <li>Click <strong>Schedule</strong></li>
+              <li>Review log for open ends, negative float, or resource conflicts</li>
+            </ol>
 
-                        <div class="warning-box"> <!-- Warning -->
-                            <strong>Never have open ends!</strong> Every activity must have a predecessor and successor (except milestones). Check for loops. <!-- Expanded -->
-                        </div> <!-- End warning -->
+            <h5>Scheduling Best Practices & How-To</h5>
+            <ul>
+              <li><strong>Logic Ties:</strong> Prefer FS relationships. Use SS/FF 
+                  relationships sparingly to avoid confusion.</li>
+              <li><strong>Constraints:</strong> Keep “Start On” or “Must Finish On” 
+                  to a minimum. Overusing constraints can distort the critical path.</li>
+              <li><strong>Data Date:</strong> Update weekly or monthly; always 
+                  progress your activities before re-running schedule.</li>
+              <li><strong>Calendars:</strong> Use consistent project-specific 
+                  calendars for holidays or weather contingencies.</li>
+              <li><strong>Float Management:</strong> Track total float to mitigate 
+                  schedule risk and identify near-critical paths.</li>
+            </ul>
 
-                        <div class="tip-box"> <!-- Tip -->
-                            <strong>💡 Tip:</strong> Use Trace Logic view to debug critical path. Set critical float threshold in preferences. <!-- Tip -->
-                        </div> <!-- End tip -->
-                    </div> <!-- End body -->
-                </div> <!-- End card -->
+            <h5>Critical Path</h5>
+            <ul>
+              <li>Activities with <strong>Total Float ≤ 0</strong></li>
+              <li>By default, displayed in <strong>red</strong>.</li>
+              <li>Use <code>View → Filters → Critical</code> or customize to fit 
+                  zero/negative float thresholds.</li>
+            </ul>
 
-                <!-- 8. Baselines --> <!-- Baselines card -->
-                <div class="card" id="baselines"> <!-- Card div -->
-                    <div class="card-header"> <!-- Header -->
-                        8. Baselines: Your Performance Snapshot <!-- Header text -->
-                    </div> <!-- End header -->
-                    <div class="card-body"> <!-- Body -->
-                        <h5>Create Baseline</h5> <!-- Subsection -->
-                        <ol> <!-- List -->
-                            <li><code>Project → Maintain Baselines → Add</code></li> <!-- Step -->
-                            <li>Name: <code>B1 - Original</code></li> <!-- Step -->
-                            <li>Type: <code>Original Project</code></li> <!-- Step -->
-                            <li>Copy current project</li> <!-- Added step -->
-                        </ol> <!-- End list -->
+            <h5>Critical Path Best Practices & How-To</h5>
+            <ul>
+              <li><strong>Identify Multiple Paths:</strong> Set 
+                  “Calculate multiple float paths” in schedule settings when needed.</li>
+              <li><strong>Buffer:</strong> Insert contingency tasks or additional 
+                  resource availability along the critical path to protect 
+                  deadlines.</li>
+              <li><strong>Monitor:</strong> Compare baselines weekly or monthly 
+                  to catch slippage early.</li>
+              <li><strong>Optimize:</strong> If needed, resource “crash” or fast-track, 
+                  but weigh cost/scope trade-offs thoroughly.</li>
+              <li><strong>Avoid Artificial Criticality:</strong> Don’t artificially 
+                  constrain tasks unless absolutely required.</li>
+            </ul>
 
-                        <h5>Assign Baseline</h5> <!-- Subsection -->
-                        <ol> <!-- List -->
-                            <li><code>Project → Assign Baselines</code></li> <!-- Step -->
-                            <li>Project Baseline: <code>B1</code></li> <!-- Step -->
-                            <li>Primary Baseline: <code>B1</code></li> <!-- Step -->
-                            <li>Secondary if needed</li> <!-- Added step -->
-                        </ol> <!-- End list -->
+            <div class="warning-box">
+              <strong>Never have open ends!</strong> Ensuring each activity has 
+              a valid predecessor and successor (except the first and last 
+              milestone) prevents scheduling errors and spurious float values.
+            </div>
 
-                        <div class="tip-box"> <!-- Tip -->
-                            <strong>Display Baseline Bars:</strong> <code>View → Bars → Add Baseline Bar</code>. Compare variances regularly. <!-- Expanded -->
-                        </div> <!-- End tip -->
-                    </div> <!-- End body -->
-                </div> <!-- End card -->
+            <div class="tip-box">
+              <strong>💡 Tip:</strong> Use “Trace Logic” to visualize 
+              predecessor-successor chains. Adjust the critical float threshold 
+              in Primavera’s schedule options for near-critical path analysis.
+            </div>
 
-                <!-- 9. Reports --> <!-- Reports card -->
-                <div class="card" id="reports"> <!-- Card div -->
-                    <div class="card-header"> <!-- Header -->
-                        9. Reports & Custom Layouts <!-- Header text -->
-                    </div> <!-- End header -->
-                    <div class="card-body"> <!-- Body -->
-                        <h5>Standard Reports</h5> <!-- Subsection -->
-                        <ul> <!-- List -->
-                            <li><code>Reports → Project → Schedule Comparison</code></li> <!-- Item -->
-                            <li><code>Reports → Resource → Usage Profile</code></li> <!-- Item -->
-                            <li><code>Reports → Activity → Earned Value</code></li> <!-- Item -->
-                            <li><code>Reports → Cost → Cash Flow</code></li> <!-- Added item -->
-                        </ul> <!-- End list -->
+            <!-- Additional expansion for deeper context -->
+            <p class="mt-3">
+              <strong>Handling Lag & Lead:</strong><br/>
+              - Use leads (negative lag) cautiously, as they can confuse project teams.<br/>
+              - Document any complicated logic for clarity in scheduling reviews.<br/>
+              - Thoughtful scheduling clarifies resources, deadlines, and risk areas.
+            </p><!-- Further guidance on scheduling complexities -->
 
-                        <h5>Save Custom Layout</h5> <!-- Subsection -->
-                        <ol> <!-- List -->
-                            <li>Customize columns</li> <!-- Step -->
-                            <li><code>View → Layouts → Save As</code></li> <!-- Step -->
-                            <li>Name: <code>3-Week Lookahead</code></li> <!-- Step -->
-                            <li>Share with users</li> <!-- Added step -->
-                        </ol> <!-- End list -->
+          </div><!-- End card-body -->
+        </div><!-- End Scheduling card -->
 
-                        <div class="tip-box"> <!-- Tip -->
-                            <strong>💡 Tip:</strong> Use Report Wizard for custom reports. Export to Excel for further analysis. <!-- Tip -->
-                        </div> <!-- End tip -->
-                    </div> <!-- End body -->
-                </div> <!-- End card -->
+        <!-- 8. Baselines Card -->
+        <div class="card" id="baselines">
+          <div class="card-header">
+            8. Baselines: Your Performance Snapshot
+          </div>
+          <div class="card-body">
+            <p>
+              Baselines preserve a snapshot of your project schedule at a given 
+              point in time (often at approval). Comparing current progress to 
+              original or interim baselines highlights variances in scope, cost, 
+              or time, enabling proactive corrections.
+            </p>
 
-                <!-- 10. Advanced Tools --> <!-- Tools card -->
-                <div class="card" id="tools"> <!-- Card div -->
-                    <div class="card-header"> <!-- Header -->
-                        10. Power Tools You Must Know <!-- Header text -->
-                    </div> <!-- End header -->
-                    <div class="card-body"> <!-- Body -->
-                        <div class="row g-4"> <!-- Row -->
-                            <div class="col-md-6"> <!-- Column -->
-                                <div class="border p-3 rounded h-100"> <!-- Box -->
-                                    <h6>🔧 Global Change</h6> <!-- Title -->
-                                    <p>Mass update data. E.g., add prefix to IDs.</p> <!-- Description -->
-                                    <code>Tools → Global Change</code> <!-- Code -->
-                                </div> <!-- End box -->
-                            </div> <!-- End column -->
-                            <div class="col-md-6"> <!-- Column -->
-                                <div class="border p-3 rounded h-100"> <!-- Box -->
-                                    <h6>📊 Resource Leveling</h6> <!-- Title -->
-                                    <p>Avoid overallocation. Set priorities.</p> <!-- Description -->
-                                    <code>Tools → Level Resources</code> <!-- Code -->
-                                </div> <!-- End box -->
-                            </div> <!-- End column -->
-                            <div class="col-md-6"> <!-- Column -->
-                                <div class="border p-3 rounded h-100"> <!-- Box -->
-                                    <h6>📈 Claim Digger</h6> <!-- Title -->
-                                    <p>Compare schedule versions. Export differences.</p> <!-- Description -->
-                                    <code>Tools → Claim Digger</code> <!-- Code -->
-                                </div> <!-- End box -->
-                            </div> <!-- End column -->
-                            <div class="col-md-6"> <!-- Column -->
-                                <div class="border p-3 rounded h-100"> <!-- Box -->
-                                    <h6>🎨 Visualizer</h6> <!-- Title -->
-                                    <p>Create Gantt & Timescale charts. Customize themes.</p> <!-- Description -->
-                                    <code>Tools → Visualizer</code> <!-- Code -->
-                                </div> <!-- End box -->
-                            </div> <!-- End column -->
-                            <div class="col-md-6"> <!-- Added column -->
-                                <div class="border p-3 rounded h-100"> <!-- Box -->
-                                    <h6>🛠️ Reflection</h6> <!-- Title -->
-                                    <p>Merge what-if scenarios.</p> <!-- Description -->
-                                    <code>Tools → Reflection</code> <!-- Code -->
-                                </div> <!-- End box -->
-                            </div> <!-- End column -->
-                        </div> <!-- End row -->
+            <h5>Create Baseline</h5>
+            <ol>
+              <li><code>Project → Maintain Baselines → Add</code></li>
+              <li>Name: <code>B1 - Original</code></li>
+              <li>Type: <code>Original Project</code></li>
+              <li>Copy current project to freeze historical data</li>
+            </ol>
 
-                        <div class="tip-box mt-3"> <!-- Tip -->
-                            <strong>💡 Tip:</strong> Backup before Global Change. Test on small sets. <!-- Tip -->
-                        </div> <!-- End tip -->
-                    </div> <!-- End body -->
-                </div> <!-- End card -->
+            <h5>Assign Baseline</h5>
+            <ol>
+              <li><code>Project → Assign Baselines</code></li>
+              <li>Project Baseline: <code>B1</code></li>
+              <li>Primary Baseline: <code>B1</code></li>
+              <li>Optionally set Secondary or Tertiary baselines for other snapshots</li>
+            </ol>
 
-                <!-- 11. Common Deliverables --> <!-- Deliverables card -->
-                <div class="card" id="deliverables"> <!-- Card div -->
-                    <div class="card-header"> <!-- Header -->
-                        11. Common Deliverables & Best Practices <!-- Updated header -->
-                    </div> <!-- End header -->
-                    <div class="card-body"> <!-- Body -->
-                        <div class="accordion" id="deliverablesAccordion"> <!-- Accordion -->
+            <div class="tip-box">
+              <strong>Display Baseline Bars:</strong> 
+              <code>View → Bars → Add Baseline Bar</code>. Tracking how your 
+              schedule evolves over time is crucial for controlling scope creep 
+              and reinforcing accountability.
+            </div>
 
-                            <div class="accordion-item"> <!-- Item -->
-                                <h2 class="accordion-header"> <!-- Header -->
-                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#del1"> <!-- Button -->
-                                        3-Week Lookahead <!-- Text -->
-                                    </button> <!-- End button -->
-                                </h2> <!-- End header -->
-                                <div id="del1" class="accordion-collapse collapse show" data-bs-parent="#deliverablesAccordion"> <!-- Collapse -->
-                                    <div class="accordion-body"> <!-- Body -->
-                                        <ol> <!-- List -->
-                                            <li>Filter: <code>Start ≥ Today, Start ≤ Today+3w</code></li> <!-- Step -->
-                                            <li>Columns: ID, Name, Start, Finish, % Complete, Responsible</li> <!-- Step -->
-                                            <li>Group by WBS</li> <!-- Step -->
-                                            <li>Export to PDF via Visualizer</li> <!-- Step -->
-                                            <li>Include resources and notes</li> <!-- Added step -->
-                                        </ol> <!-- End list -->
-                                    </div> <!-- End body -->
-                                </div> <!-- End collapse -->
-                            </div> <!-- End item -->
+            <!-- Additional expansion for deeper context -->
+            <p class="mt-3">
+              <strong>Baseline Management Strategies:</strong><br/>
+              - Lock in a baseline after final client approval or major scope sign-off.<br/>
+              - Use incremental baselines to track progress after each major phase.<br/>
+              - Compare baseline vs. actual to measure performance and justify changes.
+            </p><!-- Advice on baseline usage in real-world scenarios -->
 
-                            <div class="accordion-item"> <!-- Item -->
-                                <h2 class="accordion-header"> <!-- Header -->
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#del2"> <!-- Button -->
-                                        Critical Path Report <!-- Text -->
-                                    </button> <!-- End button -->
-                                </h2> <!-- End header -->
-                                <div id="del2" class="accordion-collapse collapse" data-bs-parent="#deliverablesAccordion"> <!-- Collapse -->
-                                    <div class="accordion-body"> <!-- Body -->
-                                        <ol> <!-- List -->
-                                            <li>Filter: <code>Total Float ≤ 0</code></li> <!-- Step -->
-                                            <li>Sort by Start Date</li> <!-- Step -->
-                                            <li>Highlight in red</li> <!-- Step -->
-                                            <li>Export with baseline bars</li> <!-- Step -->
-                                            <li>Add variance columns</li> <!-- Added step -->
-                                        </ol> <!-- End list -->
-                                    </div> <!-- End body -->
-                                </div> <!-- End collapse -->
-                            </div> <!-- End item -->
+          </div><!-- End card-body -->
+        </div><!-- End Baselines card -->
 
-                            <div class="accordion-item"> <!-- Item -->
-                                <h2 class="accordion-header"> <!-- Header -->
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#del3"> <!-- Button -->
-                                        S-Curve (Earned Value) <!-- Text -->
-                                    </button> <!-- End button -->
-                                </h2> <!-- End header -->
-                                <div id="del3" class="accordion-collapse collapse" data-bs-parent="#deliverablesAccordion"> <!-- Collapse -->
-                                    <div class="accordion-body"> <!-- Body -->
-                                        <ol> <!-- List -->
-                                            <li><code>Tools → Visualizer</code></li> <!-- Step -->
-                                            <li>New → Timescale Chart</li> <!-- Step -->
-                                            <li>Add: Planned, Actual, Earned</li> <!-- Step -->
-                                            <li>Export to Excel/PDF</li> <!-- Step -->
-                                            <li>Include CPI/SPI metrics</li> <!-- Added step -->
-                                        </ol> <!-- End list -->
-                                    </div> <!-- End body -->
-                                </div> <!-- End collapse -->
-                            </div> <!-- End item -->
+        <!-- 9. Reports & Custom Layouts Card -->
+        <div class="card" id="reports">
+          <div class="card-header">
+            9. Reports & Custom Layouts
+          </div>
+          <div class="card-body">
+            <p>
+              Effective reporting is key to communicating status, costs, and 
+              resource usage. Primavera P6 offers built-in and custom 
+              capabilities for sharing project insights, essential for 
+              transparent stakeholder communication.
+            </p>
 
-                            <div class="accordion-item"> <!-- Added item -->
-                                <h2 class="accordion-header"> <!-- Header -->
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#del4"> <!-- Button -->
-                                        Resource Histogram <!-- Text -->
-                                    </button> <!-- End button -->
-                                </h2> <!-- End header -->
-                                <div id="del4" class="accordion-collapse collapse" data-bs-parent="#deliverablesAccordion"> <!-- Collapse -->
-                                    <div class="accordion-body"> <!-- Body -->
-                                        <ol> <!-- List -->
-                                            <li>Go to Resource Usage Profile</li> <!-- Step -->
-                                            <li>Filter by role/resource</li> <!-- Step -->
-                                            <li>Show allocation vs availability</li> <!-- Step -->
-                                            <li>Export chart</li> <!-- Step -->
-                                        </ol> <!-- End list -->
-                                    </div> <!-- End body -->
-                                </div> <!-- End collapse -->
-                            </div> <!-- End item -->
+            <h5>Standard Reports</h5>
+            <ul>
+              <li><code>Reports → Project → Schedule Comparison</code></li>
+              <li><code>Reports → Resource → Usage Profile</code></li>
+              <li><code>Reports → Activity → Earned Value</code></li>
+              <li><code>Reports → Cost → Cash Flow</code></li>
+            </ul>
 
-                        </div> <!-- End accordion -->
+            <h5>Save Custom Layout</h5>
+            <ol>
+              <li>Customize columns, grouping, or filters in your active layout</li>
+              <li><code>View → Layouts → Save As</code></li>
+              <li>Name: <code>3-Week Lookahead</code> (or any descriptive name)</li>
+              <li>Share layout with other users or keep it private</li>
+            </ol>
 
-                        <h5 class="mt-4">Common Deliverables Best Practices & How-To</h5> <!-- New subsection -->
-                        <ul> <!-- List -->
-                            <li><strong>Consistency:</strong> Standardize layouts/reports across projects.</li> <!-- Practice -->
-                            <li><strong>Customization:</strong> Tailor filters/groups for audience (e.g., execs vs field).</li> <!-- Practice -->
-                            <li><strong>Frequency:</strong> Weekly lookahead, monthly EV reports.</li> <!-- Practice -->
-                            <li><strong>Integration:</strong> Link to baselines for variance analysis.</li> <!-- Practice -->
-                            <li><strong>Export:</strong> Use PDF for distribution, Excel for manipulation.</li> <!-- Practice -->
-                        </ul> <!-- End list -->
+            <div class="tip-box">
+              <strong>💡 Tip:</strong> The Report Wizard (under 
+              <code>Reports → Report Wizard</code>) helps you create or modify 
+              custom reports. Export results to Excel for deeper analysis or 
+              distribution. Combining multiple data points can highlight format 
+              or cost variances.
+            </div>
 
-                        <div class="tip-box"> <!-- Tip -->
-                            <strong>💡 Tip:</strong> Automate reports with batch printing. Include legends in visuals. <!-- Tip -->
-                        </div> <!-- End tip -->
-                    </div> <!-- End body -->
-                </div> <!-- End card -->
+            <!-- Additional expansion for deeper context -->
+            <p class="mt-3">
+              <strong>Report Distribution Plans:</strong><br/>
+              - Automate weekly or monthly dispatch of Key Performance Indicators (KPIs).<br/>
+              - Keep layouts simple for upper management, but offer detailed breakdowns for project teams.<br/>
+              - Use pivot tables in Excel to cross-reference time vs. cost data if needed.
+            </p><!-- Further guidance on advanced reporting -->
 
-                <!-- 12. Competency Test Prep --> <!-- Test card -->
-                <div class="card" id="test"> <!-- Card div -->
-                    <div class="card-header"> <!-- Header -->
-                        12. Pass Your Employer P6 Test <!-- Header text -->
-                    </div> <!-- End header -->
-                    <div class="card-body"> <!-- Body -->
-                        <h5>Typical Test Tasks</h5> <!-- Subsection -->
-                        <div class="table-responsive"> <!-- Table wrapper -->
-                            <table class="table table-striped"> <!-- Table -->
-                                <thead> <!-- Head -->
-                                    <tr> <!-- Row -->
-                                        <th>Task</th> <!-- Header -->
-                                        <th>Time</th> <!-- Header -->
-                                        <th>Key Steps</th> <!-- Header -->
-                                    </tr> <!-- End row -->
-                                </thead> <!-- End head -->
-                                <tbody> <!-- Body -->
-                                    <tr> <!-- Row -->
-                                        <td>Create Project + WBS</td> <!-- Cell -->
-                                        <td>10 min</td> <!-- Cell -->
-                                        <td>EPS → Project → WBS → 3 levels, assign OBS</td> <!-- Expanded cell -->
-                                    </tr> <!-- End row -->
-                                    <tr> <!-- Row -->
-                                        <td>Add 20 Activities + Logic</td> <!-- Cell -->
-                                        <td>15 min</td> <!-- Cell -->
-                                        <td>Insert → FS relationships → No open ends, check logic</td> <!-- Expanded -->
-                                    </tr> <!-- End row -->
-                                    <tr> <!-- Row -->
-                                        <td>Assign Resources</td> <!-- Cell -->
-                                        <td>10 min</td> <!-- Cell -->
-                                        <td>Resources tab → Budgeted Units, check allocation</td> <!-- Expanded -->
-                                    </tr> <!-- End row -->
-                                    <tr> <!-- Row -->
-                                        <td>Schedule & Show Critical Path</td> <!-- Cell -->
-                                        <td>5 min</td> <!-- Cell -->
-                                        <td>F9 → Filter Critical, review float</td> <!-- Expanded -->
-                                    </tr> <!-- End row -->
-                                    <tr> <!-- Row -->
-                                        <td>Create Baseline</td> <!-- Cell -->
-                                        <td>5 min</td> <!-- Cell -->
-                                        <td>Maintain → Assign, add bars</td> <!-- Expanded -->
-                                    </tr> <!-- End row -->
-                                    <tr> <!-- Row -->
-                                        <td>Generate 3 Reports</td> <!-- Cell -->
-                                        <td>15 min</td> <!-- Cell -->
-                                        <td>Lookahead, Critical, S-Curve, customize</td> <!-- Expanded -->
-                                    </tr> <!-- End row -->
-                                    <tr> <!-- Added row -->
-                                        <td>Level Resources</td> <!-- Cell -->
-                                        <td>10 min</td> <!-- Cell -->
-                                        <td>Tools → Level, resolve overallocations</td> <!-- Cell -->
-                                    </tr> <!-- End row -->
-                                </tbody> <!-- End body -->
-                            </table> <!-- End table -->
-                        </div> <!-- End wrapper -->
+          </div><!-- End card-body -->
+        </div><!-- End Reports card -->
 
-                        <div class="success-box"> <!-- Success -->
-                            <strong>🎯 Pro Tip:</strong> Practice with a <strong>timer</strong>. Save layouts for speed. Review logs after each action. <!-- Expanded -->
-                        </div> <!-- End success -->
-                    </div> <!-- End body -->
-                    <div class="card-footer"> <!-- Footer -->
-                        <strong>Total Test Time:</strong> ~60 minutes | <strong>Passing Score:</strong> 85% <!-- Text -->
-                    </div> <!-- End footer -->
-                </div> <!-- End card -->
+        <!-- 10. Advanced Tools Card -->
+        <div class="card" id="tools">
+          <div class="card-header">
+            10. Power Tools You Must Know
+          </div>
+          <div class="card-body">
+            <p>
+              Beyond basic scheduling and resource assignments, Primavera P6 
+              offers powerful tools to compare, optimize, and visualize your 
+              project plan. Mastering these can dramatically increase efficiency.
+            </p>
+            <div class="row g-4">
+              <div class="col-md-6">
+                <div class="border p-3 rounded h-100">
+                  <h6>🔧 Global Change</h6>
+                  <p>Perform mass updates without manual entry. For example, 
+                     globally adjusting activity durations by a certain factor 
+                     or adding prefixes to IDs.</p>
+                  <code>Tools → Global Change</code>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="border p-3 rounded h-100">
+                  <h6>📊 Resource Leveling</h6>
+                  <p>Automatically redistribute assigned hours to resolve 
+                     overallocations. Set leveling priorities to ensure 
+                     critical tasks keep resources first.</p>
+                  <code>Tools → Level Resources</code>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="border p-3 rounded h-100">
+                  <h6>📈 Claim Digger</h6>
+                  <p>Compare two project schedules to quickly identify 
+                     differences in durations, dates, constraints, and more.</p>
+                  <code>Tools → Claim Digger</code>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="border p-3 rounded h-100">
+                  <h6>🎨 Visualizer</h6>
+                  <p>Create detailed Gantt charts or timescaled logic diagrams 
+                     for presentation or analysis. Customize bar styles, text, 
+                     and legends.</p>
+                  <code>Tools → Visualizer</code>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="border p-3 rounded h-100">
+                  <h6>🛠️ Reflection</h6>
+                  <p>Generate a “reflection” copy of your schedule to try 
+                     what-if scenarios, then merge accepted changes back 
+                     into the baseline project.</p>
+                  <code>Tools → Reflection</code>
+                </div>
+              </div>
+            </div>
 
-            </div> <!-- End column -->
-        </div> <!-- End row -->
-    </div> <!-- End container -->
+            <div class="tip-box mt-3">
+              <strong>💡 Tip:</strong> Always backup your project or test on a 
+              copy before running Global Change. A well-planned scenario 
+              ensures minimal disruptions. Reflection is a great sandbox 
+              environment for large changes with minimal risk.
+            </div>
 
-    <!-- Footer --> <!-- Footer section -->
-    <footer class="text-center"> <!-- Footer element -->
-        <div class="container"> <!-- Container -->
-            <p class="mb-1">&copy; 2025 P6 101 Mastery Guide. Built for production excellence.</p> <!-- Copyright -->
-            <p class="small text-muted">Designed for internal training & competency certification.</p> <!-- Description -->
-        </div> <!-- End container -->
-    </footer> <!-- End footer -->
+            <!-- Additional expansion for deeper context -->
+            <p class="mt-3">
+              <strong>Advanced Tools in Action:</strong><br/>
+              - Combine Resource Leveling with Reflection to test new resource strategies safely.<br/>
+              - Use Claim Digger when a client disputes schedule changes or variance claims.<br/>
+              - Leverage Visualizer to produce polished, executive-ready presentations quickly.
+            </p><!-- Concrete examples of advanced tools usage -->
 
-    <!-- Bootstrap JS --> <!-- Bootstrap JS CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+          </div><!-- End card-body -->
+        </div><!-- End Advanced Tools card -->
 
-    <!-- Custom JS --> <!-- Custom script -->
-    <script> <!-- Script tag -->
-        // Smooth scrolling for TOC <!-- Comment -->
-        document.querySelectorAll('.toc a').forEach(link => { <!-- For each TOC link -->
-            link.addEventListener('click', function(e) { <!-- Add click event -->
-                e.preventDefault(); <!-- Prevent default -->
-                const target = document.querySelector(this.getAttribute('href')); <!-- Get target -->
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' }); <!-- Scroll -->
-                
-                // Update active state <!-- Comment -->
-                document.querySelectorAll('.toc a').forEach(a => a.classList.remove('active')); <!-- Remove active -->
-                this.classList.add('active'); <!-- Add active -->
-            }); <!-- End listener -->
-        }); <!-- End forEach -->
+        <!-- 11. Common Deliverables Card -->
+        <div class="card" id="deliverables">
+          <div class="card-header">
+            11. Common Deliverables & Best Practices
+          </div>
+          <div class="card-body">
+            <p>
+              Consistent deliverables (like lookahead schedules, critical path 
+              summaries, and S-curves) are essential for stakeholders. They 
+              provide clarity on upcoming work, potential risks, and progress 
+              trends, building confidence in project oversight.
+            </p>
+            <div class="accordion" id="deliverablesAccordion"><!-- Bootstrap accordion group -->
 
-        // Progress bar on scroll <!-- Comment -->
-        window.addEventListener('scroll', () => { <!-- Add scroll event -->
-            const winScroll = document.body.scrollTop || document.documentElement.scrollTop; <!-- Get scroll position -->
-            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight; <!-- Calculate height -->
-            const scrolled = (winScroll / height) * 100; <!-- Calculate percentage -->
-            document.getElementById('progressBar').style.width = scrolled + '%'; <!-- Update width -->
-        }); <!-- End listener -->
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button 
+                    class="accordion-button" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#del1"
+                  >
+                    3-Week Lookahead
+                  </button>
+                </h2>
+                <div 
+                  id="del1" 
+                  class="accordion-collapse collapse show" 
+                  data-bs-parent="#deliverablesAccordion"
+                >
+                  <div class="accordion-body">
+                    <ol>
+                      <li>Filter: <code>Start ≥ Today</code> AND 
+                          <code>Start ≤ Today+3w</code></li>
+                      <li>Columns: ID, Name, Start, Finish, % Complete, Responsible</li>
+                      <li>Group by WBS or responsible party</li>
+                      <li>Export to PDF via Visualizer for distribution</li>
+                      <li>Include resource assignments or notes for clarity</li>
+                    </ol>
+                  </div>
+                </div>
+              </div><!-- End 3-Week Lookahead accordion item -->
 
-        // Highlight TOC on scroll <!-- Comment -->
-        window.addEventListener('scroll', () => { <!-- Add scroll event -->
-            const sections = document.querySelectorAll('div.card[id]'); <!-- Get sections -->
-            const tocLinks = document.querySelectorAll('.toc a'); <!-- Get links -->
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button 
+                    class="accordion-button collapsed" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#del2"
+                  >
+                    Critical Path Report
+                  </button>
+                </h2>
+                <div 
+                  id="del2" 
+                  class="accordion-collapse collapse" 
+                  data-bs-parent="#deliverablesAccordion"
+                >
+                  <div class="accordion-body">
+                    <ol>
+                      <li>Filter: <code>Total Float ≤ 0</code></li>
+                      <li>Sort by Start Date for a chronological view</li>
+                      <li>Highlight critical tasks in red</li>
+                      <li>Export with baseline bars to compare planned vs. actual</li>
+                      <li>Add variance columns for extended or shortened tasks</li>
+                    </ol>
+                  </div>
+                </div>
+              </div><!-- End Critical Path Report accordion item -->
 
-            let current = ''; <!-- Current section -->
-            sections.forEach(section => { <!-- For each section -->
-                const sectionTop = section.offsetTop - 150; <!-- Get top -->
-                if (scrollY >= sectionTop) { <!-- Check position -->
-                    current = section.getAttribute('id'); <!-- Set current -->
-                } <!-- End if -->
-            }); <!-- End forEach -->
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button 
+                    class="accordion-button collapsed" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#del3"
+                  >
+                    S-Curve (Earned Value)
+                  </button>
+                </h2>
+                <div 
+                  id="del3" 
+                  class="accordion-collapse collapse" 
+                  data-bs-parent="#deliverablesAccordion"
+                >
+                  <div class="accordion-body">
+                    <ol>
+                      <li><code>Tools → Visualizer</code></li>
+                      <li>Create a new Timescale Chart</li>
+                      <li>Choose Planned, Actual, Earned data lines</li>
+                      <li>Export to Excel or PDF</li>
+                      <li>Optionally include CPI (Cost Performance Index) and SPI 
+                          (Schedule Performance Index) metrics</li>
+                    </ol>
+                  </div>
+                </div>
+              </div><!-- End S-Curve (Earned Value) accordion item -->
 
-            tocLinks.forEach(link => { <!-- For each link -->
-                link.classList.remove('active'); <!-- Remove active -->
-                if (link.getAttribute('href') === `#${current}`) { <!-- Check match -->
-                    link.classList.add('active'); <!-- Add active -->
-                } <!-- End if -->
-            }); <!-- End forEach -->
-        }); <!-- End listener -->
-    </script> <!-- End script -->
-</body> <!-- End body -->
-</html> <!-- End html -->
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button 
+                    class="accordion-button collapsed" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#del4"
+                  >
+                    Resource Histogram
+                  </button>
+                </h2>
+                <div 
+                  id="del4" 
+                  class="accordion-collapse collapse" 
+                  data-bs-parent="#deliverablesAccordion"
+                >
+                  <div class="accordion-body">
+                    <ol>
+                      <li>Open the Resource Usage Profile</li>
+                      <li>Filter by specific roles or resources</li>
+                      <li>Display allocation vs. availability in a histogram</li>
+                      <li>Export charts or screenshots for quick oversight</li>
+                    </ol>
+                  </div>
+                </div>
+              </div><!-- End Resource Histogram accordion item -->
+
+            </div><!-- End deliverables accordion group -->
+
+            <h5 class="mt-4">Common Deliverables Best Practices & How-To</h5>
+            <ul>
+              <li><strong>Consistency:</strong> Standardize layouts and filters 
+                  so each team sees uniform reports.</li>
+              <li><strong>Customization:</strong> Too much detail can overwhelm 
+                  executives. Tailor deliverables to each audience.</li>
+              <li><strong>Frequency:</strong> Weekly or bi-weekly lookaheads, 
+                  monthly EV reports, or as contractually required.</li>
+              <li><strong>Integration:</strong> Compare actual progress against 
+                  baseline, highlighting variances and potential issues.</li>
+              <li><strong>Export:</strong> Distribute PDF or Excel versions to 
+                  stakeholders unable to access P6 directly.</li>
+            </ul>
+
+            <div class="tip-box">
+              <strong>💡 Tip:</strong> Batch printing or exporting can save time. 
+              Include a legend or color code for Gantt charts to quickly convey 
+              key metrics.
+            </div>
+
+            <!-- Additional expansion for deeper context -->
+            <p class="mt-3">
+              <strong>Stakeholder Engagement:</strong><br/>
+              - Conduct regular status meetings where you review these deliverables.<br/>
+              - Encourage feedback to refine your standard deliverable templates.<br/>
+              - Always double-check data date and baselines for accurate representations.
+            </p><!-- Advice on how to use deliverables effectively in real environment -->
+
+          </div><!-- End card-body -->
+        </div><!-- End Common Deliverables card -->
+
+        <!-- 12. Competency Test Prep Card -->
+        <div class="card" id="test">
+          <div class="card-header">
+            12. Pass Your Employer P6 Test
+          </div>
+          <div class="card-body">
+            <p>
+              Many organizations test P6 competency by requiring you to quickly 
+              set up a project, add activities, or generate specific reports 
+              under time pressure. The table below summarizes typical tasks to 
+              help you practice.
+            </p>
+
+            <h5>Typical Test Tasks</h5>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Task</th>
+                    <th>Time</th>
+                    <th>Key Steps</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Create Project + WBS</td>
+                    <td>10 min</td>
+                    <td>EPS → Project → WBS (3 levels), assign OBS</td>
+                  </tr>
+                  <tr>
+                    <td>Add 20 Activities + Logic</td>
+                    <td>15 min</td>
+                    <td>Insert → FS relationships → No open ends, check logic in schedule</td>
+                  </tr>
+                  <tr>
+                    <td>Assign Resources</td>
+                    <td>10 min</td>
+                    <td>Resource tab → Budgeted Units, check allocation for overbookings</td>
+                  </tr>
+                  <tr>
+                    <td>Schedule & Show Critical Path</td>
+                    <td>5 min</td>
+                    <td>Press F9 → Filter Critical, review float logs</td>
+                  </tr>
+                  <tr>
+                    <td>Create Baseline</td>
+                    <td>5 min</td>
+                    <td>Maintain Baselines → Assign → Add baseline bars</td>
+                  </tr>
+                  <tr>
+                    <td>Generate 3 Reports</td>
+                    <td>15 min</td>
+                    <td>Lookahead, Critical Report, S-Curve (add variance, resources if needed)</td>
+                  </tr>
+                  <tr>
+                    <td>Level Resources</td>
+                    <td>10 min</td>
+                    <td>Tools → Level Resources, reorganize to clear peaks</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div><!-- Overview table of typical test steps with times -->
+
+            <div class="success-box">
+              <strong>🎯 Pro Tip:</strong> Practice with a <strong>timer</strong>. 
+              Layouts save time for repeating tasks. Always review logs after 
+              scheduling or leveling to catch warnings early. Document your 
+              attempts to watch your speed and accuracy improve.
+            </div>
+
+            <!-- Additional expansion for deeper context -->
+            <p class="mt-3">
+              <strong>Further Preparation Ideas:</strong><br/>
+              - Recreate the same small project repeatedly until steps become second nature.<br/>
+              - Memorize key shortcuts (F9 for schedule, Ctrl+D for fill down, etc.).<br/>
+              - Keep a cheat sheet of your typical resource rates and activity codes if allowed.
+            </p><!-- Extra tips for test readiness -->
+
+          </div><!-- End card-body -->
+          <div class="card-footer">
+            <strong>Total Test Time:</strong> ~60 minutes | 
+            <strong>Passing Score:</strong> 85%
+          </div><!-- Basic test guidelines -->
+        </div><!-- End Competency Test Prep card -->
+
+      </div><!-- End main content column -->
+    </div><!-- End row -->
+  </div><!-- End overall container -->
+
+  <!-- Footer Section -->
+  <footer class="text-center">
+    <div class="container">
+      <p class="mb-1">
+        &copy; 2025 P6 101 Mastery Guide. Built for production excellence.
+      </p>
+      <p class="small text-muted">
+        Designed for internal training & competency certification.
+      </p>
+    </div>
+  </footer><!-- End site footer -->
+
+  <!-- Bootstrap JS (required for certain components like collapse) -->
+  <script 
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" 
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" 
+    crossorigin="anonymous"
+  ></script><!-- Official Bootstrap bundle with popper.js -->
+
+  <!-- Custom JS -->
+  <script>
+    // Smooth scrolling for TOC
+    document.querySelectorAll('.toc a').forEach(link => {
+      // Add click event for each TOC link
+      link.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent default anchor behavior
+        const target = document.querySelector(this.getAttribute('href'));
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Update active link state for clarity
+        document.querySelectorAll('.toc a').forEach(a => a.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // Progress bar on scroll
+    window.addEventListener('scroll', () => {
+      // Calculate how far the user has scrolled
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      // Update the width of the progressBar
+      document.getElementById('progressBar').style.width = scrolled + '%';
+    });
+
+    // Highlight TOC on scroll event
+    window.addEventListener('scroll', () => {
+      // Grab all cards with IDs
+      const sections = document.querySelectorAll('div.card[id]');
+      const tocLinks = document.querySelectorAll('.toc a');
+
+      let current = '';
+      // Determine which section is in the viewport
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop - 150; 
+        if (window.scrollY >= sectionTop) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      // Update TOC links to highlight the current section
+      tocLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === `#${current}`) {
+          link.classList.add('active');
+        }
+      });
+    });
+  </script><!-- End custom JS -->
+</body><!-- End body -->
+</html><!-- End document -->
